@@ -2,12 +2,12 @@
 "use client";
 import { useState } from "react";
 import { useWasm } from "./WasmProvider";
-import type { ExchangeCodeForTokenInput, AuthContext } from "@wasm";
+import type { ExchangeCodeForIdentityInput, AuthIdentity } from "@wasm";
 
 export default function TokenExchange() {
   const { wasmModule, isLoading, error: wasmError } = useWasm();
   const [code, setCode] = useState("");
-  const [authContext, setAuthContext] = useState<AuthContext | null>(null);
+  const [authIdentity, setAuthIdentity] = useState<AuthIdentity | null>(null);
   const [error, setError] = useState<string>();
 
   const handleExchange = async () => {
@@ -17,26 +17,26 @@ export default function TokenExchange() {
     }
 
     try {
-      const input: ExchangeCodeForTokenInput = { code };
-      const response = await wasmModule.exchange_code_for_token(input);
+      const input: ExchangeCodeForIdentityInput = { code };
+      const response = await wasmModule.exchange_code_for_identity(input);
 
       if (response.error) {
         setError(`${response.error.kind} error: ${response.error.message}`);
-        setAuthContext(null);
+        setAuthIdentity(null);
         return;
       }
 
       if (response.output) {
-        setAuthContext(response.output.output);
+        setAuthIdentity(response.output.output);
         setError(undefined);
       } else {
         setError("No output received");
-        setAuthContext(null);
+        setAuthIdentity(null);
       }
     } catch (err) {
       console.error("Token exchange error:", err);
       setError(err instanceof Error ? err.message : "Error exchanging token");
-      setAuthContext(null);
+      setAuthIdentity(null);
     }
   };
 
@@ -67,27 +67,27 @@ export default function TokenExchange() {
           Error: {error || wasmError}
         </div>
       )}
-      {authContext && (
+      {authIdentity && (
         <div className="p-4 bg-gray-50 border rounded">
-          <h3 className="font-semibold mb-2">Auth Context:</h3>
+          <h3 className="font-semibold mb-2">Auth Identity:</h3>
           <dl className="space-y-2">
             <dt className="font-medium">Authenticated:</dt>
             <dd className="ml-4">
-              {authContext.is_authenticated ? "Yes" : "No"}
+              {authIdentity.is_authenticated ? "Yes" : "No"}
             </dd>
             <dt className="font-medium">Admin:</dt>
             <dd className="ml-4">
-              {authContext.identity.is_admin ? "Yes" : "No"}
+              {authIdentity.identity.is_admin ? "Yes" : "No"}
             </dd>
             <dt className="font-medium">Access Token:</dt>
             <dd className="ml-4 break-all">
-              {authContext.identity.access_token}
+              {authIdentity.identity.access_token}
             </dd>
             <dt className="font-medium">ID Token:</dt>
-            <dd className="ml-4 break-all">{authContext.identity.id_token}</dd>
+            <dd className="ml-4 break-all">{authIdentity.identity.id_token}</dd>
             <dt className="font-medium">Refresh Token:</dt>
             <dd className="ml-4 break-all">
-              {authContext.identity.refresh_token}
+              {authIdentity.identity.refresh_token}
             </dd>
           </dl>
         </div>
