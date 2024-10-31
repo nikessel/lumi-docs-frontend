@@ -1,36 +1,12 @@
-// WasmAuth0Config.tsx
-import React, { useState, useEffect } from "react";
-import type {
-  GetPublicAuth0ConfigResponse,
-  GetPublicAuth0ConfigOutput,
-} from "@wasm";
-import type * as WasmModule from "@wasm";
+"use client";
+import { useState } from "react";
+import { useWasm } from "./WasmProvider";
+import type { Auth0ConfigPublic } from "@wasm";
 
-const Auth0Config = () => {
-  const [config, setConfig] = useState<
-    GetPublicAuth0ConfigOutput["result"] | null
-  >(null);
-  const [wasmModule, setWasmModule] = useState<typeof WasmModule | null>(null);
+function Auth0Config() {
+  const { wasmModule, isLoading, error: wasmError } = useWasm();
+  const [config, setConfig] = useState<Auth0ConfigPublic | null>(null);
   const [error, setError] = useState<string>();
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const initWasm = async () => {
-      try {
-        const jsModule = await import("@wasm");
-        await jsModule.default();
-        setWasmModule(jsModule);
-        setIsLoading(false);
-      } catch (err) {
-        console.error("WASM initialization error:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to initialize WASM",
-        );
-        setIsLoading(false);
-      }
-    };
-    initWasm();
-  }, []);
 
   const fetchConfig = async () => {
     if (!wasmModule) {
@@ -39,20 +15,18 @@ const Auth0Config = () => {
     }
 
     try {
-      const response: GetPublicAuth0ConfigResponse =
-        await wasmModule.get_public_auth0_config();
-
+      const response = await wasmModule.get_public_auth0_config();
       if (response.error) {
         setError(`${response.error.kind} error: ${response.error.message}`);
         setConfig(null);
         return;
       }
 
-      if (response.data) {
-        setConfig(response.data.result);
+      if (response.output) {
+        setConfig(response.output.output);
         setError(undefined);
       } else {
-        setError("No data received");
+        setError("No output received");
         setConfig(null);
       }
     } catch (err) {
@@ -73,11 +47,14 @@ const Auth0Config = () => {
       >
         Fetch Auth0 Config
       </button>
-
       {isLoading && (
         <div className="text-blue-600 font-medium">Loading WASM module...</div>
       )}
-      {error && <div className="text-red-600 font-medium">Error: {error}</div>}
+      {(error || wasmError) && (
+        <div className="text-red-600 font-medium">
+          Error: {error || wasmError}
+        </div>
+      )}
       {config && (
         <div className="p-4 bg-white border rounded">
           <h3 className="font-semibold mb-2">Auth0 Configuration:</h3>
@@ -95,6 +72,6 @@ const Auth0Config = () => {
       )}
     </div>
   );
-};
+}
 
 export default Auth0Config;

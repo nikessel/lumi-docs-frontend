@@ -1,17 +1,88 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
-*/
-export function hydrate(): void;
-/**
-* @param {EchoArgs} input
+* @param {EchoInput} input
 * @returns {Promise<EchoResponse>}
 */
-export function echo(input: EchoArgs): Promise<EchoResponse>;
+export function echo(input: EchoInput): Promise<EchoResponse>;
 /**
 * @returns {Promise<GetPublicAuth0ConfigResponse>}
 */
 export function get_public_auth0_config(): Promise<GetPublicAuth0ConfigResponse>;
+/**
+* @param {ExchangeCodeForTokenInput} input
+* @returns {Promise<ExchangeCodeForTokenResponse>}
+*/
+export function exchange_code_for_token(input: ExchangeCodeForTokenInput): Promise<ExchangeCodeForTokenResponse>;
+/**
+* @param {TokenToClaimsInput} input
+* @returns {Promise<TokenToClaimsResponse>}
+*/
+export function token_to_claims(input: TokenToClaimsInput): Promise<TokenToClaimsResponse>;
+/**
+* @returns {Promise<AppVersionResponse>}
+*/
+export function app_version(): Promise<AppVersionResponse>;
+/**
+*/
+export function hydrate(): void;
+export interface EchoInput {
+    input: string;
+}
+
+export interface EchoOutput {
+    output: string;
+}
+
+export interface EchoResponse {
+    output: EchoOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+export interface GetPublicAuth0ConfigOutput {
+    output: Auth0ConfigPublic;
+}
+
+export interface GetPublicAuth0ConfigResponse {
+    output: GetPublicAuth0ConfigOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+export interface ExchangeCodeForTokenInput {
+    code: string;
+}
+
+export interface ExchangeCodeForTokenOutput {
+    output: AuthContext;
+}
+
+export interface ExchangeCodeForTokenResponse {
+    output: ExchangeCodeForTokenOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+export interface TokenToClaimsInput {
+    token: string;
+}
+
+export interface TokenToClaimsOutput {
+    output: Claims;
+}
+
+export interface TokenToClaimsResponse {
+    output: TokenToClaimsOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+export interface AppVersionOutput {
+    output: string;
+}
+
+export interface AppVersionResponse {
+    output: AppVersionOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
 export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
 
 export interface ClientSideError {
@@ -19,26 +90,35 @@ export interface ClientSideError {
     message: string;
 }
 
-export interface EchoArgs {
-    input: string;
+export interface Claims {
+    nickname: string;
+    given_name?: string | undefined;
+    family_name?: string | undefined;
+    name: string;
+    picture: string;
+    updated_at: string;
+    email: string;
+    email_verified: boolean;
+    id: IdType;
+    iss: string;
+    aud: string;
+    iat: number;
+    exp: number;
+    sub: string;
+    sid: string;
 }
 
-export interface EchoOutput {
-    result: string;
+export interface UserSignupForm {
+    first_name: string;
+    last_name: string;
+    job_title: string | undefined;
+    company: string | undefined;
+    config: Config;
 }
 
-export interface EchoResponse {
-    data: EchoOutput | undefined;
-    error: ClientSideError | undefined;
-}
-
-export interface GetPublicAuth0ConfigOutput {
-    result: Auth0ConfigPublic;
-}
-
-export interface GetPublicAuth0ConfigResponse {
-    data: GetPublicAuth0ConfigOutput | undefined;
-    error: ClientSideError | undefined;
+export interface AuthContext {
+    is_authenticated: boolean;
+    identity: AuthIdentity;
 }
 
 export interface Auth0ConfigPublic {
@@ -46,6 +126,13 @@ export interface Auth0ConfigPublic {
     client_id: ArcStr;
     login_redirect_uri: ArcStr;
     logout_redirect_uri: ArcStr;
+}
+
+export interface AuthIdentity {
+    id_token: ArcStr;
+    access_token: ArcStr;
+    refresh_token: ArcStr;
+    is_admin: boolean;
 }
 
 export type ArcStr = string;
@@ -110,9 +197,12 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly hydrate: () => void;
   readonly echo: (a: number) => number;
   readonly get_public_auth0_config: () => number;
+  readonly exchange_code_for_token: (a: number) => number;
+  readonly token_to_claims: (a: number) => number;
+  readonly app_version: () => number;
+  readonly hydrate: () => void;
   readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
   readonly intounderlyingsink_write: (a: number, b: number) => number;
   readonly intounderlyingsink_close: (a: number) => number;

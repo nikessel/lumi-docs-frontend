@@ -1,32 +1,14 @@
-// WasmEcho.tsx
-import { useState, useEffect } from "react";
-import type { EchoArgs, EchoResponse } from "@wasm";
-import type * as WasmModule from "@wasm";
+// Echo.tsx
+"use client";
+import { useState } from "react";
+import { useWasm } from "./WasmProvider";
+import type { EchoInput, EchoResponse } from "@wasm";
 
-export default function Echo() {
+function Echo() {
+  const { wasmModule, isLoading, error: wasmError } = useWasm();
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
-  const [wasmModule, setWasmModule] = useState<typeof WasmModule | null>(null);
   const [error, setError] = useState<string>();
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    const initWasm = async () => {
-      try {
-        const jsModule = await import("@wasm");
-        await jsModule.default();
-        setWasmModule(jsModule);
-        setIsLoading(false);
-      } catch (err) {
-        console.error("WASM initialization error:", err);
-        setError(
-          err instanceof Error ? err.message : "Failed to initialize WASM",
-        );
-        setIsLoading(false);
-      }
-    };
-    initWasm();
-  }, []);
 
   const handleEcho = async () => {
     if (!wasmModule) {
@@ -35,7 +17,7 @@ export default function Echo() {
     }
 
     try {
-      const args: EchoArgs = { input };
+      const args: EchoInput = { input };
       const response: EchoResponse = await wasmModule.echo(args);
 
       if (response.error) {
@@ -44,11 +26,11 @@ export default function Echo() {
         return;
       }
 
-      if (response.data) {
-        setOutput(response.data.result);
+      if (response.output) {
+        setOutput(response.output.output);
         setError(undefined);
       } else {
-        setError("No data received");
+        setError("No output received");
         setOutput("");
       }
     } catch (err) {
@@ -82,10 +64,16 @@ export default function Echo() {
       {isLoading && (
         <div className="text-blue-600 font-medium">Loading WASM module...</div>
       )}
-      {error && <div className="text-red-600 font-medium">Error: {error}</div>}
+      {(error || wasmError) && (
+        <div className="text-red-600 font-medium">
+          Error: {error || wasmError}
+        </div>
+      )}
       {output && (
         <div className="p-4 bg-white border rounded text-black">{output}</div>
       )}
     </div>
   );
 }
+
+export default Echo;

@@ -1,9 +1,12 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
-export function hydrate(): void;
 export function echo(a: number): number;
 export function get_public_auth0_config(): number;
+export function exchange_code_for_token(a: number): number;
+export function token_to_claims(a: number): number;
+export function app_version(): number;
+export function hydrate(): void;
 export function __wbg_intounderlyingsink_free(a: number, b: number): void;
 export function intounderlyingsink_write(a: number, b: number): number;
 export function intounderlyingsink_close(a: number): number;
