@@ -16,7 +16,7 @@ export default function WasmEcho() {
   useEffect(() => {
     const initWasm = async () => {
       try {
-        const jsModule = await import('../pkg/lumi_docs_app.js');
+        const jsModule = await import('@pkg/lumi_docs_app.js');
         await jsModule.default();
         setWasmModule(jsModule);
         setIsLoading(false);
