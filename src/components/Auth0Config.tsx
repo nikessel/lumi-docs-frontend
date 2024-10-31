@@ -1,8 +1,12 @@
+// WasmAuth0Config.tsx
 import React, { useState, useEffect } from "react";
-import type { ClientResponse, GetPublicAuth0ConfigOutput } from "@wasm";
+import type {
+  GetPublicAuth0ConfigResponse,
+  GetPublicAuth0ConfigOutput,
+} from "@wasm";
 import type * as WasmModule from "@wasm";
 
-const WasmAuth0Config = () => {
+const Auth0Config = () => {
   const [config, setConfig] = useState<
     GetPublicAuth0ConfigOutput["result"] | null
   >(null);
@@ -35,12 +39,11 @@ const WasmAuth0Config = () => {
     }
 
     try {
-      const response: ClientResponse<GetPublicAuth0ConfigOutput> =
+      const response: GetPublicAuth0ConfigResponse =
         await wasmModule.get_public_auth0_config();
 
       if (response.error) {
-        const clientError = response.error;
-        setError(`${clientError.kind} error: ${clientError.message}`);
+        setError(`${response.error.kind} error: ${response.error.message}`);
         setConfig(null);
         return;
       }
@@ -74,22 +77,17 @@ const WasmAuth0Config = () => {
       {isLoading && (
         <div className="text-blue-600 font-medium">Loading WASM module...</div>
       )}
-
       {error && <div className="text-red-600 font-medium">Error: {error}</div>}
-
       {config && (
         <div className="p-4 bg-white border rounded">
           <h3 className="font-semibold mb-2">Auth0 Configuration:</h3>
           <dl className="space-y-2">
             <dt className="font-medium">Domain:</dt>
             <dd className="ml-4">{config.domain}</dd>
-
             <dt className="font-medium">Client ID:</dt>
             <dd className="ml-4">{config.client_id}</dd>
-
             <dt className="font-medium">Login Redirect URI:</dt>
             <dd className="ml-4">{config.login_redirect_uri}</dd>
-
             <dt className="font-medium">Logout Redirect URI:</dt>
             <dd className="ml-4">{config.logout_redirect_uri}</dd>
           </dl>
@@ -99,4 +97,4 @@ const WasmAuth0Config = () => {
   );
 };
 
-export default WasmAuth0Config;
+export default Auth0Config;

@@ -5,23 +5,18 @@
 export function hydrate(): void;
 /**
 * @param {EchoArgs} input
-* @returns {Promise<ClientResponse>}
+* @returns {Promise<EchoResponse>}
 */
-export function echo(input: EchoArgs): Promise<ClientResponse>;
+export function echo(input: EchoArgs): Promise<EchoResponse>;
 /**
-* @returns {Promise<ClientResponse>}
+* @returns {Promise<GetPublicAuth0ConfigResponse>}
 */
-export function get_public_auth0_config(): Promise<ClientResponse>;
+export function get_public_auth0_config(): Promise<GetPublicAuth0ConfigResponse>;
 export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
 
 export interface ClientSideError {
     kind: ErrorKind;
     message: string;
-}
-
-export interface ClientResponse<T> {
-    data: T | undefined;
-    error: ClientSideError | undefined;
 }
 
 export interface EchoArgs {
@@ -32,8 +27,18 @@ export interface EchoOutput {
     result: string;
 }
 
+export interface EchoResponse {
+    data: EchoOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
 export interface GetPublicAuth0ConfigOutput {
     result: Auth0ConfigPublic;
+}
+
+export interface GetPublicAuth0ConfigResponse {
+    data: GetPublicAuth0ConfigOutput | undefined;
+    error: ClientSideError | undefined;
 }
 
 export interface Auth0ConfigPublic {

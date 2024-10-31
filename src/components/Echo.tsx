@@ -1,9 +1,9 @@
-"use client";
+// WasmEcho.tsx
 import { useState, useEffect } from "react";
-import type { ClientResponse, EchoArgs, EchoOutput } from "@wasm";
+import type { EchoArgs, EchoResponse } from "@wasm";
 import type * as WasmModule from "@wasm";
 
-export default function WasmEcho() {
+export default function Echo() {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [wasmModule, setWasmModule] = useState<typeof WasmModule | null>(null);
@@ -36,11 +36,10 @@ export default function WasmEcho() {
 
     try {
       const args: EchoArgs = { input };
-      const response: ClientResponse<EchoOutput> = await wasmModule.echo(args);
+      const response: EchoResponse = await wasmModule.echo(args);
 
       if (response.error) {
-        const clientError = response.error;
-        setError(`${clientError.kind} error: ${clientError.message}`);
+        setError(`${response.error.kind} error: ${response.error.message}`);
         setOutput("");
         return;
       }

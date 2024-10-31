@@ -223,7 +223,7 @@ export function hydrate() {
 
 /**
 * @param {EchoArgs} input
-* @returns {Promise<ClientResponse>}
+* @returns {Promise<EchoResponse>}
 */
 export function echo(input) {
     const ret = wasm.echo(addHeapObject(input));
@@ -231,7 +231,7 @@ export function echo(input) {
 }
 
 /**
-* @returns {Promise<ClientResponse>}
+* @returns {Promise<GetPublicAuth0ConfigResponse>}
 */
 export function get_public_auth0_config() {
     const ret = wasm.get_public_auth0_config();
@@ -875,7 +875,7 @@ function __wbg_get_imports() {
         const ret = wasm.memory;
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_closure_wrapper2076 = function(arg0, arg1, arg2) {
+    imports.wbg.__wbindgen_closure_wrapper2078 = function(arg0, arg1, arg2) {
         const ret = makeMutClosure(arg0, arg1, 381, __wbg_adapter_34);
         return addHeapObject(ret);
     };
