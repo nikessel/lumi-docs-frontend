@@ -1,13 +1,17 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
+*/
+export function hydrate(): void;
+/**
 * @param {EchoArgs} input
 * @returns {Promise<ClientResponse>}
 */
 export function echo(input: EchoArgs): Promise<ClientResponse>;
 /**
+* @returns {Promise<ClientResponse>}
 */
-export function hydrate(): void;
+export function get_public_auth0_config(): Promise<ClientResponse>;
 export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
 
 export interface ClientSideError {
@@ -27,6 +31,19 @@ export interface EchoArgs {
 export interface EchoOutput {
     result: string;
 }
+
+export interface GetPublicAuth0ConfigOutput {
+    result: Auth0ConfigPublic;
+}
+
+export interface Auth0ConfigPublic {
+    domain: ArcStr;
+    client_id: ArcStr;
+    login_redirect_uri: ArcStr;
+    logout_redirect_uri: ArcStr;
+}
+
+export type ArcStr = string;
 
 /**
 */
@@ -88,8 +105,9 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly echo: (a: number) => number;
   readonly hydrate: () => void;
+  readonly echo: (a: number) => number;
+  readonly get_public_auth0_config: () => number;
   readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
   readonly intounderlyingsink_write: (a: number, b: number) => number;
   readonly intounderlyingsink_close: (a: number) => number;

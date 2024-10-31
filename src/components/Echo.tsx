@@ -1,16 +1,11 @@
-'use client';
-import { useState, useEffect } from 'react';
-import type { 
-  ClientResponse, 
-  ClientSideError, 
-  EchoArgs, 
-  EchoOutput 
-} from '@pkg/lumi_docs_app';
-import type * as WasmModule from '@pkg/lumi_docs_app';
+"use client";
+import { useState, useEffect } from "react";
+import type { ClientResponse, EchoArgs, EchoOutput } from "@wasm";
+import type * as WasmModule from "@wasm";
 
 export default function WasmEcho() {
-  const [input, setInput] = useState('');
-  const [output, setOutput] = useState('');
+  const [input, setInput] = useState("");
+  const [output, setOutput] = useState("");
   const [wasmModule, setWasmModule] = useState<typeof WasmModule | null>(null);
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(true);
@@ -18,13 +13,15 @@ export default function WasmEcho() {
   useEffect(() => {
     const initWasm = async () => {
       try {
-        const jsModule = await import('@pkg/lumi_docs_app');
+        const jsModule = await import("@wasm");
         await jsModule.default();
         setWasmModule(jsModule);
         setIsLoading(false);
       } catch (err) {
-        console.error('WASM initialization error:', err);
-        setError(err instanceof Error ? err.message : 'Failed to initialize WASM');
+        console.error("WASM initialization error:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to initialize WASM",
+        );
         setIsLoading(false);
       }
     };
@@ -33,17 +30,18 @@ export default function WasmEcho() {
 
   const handleEcho = async () => {
     if (!wasmModule) {
-      setError('WASM module not loaded');
+      setError("WASM module not loaded");
       return;
     }
 
     try {
-      const response: ClientResponse<EchoOutput> = await wasmModule.echo({ input });
-      
+      const args: EchoArgs = { input };
+      const response: ClientResponse<EchoOutput> = await wasmModule.echo(args);
+
       if (response.error) {
         const clientError = response.error;
         setError(`${clientError.kind} error: ${clientError.message}`);
-        setOutput('');
+        setOutput("");
         return;
       }
 
@@ -51,13 +49,15 @@ export default function WasmEcho() {
         setOutput(response.data.result);
         setError(undefined);
       } else {
-        setError('No data received');
-        setOutput('');
+        setError("No data received");
+        setOutput("");
       }
     } catch (err) {
-      console.error('Echo execution error:', err);
-      setError(err instanceof Error ? err.message : 'Error executing echo function');
-      setOutput('');
+      console.error("Echo execution error:", err);
+      setError(
+        err instanceof Error ? err.message : "Error executing echo function",
+      );
+      setOutput("");
     }
   };
 
@@ -80,23 +80,12 @@ export default function WasmEcho() {
           Echo
         </button>
       </div>
-      
       {isLoading && (
-        <div className="text-blue-600 font-medium">
-          Loading WASM module...
-        </div>
+        <div className="text-blue-600 font-medium">Loading WASM module...</div>
       )}
-      
-      {error && (
-        <div className="text-red-600 font-medium">
-          Error: {error}
-        </div>
-      )}
-      
+      {error && <div className="text-red-600 font-medium">Error: {error}</div>}
       {output && (
-        <div className="p-4 bg-white border rounded text-black">
-          {output}
-        </div>
+        <div className="p-4 bg-white border rounded text-black">{output}</div>
       )}
     </div>
   );
