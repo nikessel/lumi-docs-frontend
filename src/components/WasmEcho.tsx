@@ -1,22 +1,24 @@
-// src/components/WasmEcho.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
-
-type EchoInput = { input: string };
-type EchoOutput = { result: string };
+import type { 
+  ClientResponse, 
+  ClientSideError, 
+  EchoArgs, 
+  EchoOutput 
+} from '@pkg/lumi_docs_app';
+import type * as WasmModule from '@pkg/lumi_docs_app';
 
 export default function WasmEcho() {
   const [input, setInput] = useState('');
   const [output, setOutput] = useState('');
-  const [wasmModule, setWasmModule] = useState<any>(null);
+  const [wasmModule, setWasmModule] = useState<typeof WasmModule | null>(null);
   const [error, setError] = useState<string>();
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const initWasm = async () => {
       try {
-        const jsModule = await import('@pkg/lumi_docs_app.js');
+        const jsModule = await import('@pkg/lumi_docs_app');
         await jsModule.default();
         setWasmModule(jsModule);
         setIsLoading(false);
@@ -26,7 +28,6 @@ export default function WasmEcho() {
         setIsLoading(false);
       }
     };
-
     initWasm();
   }, []);
 
@@ -37,11 +38,26 @@ export default function WasmEcho() {
     }
 
     try {
-      const response = await wasmModule.echo({ input });
-      setOutput(response.result);
-      setError(undefined);
+      const response: ClientResponse<EchoOutput> = await wasmModule.echo({ input });
+      
+      if (response.error) {
+        const clientError = response.error;
+        setError(`${clientError.kind} error: ${clientError.message}`);
+        setOutput('');
+        return;
+      }
+
+      if (response.data) {
+        setOutput(response.data.result);
+        setError(undefined);
+      } else {
+        setError('No data received');
+        setOutput('');
+      }
     } catch (err) {
+      console.error('Echo execution error:', err);
       setError(err instanceof Error ? err.message : 'Error executing echo function');
+      setOutput('');
     }
   };
 

@@ -1,18 +1,33 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
-* @param {any} input
-* @returns {Promise<any>}
+* @param {EchoArgs} input
+* @returns {Promise<ClientResponse>}
 */
-export function echo(input: any): Promise<any>;
-/**
-* @param {any} value
-* @returns {boolean}
-*/
-export function is_echo_input(value: any): boolean;
+export function echo(input: EchoArgs): Promise<ClientResponse>;
 /**
 */
 export function hydrate(): void;
+export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
+
+export interface ClientSideError {
+    kind: ErrorKind;
+    message: string;
+}
+
+export interface ClientResponse<T> {
+    data: T | undefined;
+    error: ClientSideError | undefined;
+}
+
+export interface EchoArgs {
+    input: string;
+}
+
+export interface EchoOutput {
+    result: string;
+}
+
 /**
 */
 export class IntoUnderlyingByteSource {
@@ -74,7 +89,6 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
   readonly echo: (a: number) => number;
-  readonly is_echo_input: (a: number) => number;
   readonly hydrate: () => void;
   readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
   readonly intounderlyingsink_write: (a: number, b: number) => number;

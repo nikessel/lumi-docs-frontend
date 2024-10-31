@@ -2,7 +2,6 @@
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
 export function echo(a: number): number;
-export function is_echo_input(a: number): number;
 export function hydrate(): void;
 export function __wbg_intounderlyingsink_free(a: number, b: number): void;
 export function intounderlyingsink_write(a: number, b: number): number;
