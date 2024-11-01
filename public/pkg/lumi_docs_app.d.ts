@@ -40,6 +40,24 @@ export function get_user(): Promise<GetUserResponse>;
 /**
 */
 export function hydrate(): void;
+declare namespace ErrorKind {
+    export type Validation = "Validation";
+    export type NotFound = "NotFound";
+    export type AlreadyExists = "AlreadyExists";
+    export type Unauthorized = "Unauthorized";
+    export type Timeout = "Timeout";
+    export type Deserialization = "Deserialization";
+    export type Serialization = "Serialization";
+    export type Server = "Server";
+}
+
+export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
+
+export interface ClientSideError {
+    kind: ErrorKind;
+    message: string;
+}
+
 export interface EchoInput {
     input: string;
 }
@@ -133,68 +151,6 @@ export interface GetUserResponse {
     error: ClientSideError | undefined;
 }
 
-declare namespace ErrorKind {
-    export type Validation = "Validation";
-    export type NotFound = "NotFound";
-    export type AlreadyExists = "AlreadyExists";
-    export type Unauthorized = "Unauthorized";
-    export type Timeout = "Timeout";
-    export type Deserialization = "Deserialization";
-    export type Serialization = "Serialization";
-    export type Server = "Server";
-}
-
-export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
-
-export interface ClientSideError {
-    kind: ErrorKind;
-    message: string;
-}
-
-export interface UserConfig {
-    user: UserBaseConfig;
-    admin: AdminConfig;
-}
-
-export interface UserBaseConfig {}
-
-export interface AdminConfig {
-    embed_config: EmbedConfig;
-    llm_config: LlmConfig;
-}
-
-export interface ChunkId {
-    parent_id: string;
-    index: number;
-}
-
-export type VersionedIdType = [string, number];
-
-export type IdType = string;
-
-export interface EmbedConfig {
-    model: EmbedModel;
-    regulation_vector_search_limit: number;
-    user_documentation_vector_search_limit: number;
-    tokens_per_chunk: number;
-    token_overlap: number;
-}
-
-export interface User {
-    id: IdType;
-    first_name: string;
-    last_name: string;
-    email: Email;
-    job_title: string | undefined;
-    company: string | undefined;
-    config?: UserConfig;
-}
-
-export interface LlmConfig {
-    model: LlmModel;
-    temperature: number | undefined;
-}
-
 export interface Claims {
     nickname: string;
     given_name?: string | undefined;
@@ -245,10 +201,54 @@ export type ArcStr = string;
 
 export type ArcBytes = Uint8Array;
 
+export interface User {
+    id: IdType;
+    first_name: string;
+    last_name: string;
+    email: Email;
+    job_title: string | undefined;
+    company: string | undefined;
+    config?: UserConfig;
+}
+
+export interface UserConfig {
+    user: UserBaseConfig;
+    admin: AdminConfig;
+}
+
+export interface UserBaseConfig {}
+
+export interface AdminConfig {
+    embed_config: EmbedConfig;
+    llm_config: LlmConfig;
+}
+
+export interface EmbedConfig {
+    model: EmbedModel;
+    regulation_vector_search_limit: number;
+    user_documentation_vector_search_limit: number;
+    tokens_per_chunk: number;
+    token_overlap: number;
+}
+
 export interface ReportFilterConfig {
     categories_to_include: Id[] | undefined;
     requirements_to_include: Id[] | undefined;
 }
+
+export interface LlmConfig {
+    model: LlmModel;
+    temperature: number | undefined;
+}
+
+export interface ChunkId {
+    parent_id: string;
+    index: number;
+}
+
+export type VersionedIdType = [string, number];
+
+export type IdType = string;
 
 /**
 */
