@@ -1,6 +1,9 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
+*/
+export function hydrate(): void;
+/**
 * @param {EchoInput} input
 * @returns {Promise<EchoResponse>}
 */
@@ -37,26 +40,12 @@ export function upload_file_chunk(input: UploadFileChunkInput): Promise<UploadFi
 * @returns {Promise<GetUserResponse>}
 */
 export function get_user(): Promise<GetUserResponse>;
-/**
-*/
-export function hydrate(): void;
-declare namespace ErrorKind {
-    export type Validation = "Validation";
-    export type NotFound = "NotFound";
-    export type AlreadyExists = "AlreadyExists";
-    export type Unauthorized = "Unauthorized";
-    export type Timeout = "Timeout";
-    export type Deserialization = "Deserialization";
-    export type Serialization = "Serialization";
-    export type Server = "Server";
+declare namespace StorageKey {
+    export type id_token = "id_token";
+    export type access_token = "access_token";
 }
 
-export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
-
-export interface ClientSideError {
-    kind: ErrorKind;
-    message: string;
-}
+export type StorageKey = "id_token" | "access_token";
 
 export interface EchoInput {
     input: string;
@@ -151,6 +140,68 @@ export interface GetUserResponse {
     error: ClientSideError | undefined;
 }
 
+declare namespace ErrorKind {
+    export type Validation = "Validation";
+    export type NotFound = "NotFound";
+    export type AlreadyExists = "AlreadyExists";
+    export type Unauthorized = "Unauthorized";
+    export type Timeout = "Timeout";
+    export type Deserialization = "Deserialization";
+    export type Serialization = "Serialization";
+    export type Server = "Server";
+}
+
+export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
+
+export interface ClientSideError {
+    kind: ErrorKind;
+    message: string;
+}
+
+export interface UserConfig {
+    user: UserBaseConfig;
+    admin: AdminConfig;
+}
+
+export interface UserBaseConfig {}
+
+export interface AdminConfig {
+    embed_config: EmbedConfig;
+    llm_config: LlmConfig;
+}
+
+export interface ChunkId {
+    parent_id: string;
+    index: number;
+}
+
+export type VersionedIdType = [string, number];
+
+export type IdType = string;
+
+export interface EmbedConfig {
+    model: EmbedModel;
+    regulation_vector_search_limit: number;
+    user_documentation_vector_search_limit: number;
+    tokens_per_chunk: number;
+    token_overlap: number;
+}
+
+export interface User {
+    id: IdType;
+    first_name: string;
+    last_name: string;
+    email: Email;
+    job_title: string | undefined;
+    company: string | undefined;
+    config?: UserConfig;
+}
+
+export interface LlmConfig {
+    model: LlmModel;
+    temperature: number | undefined;
+}
+
 export interface Claims {
     nickname: string;
     given_name?: string | undefined;
@@ -201,54 +252,10 @@ export type ArcStr = string;
 
 export type ArcBytes = Uint8Array;
 
-export interface User {
-    id: IdType;
-    first_name: string;
-    last_name: string;
-    email: Email;
-    job_title: string | undefined;
-    company: string | undefined;
-    config?: UserConfig;
-}
-
-export interface UserConfig {
-    user: UserBaseConfig;
-    admin: AdminConfig;
-}
-
-export interface UserBaseConfig {}
-
-export interface AdminConfig {
-    embed_config: EmbedConfig;
-    llm_config: LlmConfig;
-}
-
-export interface EmbedConfig {
-    model: EmbedModel;
-    regulation_vector_search_limit: number;
-    user_documentation_vector_search_limit: number;
-    tokens_per_chunk: number;
-    token_overlap: number;
-}
-
 export interface ReportFilterConfig {
     categories_to_include: Id[] | undefined;
     requirements_to_include: Id[] | undefined;
 }
-
-export interface LlmConfig {
-    model: LlmModel;
-    temperature: number | undefined;
-}
-
-export interface ChunkId {
-    parent_id: string;
-    index: number;
-}
-
-export type VersionedIdType = [string, number];
-
-export type IdType = string;
 
 /**
 */
@@ -310,6 +317,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
+  readonly hydrate: () => void;
   readonly echo: (a: number) => number;
   readonly get_public_auth0_config: () => number;
   readonly exchange_code_for_identity: (a: number) => number;
@@ -318,7 +326,6 @@ export interface InitOutput {
   readonly get_file_data: (a: number) => number;
   readonly upload_file_chunk: (a: number) => number;
   readonly get_user: () => number;
-  readonly hydrate: () => void;
   readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
   readonly intounderlyingsink_write: (a: number, b: number) => number;
   readonly intounderlyingsink_close: (a: number) => number;

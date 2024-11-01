@@ -59,7 +59,7 @@ const ProtectedContent = ({ children }) => {
     <div>
       <div className="flex justify-between items-center mb-8 p-4 bg-gray-50 rounded">
         <div>
-          <p className="text-sm text-gray-600">Welcome, {user?.name}</p>
+          <p className="text-sm text-gray-600">Welcome, {user?.given_name}</p>
           <p className="text-xs text-gray-500">{user?.email}</p>
         </div>
         <button

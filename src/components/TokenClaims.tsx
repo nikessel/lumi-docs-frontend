@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useWasm } from "./WasmProvider";
+import { useStorage } from "@/storage";
 import type { TokenToClaimsInput, Claims } from "@wasm";
 
 // Helper function to format timestamps consistently in ISO UTC
@@ -13,6 +14,7 @@ export default function TokenClaims() {
   const { wasmModule, isLoading } = useWasm();
   const [claims, setClaims] = useState<Claims | null>(null);
   const [error, setError] = useState<string>();
+  const [idToken] = useStorage("id_token");
 
   const fetchClaims = useCallback(
     async (tokenToUse: string) => {
@@ -47,15 +49,10 @@ export default function TokenClaims() {
     [wasmModule],
   );
 
-  // Check for stored token on mount and when WASM module becomes available
   useEffect(() => {
-    if (!wasmModule || isLoading) return;
-
-    const storedToken = localStorage.getItem("id_token");
-    if (storedToken) {
-      fetchClaims(storedToken);
-    }
-  }, [wasmModule, isLoading, fetchClaims]);
+    if (!wasmModule || isLoading || !idToken) return;
+    fetchClaims(idToken);
+  }, [wasmModule, isLoading, fetchClaims, idToken]);
 
   if (isLoading) {
     return (

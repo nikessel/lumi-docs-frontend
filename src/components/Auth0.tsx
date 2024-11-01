@@ -8,6 +8,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import { useWasm } from "./WasmProvider";
+import { storage, useStorage } from "@/storage";
 
 // Auth Context
 const AuthContext = createContext(null);
@@ -47,19 +48,19 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
   const { wasmModule, isLoading: isWasmLoading } = useWasm();
+  const [idToken] = useStorage("id_token");
 
   // Initialize auth state
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem("id_token");
-      if (token) {
+      if (idToken) {
         setIsAuthenticated(true);
       }
       setIsLoading(false);
     };
 
     checkAuth();
-  }, []);
+  }, [idToken]);
 
   const login = useCallback(async () => {
     if (!wasmModule) {
@@ -114,13 +115,10 @@ export function AuthProvider({ children }) {
 
       const config = response.output.output;
 
-      localStorage.removeItem("id_token");
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
+      storage.clear(); // Clear all tokens
       setIsAuthenticated(false);
       setUser(null);
 
-      // Construct Auth0 logout URL
       const logoutUrl = new URL(`https://${config.domain}/v2/logout`);
       logoutUrl.searchParams.append("client_id", config.client_id);
       logoutUrl.searchParams.append("returnTo", config.logout_redirect_uri);
@@ -215,11 +213,12 @@ export function AuthCallback() {
           throw new Error("Missing id_token in response");
         }
 
-        // Store tokens
-        localStorage.setItem("id_token", tokens.id_token);
-        localStorage.setItem("access_token", tokens.access_token);
+        // Store tokens using storage module
+        storage.set("id_token", tokens.id_token);
+        storage.set("access_token", tokens.access_token);
+
         if (tokens.refresh_token) {
-          localStorage.setItem("refresh_token", tokens.refresh_token);
+          storage.set("refresh_token", tokens.refresh_token);
         }
 
         // Get user claims
