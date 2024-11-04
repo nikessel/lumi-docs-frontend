@@ -1,7 +1,7 @@
 // Echo.tsx
 "use client";
 import { useState } from "react";
-import { useWasm } from "./WasmProvider";
+import { useWasm } from "@/components/WasmProvider";
 import type { EchoInput, EchoResponse } from "@wasm";
 
 function Echo() {

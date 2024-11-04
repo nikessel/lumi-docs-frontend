@@ -40,6 +40,29 @@ export function upload_file_chunk(input: UploadFileChunkInput): Promise<UploadFi
 * @returns {Promise<GetUserResponse>}
 */
 export function get_user(): Promise<GetUserResponse>;
+/**
+* @param {GetReportInput} input
+* @returns {Promise<GetReportResponse>}
+*/
+export function get_report(input: GetReportInput): Promise<GetReportResponse>;
+/**
+* @returns {Promise<GetReportsResponse>}
+*/
+export function get_reports(): Promise<GetReportsResponse>;
+/**
+* @param {CreateUserInput} input
+* @returns {Promise<CreateUserResponse>}
+*/
+export function create_user(input: CreateUserInput): Promise<CreateUserResponse>;
+/**
+* @param {CreateReportInput} input
+* @returns {Promise<CreateReportResponse>}
+*/
+export function create_report(input: CreateReportInput): Promise<CreateReportResponse>;
+/**
+* @returns {Promise<UserExistsResponse>}
+*/
+export function user_exists(): Promise<UserExistsResponse>;
 declare namespace StorageKey {
     export type id_token = "id_token";
     export type access_token = "access_token";
@@ -140,6 +163,63 @@ export interface GetUserResponse {
     error: ClientSideError | undefined;
 }
 
+export interface GetReportInput {
+    input: IdType;
+}
+
+export interface GetReportOutput {
+    output: Report;
+}
+
+export interface GetReportResponse {
+    output: GetReportOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+export interface GetReportsOutput {
+    output: Report[];
+}
+
+export interface GetReportsResponse {
+    output: GetReportsOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+export interface CreateUserInput {
+    input: UserSignupForm;
+}
+
+export interface CreateUserOutput {
+    output: undefined;
+}
+
+export interface CreateUserResponse {
+    output: CreateUserOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+export interface CreateReportInput {
+    input: ReportFilterConfig;
+}
+
+export interface CreateReportOutput {
+    output: IdType;
+}
+
+export interface CreateReportResponse {
+    output: CreateReportOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+export interface UserExistsOutput {
+    output: boolean;
+}
+
+export interface UserExistsResponse {
+    output: UserExistsOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
 declare namespace ErrorKind {
     export type Validation = "Validation";
     export type NotFound = "NotFound";
@@ -187,6 +267,17 @@ export interface EmbedConfig {
     token_overlap: number;
 }
 
+export interface Report {
+    id: IdType;
+    status: ReportStatus;
+    regulatory_framework: RegulatoryFramework;
+    created_date: DateTime<Utc>;
+    title: string;
+    abstract_text: string;
+    overall_compliance: OverallCompliance;
+    category_mappings: CategoryMapping[];
+}
+
 export interface User {
     id: IdType;
     first_name: string;
@@ -197,10 +288,88 @@ export interface User {
     config?: UserConfig;
 }
 
+export interface ReportFilterConfig {
+    categories_to_include: VersionedIdType[] | undefined;
+    requirements_to_include: VersionedIdType[] | undefined;
+}
+
 export interface LlmConfig {
     model: LlmModel;
     temperature: number | undefined;
 }
+
+export interface SubRequirementMapping {
+    sub_requirement_id: Id;
+    assessment: SubRequirementAssessment;
+}
+
+export interface RequirementMapping {
+    requirement_id: Id;
+    assessment: RequirementAssessment;
+    sub_requirement_mappings: SubRequirementMapping[];
+}
+
+export interface CategoryMapping {
+    category_id: Id;
+    assessment: CategoryAssessment;
+    requirement_mappings: RequirementMapping[];
+}
+
+export interface CategoryAssessment {
+    abstract_text: ArcStr;
+    overall_compliance: OverallCompliance;
+}
+
+export interface ReportAbstractAndTitle {
+    abstract_text: ArcStr;
+    title: ArcStr;
+}
+
+export interface RequirementAssessment {
+    overall_compliance_grade: ComplianceGrade;
+    detailed_compliance_explanation: ArcStr;
+    referenced_documents: ArcStr[];
+}
+
+export interface SubRequirementAssessment {
+    compliance_grade: ComplianceGrade;
+    detailed_compliance_explanation: ArcStr;
+    non_conformities: ArcStr[];
+    referenced_documents: ArcStr[];
+    tasks: Task[];
+}
+
+export interface Task {
+    completed?: boolean;
+    title: ArcStr;
+    description: ArcStr;
+    task: ArcStr;
+    suggestion: Suggestion | undefined;
+    associated_document: ArcStr | undefined;
+}
+
+export interface Suggestion {
+    kind: SuggestionKind;
+    description: ArcStr;
+    content: ArcStr;
+}
+
+declare namespace SuggestionKind {
+    export type edit_paragraph = "edit_paragraph";
+    export type add_paragraph = "add_paragraph";
+    export type remove_paragraph = "remove_paragraph";
+    export type new_document = "new_document";
+}
+
+export type SuggestionKind = "edit_paragraph" | "add_paragraph" | "remove_paragraph" | "new_document";
+
+declare namespace ComplianceGrade {
+    export type C = "C";
+    export type PC = "PC";
+    export type NC = "NC";
+}
+
+export type ComplianceGrade = "C" | "PC" | "NC";
 
 export interface Claims {
     nickname: string;
@@ -225,15 +394,32 @@ export interface UserSignupForm {
     last_name: string;
     job_title: string | undefined;
     company: string | undefined;
-    config: UserConfig;
+    config: UserBaseConfig;
 }
 
 export type Email = string;
+
+declare namespace RegulatoryFramework {
+    export type mdr = "mdr";
+    export type iso13485 = "iso13485";
+}
+
+export type RegulatoryFramework = "mdr" | "iso13485";
+
+declare namespace ReportStatus {
+    export type processing = "processing";
+    export type ready = "ready";
+    export type partially_failed = "partially_failed";
+}
+
+export type ReportStatus = "processing" | "ready" | "partially_failed";
 
 export interface FileChunk {
     id: ChunkId;
     data: ArcBytes;
 }
+
+export type OverallCompliance = number;
 
 export interface Auth0ConfigPublic {
     domain: ArcStr;
@@ -251,11 +437,6 @@ export interface AuthIdentity {
 export type ArcStr = string;
 
 export type ArcBytes = Uint8Array;
-
-export interface ReportFilterConfig {
-    categories_to_include: Id[] | undefined;
-    requirements_to_include: Id[] | undefined;
-}
 
 /**
 */
@@ -326,6 +507,11 @@ export interface InitOutput {
   readonly get_file_data: (a: number) => number;
   readonly upload_file_chunk: (a: number) => number;
   readonly get_user: () => number;
+  readonly get_report: (a: number) => number;
+  readonly get_reports: () => number;
+  readonly create_user: (a: number) => number;
+  readonly create_report: (a: number) => number;
+  readonly user_exists: () => number;
   readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
   readonly intounderlyingsink_write: (a: number, b: number) => number;
   readonly intounderlyingsink_close: (a: number) => number;

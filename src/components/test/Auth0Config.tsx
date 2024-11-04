@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useWasm } from "./WasmProvider";
+import { useWasm } from "@/components/WasmProvider";
 import type { Auth0ConfigPublic } from "@wasm";
 
 function Auth0Config() {

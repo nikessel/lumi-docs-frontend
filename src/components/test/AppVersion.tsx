@@ -1,7 +1,7 @@
 // AppVersion.tsx
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { useWasm } from "./WasmProvider";
+import { useWasm } from "@/components/WasmProvider";
 import type { AppVersionResponse } from "@wasm";
 
 export default function AppVersion() {

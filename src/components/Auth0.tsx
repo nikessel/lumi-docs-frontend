@@ -7,7 +7,7 @@ import {
   useEffect,
 } from "react";
 import { useRouter } from "next/navigation";
-import { useWasm } from "./WasmProvider";
+import { useWasm } from "@/components/WasmProvider";
 import { storage, useStorage } from "@/storage";
 
 // Auth Context

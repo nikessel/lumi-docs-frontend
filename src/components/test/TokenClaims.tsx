@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { useWasm } from "./WasmProvider";
+import { useWasm } from "@/components/WasmProvider";
 import { useStorage } from "@/storage";
 import type { TokenToClaimsInput, Claims } from "@wasm";
 
