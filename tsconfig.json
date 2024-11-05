@@ -22,6 +22,10 @@
         "name": "next"
       }
     ],
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types"
+    ],
     "baseUrl": ".",
     "paths": {
       "@/*": [
@@ -42,7 +46,8 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "eslint.config.mjs" // Add this line
   ],
   "exclude": [
     "node_modules",

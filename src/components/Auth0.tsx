@@ -5,13 +5,35 @@ import {
   useState,
   useCallback,
   useEffect,
+  type ReactNode,
+  type Dispatch,
+  type SetStateAction,
 } from "react";
+import type { StorageKey, Claims } from "@wasm";
 import { useRouter } from "next/navigation";
 import { useWasm } from "@/components/WasmProvider";
 import { storage, useStorage } from "@/storage";
 
+// Helper for StorageKey values
+const SK = {
+  id_token: "id_token" as StorageKey,
+  access_token: "access_token" as StorageKey,
+} as const;
+
+interface AuthContextType {
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  user: Claims | null;
+  error: string | null;
+  login: () => Promise<void>;
+  logout: () => Promise<void>;
+  setUser: Dispatch<SetStateAction<Claims | null>>;
+  setError: Dispatch<SetStateAction<string | null>>;
+  setIsAuthenticated: Dispatch<SetStateAction<boolean>>;
+}
+
 // Auth Context
-const AuthContext = createContext(null);
+const AuthContext = createContext<AuthContextType | null>(null);
 
 // Custom hook for using auth context
 export const useAuth = () => {
@@ -42,13 +64,13 @@ export function LoginButton() {
 }
 
 // Auth Provider Component
-export function AuthProvider({ children }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState(null);
-  const [error, setError] = useState(null);
+  const [user, setUser] = useState<Claims | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const { wasmModule, isLoading: isWasmLoading } = useWasm();
-  const [idToken] = useStorage("id_token");
+  const [idToken] = useStorage(SK.id_token);
 
   // Initialize auth state
   useEffect(() => {
@@ -94,7 +116,11 @@ export function AuthProvider({ children }) {
       window.location.href = authUrl.toString();
     } catch (err) {
       console.error("Login error:", err);
-      setError(err.message);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred");
+      }
     }
   }, [wasmModule]);
 
@@ -126,26 +152,28 @@ export function AuthProvider({ children }) {
       window.location.href = logoutUrl.toString();
     } catch (err) {
       console.error("Logout error:", err);
-      setError(err.message);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred");
+      }
     }
   }, [wasmModule]);
 
+  const contextValue: AuthContextType = {
+    isAuthenticated,
+    isLoading: isLoading || isWasmLoading,
+    user,
+    error,
+    login,
+    logout,
+    setUser,
+    setError,
+    setIsAuthenticated,
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        isAuthenticated,
-        isLoading: isLoading || isWasmLoading,
-        user,
-        error,
-        login,
-        logout,
-        setUser,
-        setError,
-        setIsAuthenticated,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 }
 
@@ -214,11 +242,11 @@ export function AuthCallback() {
         }
 
         // Store tokens using storage module
-        storage.set("id_token", tokens.id_token);
-        storage.set("access_token", tokens.access_token);
+        storage.set(SK.id_token, tokens.id_token);
+        storage.set(SK.access_token, tokens.access_token);
 
         if (tokens.refresh_token) {
-          storage.set("refresh_token", tokens.refresh_token);
+          localStorage.setItem("refresh_token", tokens.refresh_token);
         }
 
         // Get user claims
