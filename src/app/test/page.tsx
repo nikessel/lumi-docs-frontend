@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { AuthProvider, LoginButton, useAuth } from "@/components/Auth0";
 import { Button } from "@/components/ui/button";
+import { FileSelector } from "@/components/test/FileSelector";
 
 // Dynamic imports for components
 const WasmProvider = dynamic(() => import("@/components/WasmProvider"), {
@@ -176,6 +177,10 @@ export default function TestPage() {
 
                 <TestComponent title="Token Claims">
                   <TokenClaims />
+                </TestComponent>
+
+                <TestComponent title="File Upload">
+                  <FileSelector />
                 </TestComponent>
               </div>
             </ProtectedContent>

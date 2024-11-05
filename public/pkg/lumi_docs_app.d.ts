@@ -1,5 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
+export function hydrate(): void;
 /**
  * @param {EchoInput} input
  * @returns {Promise<EchoResponse>}
@@ -57,6 +58,11 @@ export function create_user(input: CreateUserInput): Promise<CreateUserResponse>
  */
 export function create_report(input: CreateReportInput): Promise<CreateReportResponse>;
 /**
+ * @param {CreateFileInput} input
+ * @returns {Promise<CreateFileResponse>}
+ */
+export function create_file(input: CreateFileInput): Promise<CreateFileResponse>;
+/**
  * @returns {Promise<UserExistsResponse>}
  */
 export function user_exists(): Promise<UserExistsResponse>;
@@ -64,7 +70,32 @@ export function user_exists(): Promise<UserExistsResponse>;
  * @returns {Promise<IsAdminResponse>}
  */
 export function is_admin(): Promise<IsAdminResponse>;
-export function hydrate(): void;
+declare namespace StorageKey {
+    export type id_token = "id_token";
+    export type access_token = "access_token";
+}
+
+export type StorageKey = "id_token" | "access_token";
+
+declare namespace ErrorKind {
+    export type Validation = "Validation";
+    export type NotFound = "NotFound";
+    export type AlreadyExists = "AlreadyExists";
+    export type EmailNotVerified = "EmailNotVerified";
+    export type Unauthorized = "Unauthorized";
+    export type Timeout = "Timeout";
+    export type Deserialization = "Deserialization";
+    export type Serialization = "Serialization";
+    export type Server = "Server";
+}
+
+export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "EmailNotVerified" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
+
+export interface ClientSideError {
+    kind: ErrorKind;
+    message: string;
+}
+
 export interface EchoInput {
     input: string;
 }
@@ -206,6 +237,19 @@ export interface CreateReportResponse {
     error: ClientSideError | undefined;
 }
 
+export interface CreateFileInput {
+    input: File;
+}
+
+export interface CreateFileOutput {
+    output: undefined;
+}
+
+export interface CreateFileResponse {
+    output: CreateFileOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
 export interface UserExistsOutput {
     output: boolean;
 }
@@ -224,31 +268,24 @@ export interface IsAdminResponse {
     error: ClientSideError | undefined;
 }
 
-declare namespace ErrorKind {
-    export type Validation = "Validation";
-    export type NotFound = "NotFound";
-    export type AlreadyExists = "AlreadyExists";
-    export type EmailNotVerified = "EmailNotVerified";
-    export type Unauthorized = "Unauthorized";
-    export type Timeout = "Timeout";
-    export type Deserialization = "Deserialization";
-    export type Serialization = "Serialization";
-    export type Server = "Server";
+export interface ReportFilterConfig {
+    categories_to_include: VersionedIdType[] | undefined;
+    requirements_to_include: VersionedIdType[] | undefined;
 }
 
-export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "EmailNotVerified" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
-
-export interface ClientSideError {
-    kind: ErrorKind;
-    message: string;
+export interface LlmConfig {
+    model: LlmModel;
+    temperature: number | undefined;
 }
 
-declare namespace StorageKey {
-    export type id_token = "id_token";
-    export type access_token = "access_token";
+export interface ChunkId {
+    parent_id: string;
+    index: number;
 }
 
-export type StorageKey = "id_token" | "access_token";
+export type VersionedIdType = [string, number];
+
+export type IdType = string;
 
 export interface Claims {
     nickname: string;
@@ -277,6 +314,15 @@ export interface UserSignupForm {
 }
 
 export type Email = string;
+
+declare namespace FileExtension {
+    export type pdf = "pdf";
+    export type txt = "txt";
+    export type md = "md";
+    export type zip = "zip";
+}
+
+export type FileExtension = "pdf" | "txt" | "md" | "zip";
 
 declare namespace RegulatoryFramework {
     export type mdr = "mdr";
@@ -313,9 +359,40 @@ export interface AuthIdentity {
     refresh_token: ArcStr;
 }
 
+export interface RequirementPrompts {
+    system: ArcStr;
+    instructions: ArcStr;
+    specific: ArcStr;
+    regulation_vector: ArcStr;
+    user_documentation_vector: ArcStr;
+}
+
+export interface CategoryPrompts {
+    system: ArcStr;
+    instructions: ArcStr;
+    specific: ArcStr;
+}
+
 export type ArcStr = string;
 
 export type ArcBytes = Uint8Array;
+
+export interface FullFile {
+    meta: File;
+    data: ArcBytes;
+}
+
+export interface UserConfig {
+    user: UserBaseConfig;
+    admin: AdminConfig;
+}
+
+export interface UserBaseConfig {}
+
+export interface AdminConfig {
+    embed_config: EmbedConfig;
+    llm_config: LlmConfig;
+}
 
 export interface SubRequirementMapping {
     sub_requirement_id: Id;
@@ -390,35 +467,39 @@ declare namespace ComplianceGrade {
 
 export type ComplianceGrade = "C" | "PC" | "NC";
 
-export interface UserConfig {
-    user: UserBaseConfig;
-    admin: AdminConfig;
+export interface EmbedConfig {
+    model: EmbedModel;
+    regulation_vector_search_limit: number;
+    user_documentation_vector_search_limit: number;
+    tokens_per_chunk: number;
+    token_overlap: number;
 }
 
-export interface UserBaseConfig {}
-
-export interface AdminConfig {
-    embed_config: EmbedConfig;
-    llm_config: LlmConfig;
+export interface Requirement {
+    id: VersionedIdType;
+    name: string;
+    prompts: RequirementPrompts;
+    reference: string | undefined;
 }
 
-export interface ReportFilterConfig {
-    categories_to_include: VersionedIdType[] | undefined;
-    requirements_to_include: VersionedIdType[] | undefined;
+export interface Category {
+    id: VersionedIdType;
+    name: string;
+    prompts: CategoryPrompts;
 }
 
-export interface ChunkId {
-    parent_id: string;
-    index: number;
-}
-
-export type VersionedIdType = [string, number];
-
-export type IdType = string;
-
-export interface LlmConfig {
-    model: LlmModel;
-    temperature: number | undefined;
+export interface File {
+    id: IdType;
+    multipart_upload_id: string | undefined;
+    multipart_upload_part_ids: string[] | undefined;
+    path: string;
+    title: string;
+    extension: FileExtension;
+    size: number;
+    total_chunks: number;
+    uploaded: boolean;
+    created_date: DateTime<Utc>;
+    status: FileStatus;
 }
 
 export interface Report {
@@ -440,14 +521,6 @@ export interface User {
     job_title: string | undefined;
     company: string | undefined;
     config?: UserConfig;
-}
-
-export interface EmbedConfig {
-    model: EmbedModel;
-    regulation_vector_search_limit: number;
-    user_documentation_vector_search_limit: number;
-    tokens_per_chunk: number;
-    token_overlap: number;
 }
 
 export class IntoUnderlyingByteSource {
@@ -496,6 +569,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
+  readonly hydrate: () => void;
   readonly echo: (a: number) => number;
   readonly get_public_auth0_config: () => number;
   readonly exchange_code_for_identity: (a: number) => number;
@@ -508,9 +582,9 @@ export interface InitOutput {
   readonly get_reports: () => number;
   readonly create_user: (a: number) => number;
   readonly create_report: (a: number) => number;
+  readonly create_file: (a: number) => number;
   readonly user_exists: () => number;
   readonly is_admin: () => number;
-  readonly hydrate: () => void;
   readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
   readonly intounderlyingsink_write: (a: number, b: number) => number;
   readonly intounderlyingsink_close: (a: number) => number;
