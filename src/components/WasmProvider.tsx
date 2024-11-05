@@ -35,6 +35,7 @@ async function getWasmModule(): Promise<typeof WasmModule> {
       globalWasmModule = jsModule;
       return jsModule;
     } catch (error) {
+      console.error("Failed to load WASM module:", error);
       initializationPromise = null;
       throw error;
     }
@@ -51,7 +52,11 @@ export function useWasm() {
   return context;
 }
 
-function WasmProviderComponent({ children }: { children: React.ReactNode }) {
+export default function WasmProviderComponent({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const [wasmModule, setWasmModule] = useState<typeof WasmModule | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>();
@@ -90,5 +95,3 @@ function WasmProviderComponent({ children }: { children: React.ReactNode }) {
     </WasmContext.Provider>
   );
 }
-
-export default WasmProviderComponent;

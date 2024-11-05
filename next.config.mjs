@@ -21,6 +21,9 @@ const nextConfig = {
     config.module.rules.push({
       test: /\.wasm$/,
       type: "asset/resource",
+      generator: {
+        filename: "static/wasm/[hash][ext][query]",
+      },
     });
 
     // Add path aliases
@@ -40,8 +43,14 @@ const nextConfig = {
       };
     }
 
+    // Add file loaders for WASM
+    if (!isServer) {
+      config.output.webassemblyModuleFilename = "static/wasm/[modulehash].wasm";
+    }
+
     return config;
   },
+
   // Add rewrites for development
   async rewrites() {
     return [
