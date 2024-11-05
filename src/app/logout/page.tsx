@@ -1,6 +1,5 @@
-// pages/logout.tsx
-
 "use client";
+
 import { useEffect, useContext } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";

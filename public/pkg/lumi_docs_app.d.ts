@@ -1,75 +1,70 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
-*/
-export function hydrate(): void;
-/**
-* @param {EchoInput} input
-* @returns {Promise<EchoResponse>}
-*/
+ * @param {EchoInput} input
+ * @returns {Promise<EchoResponse>}
+ */
 export function echo(input: EchoInput): Promise<EchoResponse>;
 /**
-* @returns {Promise<GetPublicAuth0ConfigResponse>}
-*/
+ * @returns {Promise<GetPublicAuth0ConfigResponse>}
+ */
 export function get_public_auth0_config(): Promise<GetPublicAuth0ConfigResponse>;
 /**
-* @param {ExchangeCodeForIdentityInput} input
-* @returns {Promise<ExchangeCodeForIdentityResponse>}
-*/
+ * @param {ExchangeCodeForIdentityInput} input
+ * @returns {Promise<ExchangeCodeForIdentityResponse>}
+ */
 export function exchange_code_for_identity(input: ExchangeCodeForIdentityInput): Promise<ExchangeCodeForIdentityResponse>;
 /**
-* @param {TokenToClaimsInput} input
-* @returns {Promise<TokenToClaimsResponse>}
-*/
+ * @param {TokenToClaimsInput} input
+ * @returns {Promise<TokenToClaimsResponse>}
+ */
 export function token_to_claims(input: TokenToClaimsInput): Promise<TokenToClaimsResponse>;
 /**
-* @returns {Promise<AppVersionResponse>}
-*/
+ * @returns {Promise<AppVersionResponse>}
+ */
 export function app_version(): Promise<AppVersionResponse>;
 /**
-* @param {GetFileDataInput} input
-* @returns {Promise<GetFileDataResponse>}
-*/
+ * @param {GetFileDataInput} input
+ * @returns {Promise<GetFileDataResponse>}
+ */
 export function get_file_data(input: GetFileDataInput): Promise<GetFileDataResponse>;
 /**
-* @param {UploadFileChunkInput} input
-* @returns {Promise<UploadFileChunkResponse>}
-*/
+ * @param {UploadFileChunkInput} input
+ * @returns {Promise<UploadFileChunkResponse>}
+ */
 export function upload_file_chunk(input: UploadFileChunkInput): Promise<UploadFileChunkResponse>;
 /**
-* @returns {Promise<GetUserResponse>}
-*/
+ * @returns {Promise<GetUserResponse>}
+ */
 export function get_user(): Promise<GetUserResponse>;
 /**
-* @param {GetReportInput} input
-* @returns {Promise<GetReportResponse>}
-*/
+ * @param {GetReportInput} input
+ * @returns {Promise<GetReportResponse>}
+ */
 export function get_report(input: GetReportInput): Promise<GetReportResponse>;
 /**
-* @returns {Promise<GetReportsResponse>}
-*/
+ * @returns {Promise<GetReportsResponse>}
+ */
 export function get_reports(): Promise<GetReportsResponse>;
 /**
-* @param {CreateUserInput} input
-* @returns {Promise<CreateUserResponse>}
-*/
+ * @param {CreateUserInput} input
+ * @returns {Promise<CreateUserResponse>}
+ */
 export function create_user(input: CreateUserInput): Promise<CreateUserResponse>;
 /**
-* @param {CreateReportInput} input
-* @returns {Promise<CreateReportResponse>}
-*/
+ * @param {CreateReportInput} input
+ * @returns {Promise<CreateReportResponse>}
+ */
 export function create_report(input: CreateReportInput): Promise<CreateReportResponse>;
 /**
-* @returns {Promise<UserExistsResponse>}
-*/
+ * @returns {Promise<UserExistsResponse>}
+ */
 export function user_exists(): Promise<UserExistsResponse>;
-declare namespace StorageKey {
-    export type id_token = "id_token";
-    export type access_token = "access_token";
-}
-
-export type StorageKey = "id_token" | "access_token";
-
+/**
+ * @returns {Promise<IsAdminResponse>}
+ */
+export function is_admin(): Promise<IsAdminResponse>;
+export function hydrate(): void;
 export interface EchoInput {
     input: string;
 }
@@ -220,10 +215,20 @@ export interface UserExistsResponse {
     error: ClientSideError | undefined;
 }
 
+export interface IsAdminOutput {
+    output: boolean;
+}
+
+export interface IsAdminResponse {
+    output: IsAdminOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
 declare namespace ErrorKind {
     export type Validation = "Validation";
     export type NotFound = "NotFound";
     export type AlreadyExists = "AlreadyExists";
+    export type EmailNotVerified = "EmailNotVerified";
     export type Unauthorized = "Unauthorized";
     export type Timeout = "Timeout";
     export type Deserialization = "Deserialization";
@@ -231,72 +236,86 @@ declare namespace ErrorKind {
     export type Server = "Server";
 }
 
-export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
+export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "EmailNotVerified" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
 
 export interface ClientSideError {
     kind: ErrorKind;
     message: string;
 }
 
-export interface UserConfig {
-    user: UserBaseConfig;
-    admin: AdminConfig;
+declare namespace StorageKey {
+    export type id_token = "id_token";
+    export type access_token = "access_token";
 }
 
-export interface UserBaseConfig {}
+export type StorageKey = "id_token" | "access_token";
 
-export interface AdminConfig {
-    embed_config: EmbedConfig;
-    llm_config: LlmConfig;
-}
-
-export interface ChunkId {
-    parent_id: string;
-    index: number;
-}
-
-export type VersionedIdType = [string, number];
-
-export type IdType = string;
-
-export interface EmbedConfig {
-    model: EmbedModel;
-    regulation_vector_search_limit: number;
-    user_documentation_vector_search_limit: number;
-    tokens_per_chunk: number;
-    token_overlap: number;
-}
-
-export interface Report {
+export interface Claims {
+    nickname: string;
+    given_name?: string | undefined;
+    family_name?: string | undefined;
+    name: string;
+    picture: string;
+    updated_at: string;
+    email: string;
+    email_verified: boolean;
     id: IdType;
-    status: ReportStatus;
-    regulatory_framework: RegulatoryFramework;
-    created_date: DateTime<Utc>;
-    title: string;
-    abstract_text: string;
-    overall_compliance: OverallCompliance;
-    category_mappings: CategoryMapping[];
+    iss: string;
+    aud: string;
+    iat: number;
+    exp: number;
+    sub: string;
+    sid: string;
 }
 
-export interface User {
-    id: IdType;
+export interface UserSignupForm {
     first_name: string;
     last_name: string;
-    email: Email;
     job_title: string | undefined;
     company: string | undefined;
-    config?: UserConfig;
+    config: UserBaseConfig;
 }
 
-export interface ReportFilterConfig {
-    categories_to_include: VersionedIdType[] | undefined;
-    requirements_to_include: VersionedIdType[] | undefined;
+export type Email = string;
+
+declare namespace RegulatoryFramework {
+    export type mdr = "mdr";
+    export type iso13485 = "iso13485";
 }
 
-export interface LlmConfig {
-    model: LlmModel;
-    temperature: number | undefined;
+export type RegulatoryFramework = "mdr" | "iso13485";
+
+declare namespace ReportStatus {
+    export type processing = "processing";
+    export type ready = "ready";
+    export type partially_failed = "partially_failed";
 }
+
+export type ReportStatus = "processing" | "ready" | "partially_failed";
+
+export interface FileChunk {
+    id: ChunkId;
+    data: ArcBytes;
+}
+
+export type OverallCompliance = number;
+
+export interface Auth0ConfigPublic {
+    domain: ArcStr;
+    client_id: ArcStr;
+    login_redirect_uri: ArcStr;
+    logout_redirect_uri: ArcStr;
+}
+
+export interface AuthIdentity {
+    id_token: ArcStr;
+    access_token: ArcStr;
+    refresh_token: ArcStr;
+}
+
+export type ArcStr = string;
+
+export type ArcBytes = Uint8Array;
 
 export interface SubRequirementMapping {
     sub_requirement_id: Id;
@@ -371,126 +390,105 @@ declare namespace ComplianceGrade {
 
 export type ComplianceGrade = "C" | "PC" | "NC";
 
-export interface Claims {
-    nickname: string;
-    given_name?: string | undefined;
-    family_name?: string | undefined;
-    name: string;
-    picture: string;
-    updated_at: string;
-    email: string;
-    email_verified: boolean;
-    id: IdType;
-    iss: string;
-    aud: string;
-    iat: number;
-    exp: number;
-    sub: string;
-    sid: string;
+export interface UserConfig {
+    user: UserBaseConfig;
+    admin: AdminConfig;
 }
 
-export interface UserSignupForm {
+export interface UserBaseConfig {}
+
+export interface AdminConfig {
+    embed_config: EmbedConfig;
+    llm_config: LlmConfig;
+}
+
+export interface ReportFilterConfig {
+    categories_to_include: VersionedIdType[] | undefined;
+    requirements_to_include: VersionedIdType[] | undefined;
+}
+
+export interface ChunkId {
+    parent_id: string;
+    index: number;
+}
+
+export type VersionedIdType = [string, number];
+
+export type IdType = string;
+
+export interface LlmConfig {
+    model: LlmModel;
+    temperature: number | undefined;
+}
+
+export interface Report {
+    id: IdType;
+    status: ReportStatus;
+    regulatory_framework: RegulatoryFramework;
+    created_date: DateTime<Utc>;
+    title: string;
+    abstract_text: string;
+    overall_compliance: OverallCompliance;
+    category_mappings: CategoryMapping[];
+}
+
+export interface User {
+    id: IdType;
     first_name: string;
     last_name: string;
+    email: Email;
     job_title: string | undefined;
     company: string | undefined;
-    config: UserBaseConfig;
+    config?: UserConfig;
 }
 
-export type Email = string;
-
-declare namespace RegulatoryFramework {
-    export type mdr = "mdr";
-    export type iso13485 = "iso13485";
+export interface EmbedConfig {
+    model: EmbedModel;
+    regulation_vector_search_limit: number;
+    user_documentation_vector_search_limit: number;
+    tokens_per_chunk: number;
+    token_overlap: number;
 }
 
-export type RegulatoryFramework = "mdr" | "iso13485";
-
-declare namespace ReportStatus {
-    export type processing = "processing";
-    export type ready = "ready";
-    export type partially_failed = "partially_failed";
-}
-
-export type ReportStatus = "processing" | "ready" | "partially_failed";
-
-export interface FileChunk {
-    id: ChunkId;
-    data: ArcBytes;
-}
-
-export type OverallCompliance = number;
-
-export interface Auth0ConfigPublic {
-    domain: ArcStr;
-    client_id: ArcStr;
-    login_redirect_uri: ArcStr;
-    logout_redirect_uri: ArcStr;
-}
-
-export interface AuthIdentity {
-    id_token: ArcStr;
-    access_token: ArcStr;
-    refresh_token: ArcStr;
-}
-
-export type ArcStr = string;
-
-export type ArcBytes = Uint8Array;
-
-/**
-*/
 export class IntoUnderlyingByteSource {
   free(): void;
-/**
-* @param {ReadableByteStreamController} controller
-*/
+  /**
+   * @param {ReadableByteStreamController} controller
+   */
   start(controller: ReadableByteStreamController): void;
-/**
-* @param {ReadableByteStreamController} controller
-* @returns {Promise<any>}
-*/
+  /**
+   * @param {ReadableByteStreamController} controller
+   * @returns {Promise<any>}
+   */
   pull(controller: ReadableByteStreamController): Promise<any>;
-/**
-*/
   cancel(): void;
-/**
-*/
   readonly autoAllocateChunkSize: number;
-/**
-*/
-  readonly type: string;
+  readonly type: any;
 }
-/**
-*/
 export class IntoUnderlyingSink {
   free(): void;
-/**
-* @param {any} chunk
-* @returns {Promise<any>}
-*/
+  /**
+   * @param {any} chunk
+   * @returns {Promise<any>}
+   */
   write(chunk: any): Promise<any>;
-/**
-* @returns {Promise<any>}
-*/
+  /**
+   * @returns {Promise<any>}
+   */
   close(): Promise<any>;
-/**
-* @param {any} reason
-* @returns {Promise<any>}
-*/
+  /**
+   * @param {any} reason
+   * @returns {Promise<any>}
+   */
   abort(reason: any): Promise<any>;
 }
-/**
-*/
 export class IntoUnderlyingSource {
   free(): void;
-/**
-* @param {ReadableStreamDefaultController} controller
-* @returns {Promise<any>}
-*/
+  /**
+   * @param {ReadableStreamDefaultController} controller
+   * @returns {Promise<any>}
+   */
   pull(controller: ReadableStreamDefaultController): Promise<any>;
-/**
-*/
   cancel(): void;
 }
 
@@ -498,7 +496,6 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly hydrate: () => void;
   readonly echo: (a: number) => number;
   readonly get_public_auth0_config: () => number;
   readonly exchange_code_for_identity: (a: number) => number;
@@ -512,19 +509,21 @@ export interface InitOutput {
   readonly create_user: (a: number) => number;
   readonly create_report: (a: number) => number;
   readonly user_exists: () => number;
+  readonly is_admin: () => number;
+  readonly hydrate: () => void;
   readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
   readonly intounderlyingsink_write: (a: number, b: number) => number;
   readonly intounderlyingsink_close: (a: number) => number;
   readonly intounderlyingsink_abort: (a: number, b: number) => number;
-  readonly __wbg_intounderlyingsource_free: (a: number, b: number) => void;
-  readonly intounderlyingsource_pull: (a: number, b: number) => number;
-  readonly intounderlyingsource_cancel: (a: number) => void;
   readonly __wbg_intounderlyingbytesource_free: (a: number, b: number) => void;
-  readonly intounderlyingbytesource_type: (a: number, b: number) => void;
+  readonly intounderlyingbytesource_type: (a: number) => number;
   readonly intounderlyingbytesource_autoAllocateChunkSize: (a: number) => number;
   readonly intounderlyingbytesource_start: (a: number, b: number) => void;
   readonly intounderlyingbytesource_pull: (a: number, b: number) => number;
   readonly intounderlyingbytesource_cancel: (a: number) => void;
+  readonly __wbg_intounderlyingsource_free: (a: number, b: number) => void;
+  readonly intounderlyingsource_pull: (a: number, b: number) => number;
+  readonly intounderlyingsource_cancel: (a: number) => void;
   readonly __wbindgen_export_0: (a: number, b: number) => number;
   readonly __wbindgen_export_1: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_export_2: WebAssembly.Table;
@@ -532,7 +531,6 @@ export interface InitOutput {
   readonly __wbindgen_export_4: (a: number, b: number, c: number) => void;
   readonly __wbindgen_export_5: (a: number) => void;
   readonly __wbindgen_export_6: (a: number, b: number, c: number, d: number) => void;
-  readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
 }
 
 export type SyncInitInput = BufferSource | WebAssembly.Module;

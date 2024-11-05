@@ -76,6 +76,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const { wasmModule, isLoading: isWasmLoading } = useWasm();
   const [idToken] = useStorage(SK.id_token);
+  const router = useRouter();
+
+  const handleEmailVerification = useCallback(async (email: string) => {
+    storage.clear();
+    setIsAuthenticated(false);
+    setUser(null);
+    const url = `/verify-email?email=${encodeURIComponent(email)}`;
+    window.location.href = url; // Use window.location.href instead of router.push
+  }, []);
 
   const login = useCallback(async () => {
     if (!wasmModule) {
@@ -150,17 +159,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         token: idToken,
       });
 
-      if (claimsResult.error || !claimsResult.output) {
-        throw new Error(claimsResult.error?.message || "Failed to get claims");
+      if (claimsResult.error) {
+        if (claimsResult.error.kind === "EmailNotVerified") {
+          const emailMatch =
+            claimsResult.error.message.match(/for email: (.+?)$/);
+          const email = emailMatch ? emailMatch[1] : "";
+          handleEmailVerification(email);
+          return;
+        }
+        throw new Error(claimsResult.error.message);
       }
 
-      const { output: claims } = claimsResult.output;
+      if (!claimsResult.output?.output) {
+        throw new Error("Failed to get claims");
+      }
+
+      const claims = claimsResult.output.output;
 
       if (isTokenExpired(claims)) {
         storage.clear();
         setIsAuthenticated(false);
         setUser(null);
         await login();
+        return;
+      }
+
+      if (!claims.email_verified) {
+        handleEmailVerification(claims.email);
         return;
       }
 
@@ -175,7 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setIsLoading(false);
     }
-  }, [wasmModule, idToken, login]);
+  }, [wasmModule, idToken, login, handleEmailVerification]);
 
   useEffect(() => {
     checkSession();
@@ -220,6 +245,17 @@ export function AuthCallback() {
   const [processing, setProcessing] = useState(true);
   const { wasmModule, isLoading: isWasmLoading } = useWasm();
 
+  const handleEmailVerification = useCallback(
+    async (email: string) => {
+      storage.clear();
+      setIsAuthenticated(false);
+      setUser(null);
+      const url = `/verify-email?email=${encodeURIComponent(email)}`;
+      window.location.href = url;
+    },
+    [setIsAuthenticated, setUser],
+  );
+
   useEffect(() => {
     if (!wasmModule || isWasmLoading) {
       return;
@@ -253,16 +289,22 @@ export function AuthCallback() {
         if (!mounted) return;
 
         if (exchangeResult.error) {
+          if (exchangeResult.error.kind === "EmailNotVerified") {
+            const emailMatch =
+              exchangeResult.error.message.match(/for email: (.+?)$/);
+            handleEmailVerification(emailMatch?.[1] || "");
+            return;
+          }
           throw new Error(exchangeResult.error.message);
         }
 
-        if (!exchangeResult.output) {
+        if (!exchangeResult.output?.output) {
           throw new Error("No output received from identity exchange");
         }
 
         const tokens = exchangeResult.output.output;
 
-        if (!tokens || !tokens.id_token) {
+        if (!tokens.id_token) {
           throw new Error("Missing id_token in response");
         }
 
@@ -276,17 +318,24 @@ export function AuthCallback() {
         if (!mounted) return;
 
         if (claimsResult.error) {
+          if (claimsResult.error.kind === "EmailNotVerified") {
+            const emailMatch =
+              claimsResult.error.message.match(/for email: (.+?)$/);
+            handleEmailVerification(emailMatch?.[1] || "");
+            return;
+          }
           throw new Error(claimsResult.error.message);
         }
 
-        if (!claimsResult.output) {
+        if (!claimsResult.output?.output) {
           throw new Error("No output received from claims");
         }
 
-        const { output: claims } = claimsResult.output;
+        const claims = claimsResult.output.output;
 
-        if (!claims) {
-          throw new Error("Invalid claims response structure");
+        if (!claims.email_verified) {
+          handleEmailVerification(claims.email);
+          return;
         }
 
         setUser(claims);
@@ -299,14 +348,16 @@ export function AuthCallback() {
           }
         }, 0);
       } catch (err) {
+        if (!mounted) return;
         console.error("Authentication error:", err);
-        if (mounted) {
-          setError(
-            err instanceof Error
-              ? `Authentication failed: ${err.message}`
-              : "Unknown authentication error",
-          );
-        }
+        storage.clear();
+        setIsAuthenticated(false);
+        setUser(null);
+        setError(
+          err instanceof Error
+            ? `Authentication failed: ${err.message}`
+            : "Unknown authentication error",
+        );
       } finally {
         if (mounted) {
           setProcessing(false);
@@ -324,6 +375,7 @@ export function AuthCallback() {
     setError,
     setUser,
     setIsAuthenticated,
+    handleEmailVerification,
   ]);
 
   if (processing) {
