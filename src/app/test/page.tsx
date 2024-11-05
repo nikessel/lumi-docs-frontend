@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FileSelector } from "@/components/test/FileSelector";
 import { ReportCreator } from "@/components/test/ReportCreator";
 import { ReportList } from "@/components/test/ReportList";
+import { FileList } from "@/components/test/FileList";
 
 // Dynamic imports for components
 const WasmProvider = dynamic(() => import("@/components/WasmProvider"), {
@@ -191,6 +192,10 @@ export default function TestPage() {
 
                 <TestComponent title="Reports">
                   <ReportList />
+                </TestComponent>
+
+                <TestComponent title="Files">
+                  <FileList />
                 </TestComponent>
               </div>
             </ProtectedContent>
