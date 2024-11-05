@@ -1,15 +1,23 @@
-// next.config.js
 /** @type {import('next').NextConfig} */
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const path = require("path");
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const nextConfig = {
-  webpack: (config) => {
+  webpack: (config, { dev, isServer }) => {
     config.experiments = {
       asyncWebAssembly: true,
       layers: true,
     };
 
+    // Disable webpack caching in development
+    if (dev) {
+      config.cache = false;
+    }
+
+    // Configure module rules
     config.module.rules.push({
       test: /\.wasm$/,
       type: "asset/resource",
@@ -23,9 +31,17 @@ const nextConfig = {
       "@wasm": path.resolve(__dirname, "./public/pkg/lumi_docs_app"),
     };
 
+    // Optimize for WebAssembly
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+      };
+    }
+
     return config;
   },
-
   // Add rewrites for development
   async rewrites() {
     return [
@@ -37,4 +53,4 @@ const nextConfig = {
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;
