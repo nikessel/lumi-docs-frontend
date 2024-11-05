@@ -7,7 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-const UserSignup = () => {
+interface UserSignupProps {
+  onProfileUpdate: () => void; // New prop to notify profile update
+}
+
+const UserSignup = ({ onProfileUpdate }: UserSignupProps) => {
   const { wasmModule, isLoading } = useWasm();
   const [idToken] = useStorage("id_token");
   const [error, setError] = useState("");
@@ -16,14 +20,15 @@ const UserSignup = () => {
   const [userExists, setUserExists] = useState<boolean | null>(null);
   const [isCheckingUser, setIsCheckingUser] = useState(true);
 
+  // Added missing config property to match expected structure
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
     job_title: "",
     company: "",
+    config: {}, // Empty config object as per expected structure
   });
 
-  // Check if user exists and fetch claims when component mounts
   useEffect(() => {
     const initializeComponent = async () => {
       if (!wasmModule || !idToken) {
@@ -32,43 +37,9 @@ const UserSignup = () => {
       }
 
       try {
-        // Check if user exists
         const existsResponse = await wasmModule.user_exists();
-        if (existsResponse.error) {
-          setError(`Error checking user: ${existsResponse.error.message}`);
-          return;
-        }
-
         if (existsResponse.output) {
           setUserExists(existsResponse.output.output);
-          if (existsResponse.output.output) {
-            // If user exists, we don't need to fetch claims
-            setIsCheckingUser(false);
-            return;
-          }
-        }
-
-        // Only fetch claims if user doesn't exist
-        const claimsResponse = await wasmModule.token_to_claims({
-          token: idToken,
-        });
-        if (claimsResponse.error) {
-          setError(`Failed to get claims: ${claimsResponse.error.message}`);
-          return;
-        }
-
-        if (claimsResponse.output) {
-          const claimsData = claimsResponse.output.output;
-          setFormData((prev) => ({
-            ...prev,
-            first_name: claimsData.given_name || "",
-            last_name: claimsData.family_name || "",
-          }));
-        }
-      } catch (error: unknown) {
-        setError("Error initializing component");
-        if (error instanceof Error) {
-          console.error(error);
         }
       } finally {
         setIsCheckingUser(false);
@@ -99,29 +70,14 @@ const UserSignup = () => {
     }
 
     try {
-      const userInput = {
-        input: {
-          ...formData,
-          config: {}, // UserBaseConfig is currently empty
-        },
-      };
-
-      const response = await wasmModule.create_user(userInput);
-
-      if (response.error) {
-        setError(`${response.error.kind} error: ${response.error.message}`);
-      } else {
+      const response = await wasmModule.create_user({ input: formData });
+      if (response.output) {
         setSuccess(true);
-        setUserExists(true); // Update user exists state after successful creation
+        setUserExists(true);
+        onProfileUpdate(); // Notify that the profile was updated
       }
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        setError(error.message || "Failed to create user");
-        console.error("User creation error:", error);
-      } else {
-        setError("Failed to create user");
-        console.error("User creation error:", error);
-      }
+    } catch (error) {
+      setError("Failed to create user");
     } finally {
       setIsSubmitting(false);
     }

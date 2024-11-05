@@ -1,5 +1,5 @@
 "use client";
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { AuthProvider, LoginButton, useAuth } from "@/components/Auth0";
@@ -105,6 +105,13 @@ const TestComponent = ({ title, children }: TestComponentProps) => (
 );
 
 export default function TestPage() {
+  const [refreshProfile, setRefreshProfile] = useState(false);
+
+  // Callback to refresh the user profile after a successful signup
+  const handleProfileUpdate = () => {
+    setRefreshProfile((prev) => !prev); // Toggle to trigger re-fetch
+  };
+
   return (
     <WasmProvider>
       <AuthProvider>
@@ -156,10 +163,12 @@ export default function TestPage() {
             <ProtectedContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <TestComponent title="User Signup">
-                  <UserSignup />
+                  <UserSignup onProfileUpdate={handleProfileUpdate} />
                 </TestComponent>
 
-                <UserProfile />
+                <TestComponent title="User Profile">
+                  <UserProfile refreshProfile={refreshProfile} />
+                </TestComponent>
 
                 <TestComponent title="Token Exchange">
                   <TokenExchange />
