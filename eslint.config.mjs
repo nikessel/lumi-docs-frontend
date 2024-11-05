@@ -1,34 +1,42 @@
+// eslint.config.mjs
 import js from "@eslint/js";
 import { FlatCompat } from "@eslint/eslintrc";
-import typescriptParser from "@typescript-eslint/parser";
-import typescriptPlugin from "@typescript-eslint/eslint-plugin";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Use dynamic import for Next.js plugin
-const nextPlugin = (await import("@next/eslint-plugin-next")).default;
-
+// Setup compatibility layer
 const compat = new FlatCompat({
   baseDirectory: __dirname,
   recommendedConfig: js.configs.recommended,
 });
 
-// Define config array first
+// Load plugins
+const nextPlugin = (await import("@next/eslint-plugin-next")).default;
+const typescriptPlugin = (await import("@typescript-eslint/eslint-plugin"))
+  .default;
+const typescriptParser = (await import("@typescript-eslint/parser")).default;
+
 const eslintConfig = [
+  // Core ESLint config
+  js.configs.recommended,
+
+  // Next.js config
   ...compat.config({
     extends: ["next/core-web-vitals"],
   }),
+
+  // JavaScript/TypeScript files config
   {
-    files: ["**/*.{ts,tsx}"],
+    files: ["**/*.{js,jsx,ts,tsx,mjs}"],
     languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: "module",
       parser: typescriptParser,
       parserOptions: {
-        project: "./tsconfig.json",
-        ecmaVersion: 2022,
-        sourceType: "module",
+        project: null, // Don't require tsconfig for JS files
         ecmaFeatures: {
           jsx: true,
         },
@@ -43,13 +51,41 @@ const eslintConfig = [
       "no-unused-vars": "off",
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-empty-interface": "off",
+      "no-mixed-spaces-and-tabs": "error",
+      "react/react-in-jsx-scope": "off",
     },
     settings: {
-      next: {
-        rootDir: ".",
+      react: {
+        version: "detect",
       },
     },
   },
+
+  // TypeScript-specific config
+  {
+    files: ["**/*.{ts,tsx}"],
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        project: "./tsconfig.json",
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+    },
+  },
+
+  // Config files
+  {
+    files: ["*.config.{js,ts,mjs}", "postcss.config.mjs", "next.config.mjs"],
+    languageOptions: {
+      parserOptions: {
+        project: null,
+      },
+    },
+  },
+
+  // Ignore patterns
   {
     ignores: [
       "**/node_modules/**",
@@ -62,5 +98,4 @@ const eslintConfig = [
   },
 ];
 
-// Export the config
 export default eslintConfig;
