@@ -5,6 +5,8 @@ import Link from "next/link";
 import { AuthProvider, LoginButton, useAuth } from "@/components/Auth0";
 import { Button } from "@/components/ui/button";
 import { FileSelector } from "@/components/test/FileSelector";
+import { ReportCreator } from "@/components/test/ReportCreator";
+import { ReportList } from "@/components/test/ReportList";
 
 // Dynamic imports for components
 const WasmProvider = dynamic(() => import("@/components/WasmProvider"), {
@@ -181,6 +183,14 @@ export default function TestPage() {
 
                 <TestComponent title="File Upload">
                   <FileSelector />
+                </TestComponent>
+
+                <TestComponent title="Create Report">
+                  <ReportCreator />
+                </TestComponent>
+
+                <TestComponent title="Reports">
+                  <ReportList />
                 </TestComponent>
               </div>
             </ProtectedContent>

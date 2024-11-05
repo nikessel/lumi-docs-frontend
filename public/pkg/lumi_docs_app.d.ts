@@ -47,6 +47,33 @@ export function get_report(input: GetReportInput): Promise<GetReportResponse>;
  */
 export function get_reports(): Promise<GetReportsResponse>;
 /**
+ * @param {GetFileInput} input
+ * @returns {Promise<GetFileResponse>}
+ */
+export function get_file(input: GetFileInput): Promise<GetFileResponse>;
+/**
+ * @param {GetRequirementInput} input
+ * @returns {Promise<GetRequirementResponse>}
+ */
+export function get_requirement(input: GetRequirementInput): Promise<GetRequirementResponse>;
+/**
+ * @returns {Promise<GetCategoriesResponse>}
+ */
+export function get_categories(): Promise<GetCategoriesResponse>;
+/**
+ * @returns {Promise<GetFilesResponse>}
+ */
+export function get_files(): Promise<GetFilesResponse>;
+/**
+ * @returns {Promise<GetRequirementsResponse>}
+ */
+export function get_requirements(): Promise<GetRequirementsResponse>;
+/**
+ * @param {GetSubRequirementsInput} input
+ * @returns {Promise<GetSubRequirementsResponse>}
+ */
+export function get_sub_requirements(input: GetSubRequirementsInput): Promise<GetSubRequirementsResponse>;
+/**
  * @param {CreateUserInput} input
  * @returns {Promise<CreateUserResponse>}
  */
@@ -186,6 +213,72 @@ export interface GetReportsOutput {
 
 export interface GetReportsResponse {
     output: GetReportsOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+export interface GetFileInput {
+    input: IdType;
+}
+
+export interface GetFileOutput {
+    output: File;
+}
+
+export interface GetFileResponse {
+    output: GetFileOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+export interface GetRequirementInput {
+    input: VersionedIdType;
+}
+
+export interface GetRequirementOutput {
+    output: Requirement;
+}
+
+export interface GetRequirementResponse {
+    output: GetRequirementOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+export interface GetCategoriesOutput {
+    output: Category[];
+}
+
+export interface GetCategoriesResponse {
+    output: GetCategoriesOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+export interface GetFilesOutput {
+    output: File[];
+}
+
+export interface GetFilesResponse {
+    output: GetFilesOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+export interface GetRequirementsOutput {
+    output: Requirement[];
+}
+
+export interface GetRequirementsResponse {
+    output: GetRequirementsOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+export interface GetSubRequirementsInput {
+    input: VersionedIdType;
+}
+
+export interface GetSubRequirementsOutput {
+    output: Requirement[];
+}
+
+export interface GetSubRequirementsResponse {
+    output: GetSubRequirementsOutput | undefined;
     error: ClientSideError | undefined;
 }
 
@@ -595,6 +688,12 @@ export interface InitOutput {
   readonly get_user: () => number;
   readonly get_report: (a: number) => number;
   readonly get_reports: () => number;
+  readonly get_file: (a: number) => number;
+  readonly get_requirement: (a: number) => number;
+  readonly get_categories: () => number;
+  readonly get_files: () => number;
+  readonly get_requirements: () => number;
+  readonly get_sub_requirements: (a: number) => number;
   readonly create_user: (a: number) => number;
   readonly create_report: (a: number) => number;
   readonly create_file: (a: number) => number;
