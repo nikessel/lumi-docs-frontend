@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import type * as WasmModule from "@wasm";
+import { handleEvent } from "@/components/WebsocketEventHandler";
 
 interface WasmContextType {
   wasmModule: typeof WasmModule | null;
@@ -70,6 +71,9 @@ export default function WasmProviderComponent({
         if (mounted) {
           setWasmModule(wasmInstance);
           setIsLoading(false);
+
+          // Set the WebSocket event callback
+          wasmInstance.set_websocket_event_callback(handleEvent);
         }
       } catch (err) {
         console.error("WASM initialization error:", err);

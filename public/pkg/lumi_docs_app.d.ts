@@ -1,6 +1,5 @@
 /* tslint:disable */
 /* eslint-disable */
-export function hydrate(): void;
 /**
  * @param {EchoInput} input
  * @returns {Promise<EchoResponse>}
@@ -70,32 +69,11 @@ export function user_exists(): Promise<UserExistsResponse>;
  * @returns {Promise<IsAdminResponse>}
  */
 export function is_admin(): Promise<IsAdminResponse>;
-declare namespace StorageKey {
-    export type id_token = "id_token";
-    export type access_token = "access_token";
-}
-
-export type StorageKey = "id_token" | "access_token";
-
-declare namespace ErrorKind {
-    export type Validation = "Validation";
-    export type NotFound = "NotFound";
-    export type AlreadyExists = "AlreadyExists";
-    export type EmailNotVerified = "EmailNotVerified";
-    export type Unauthorized = "Unauthorized";
-    export type Timeout = "Timeout";
-    export type Deserialization = "Deserialization";
-    export type Serialization = "Serialization";
-    export type Server = "Server";
-}
-
-export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "EmailNotVerified" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
-
-export interface ClientSideError {
-    kind: ErrorKind;
-    message: string;
-}
-
+export function hydrate(): void;
+/**
+ * @param {Function} callback
+ */
+export function set_websocket_event_callback(callback: Function): void;
 export interface EchoInput {
     input: string;
 }
@@ -268,14 +246,30 @@ export interface IsAdminResponse {
     error: ClientSideError | undefined;
 }
 
-export interface ReportFilterConfig {
-    categories_to_include: VersionedIdType[] | undefined;
-    requirements_to_include: VersionedIdType[] | undefined;
+declare namespace StorageKey {
+    export type id_token = "id_token";
+    export type access_token = "access_token";
 }
 
-export interface LlmConfig {
-    model: LlmModel;
-    temperature: number | undefined;
+export type StorageKey = "id_token" | "access_token";
+
+declare namespace ErrorKind {
+    export type Validation = "Validation";
+    export type NotFound = "NotFound";
+    export type AlreadyExists = "AlreadyExists";
+    export type EmailNotVerified = "EmailNotVerified";
+    export type Unauthorized = "Unauthorized";
+    export type Timeout = "Timeout";
+    export type Deserialization = "Deserialization";
+    export type Serialization = "Serialization";
+    export type Server = "Server";
+}
+
+export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "EmailNotVerified" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
+
+export interface ClientSideError {
+    kind: ErrorKind;
+    message: string;
 }
 
 export interface ChunkId {
@@ -286,6 +280,80 @@ export interface ChunkId {
 export type VersionedIdType = [string, number];
 
 export type IdType = string;
+
+export interface EmbedConfig {
+    model: EmbedModel;
+    regulation_vector_search_limit: number;
+    user_documentation_vector_search_limit: number;
+    tokens_per_chunk: number;
+    token_overlap: number;
+}
+
+export type ProgressEvent = { Report: [IdType, number] };
+
+export type UpdateEvent = { File: IdType } | { User: IdType } | { Requirement: VersionedIdType };
+
+export type DeleteEvent = { File: IdType };
+
+export type CreateEvent = { File: IdType } | { Report: IdType };
+
+export interface ReportFilterConfig {
+    categories_to_include: VersionedIdType[] | undefined;
+    requirements_to_include: VersionedIdType[] | undefined;
+}
+
+export interface LlmConfig {
+    model: LlmModel;
+    temperature: number | undefined;
+}
+
+export interface Requirement {
+    id: VersionedIdType;
+    name: string;
+    prompts: RequirementPrompts;
+    reference: string | undefined;
+}
+
+export interface Category {
+    id: VersionedIdType;
+    name: string;
+    prompts: CategoryPrompts;
+}
+
+export interface File {
+    id: IdType;
+    multipart_upload_id: string | undefined;
+    multipart_upload_part_ids: string[] | undefined;
+    path: string;
+    title: string;
+    extension: FileExtension;
+    size: number;
+    total_chunks: number;
+    uploaded: boolean;
+    created_date: DateTime<Utc>;
+    status: FileStatus;
+}
+
+export interface Report {
+    id: IdType;
+    status: ReportStatus;
+    regulatory_framework: RegulatoryFramework;
+    created_date: DateTime<Utc>;
+    title: string;
+    abstract_text: string;
+    overall_compliance: OverallCompliance;
+    category_mappings: CategoryMapping[];
+}
+
+export interface User {
+    id: IdType;
+    first_name: string;
+    last_name: string;
+    email: Email;
+    job_title: string | undefined;
+    company: string | undefined;
+    config?: UserConfig;
+}
 
 export interface Claims {
     nickname: string;
@@ -339,6 +407,8 @@ declare namespace ReportStatus {
 
 export type ReportStatus = "processing" | "ready" | "partially_failed";
 
+export type FileStatus = "uploading" | "processing" | "ready" | { upload_failed: ArcStr } | { processing_failed: ArcStr };
+
 export interface FileChunk {
     id: ChunkId;
     data: ArcBytes;
@@ -380,18 +450,6 @@ export type ArcBytes = Uint8Array;
 export interface FullFile {
     meta: File;
     data: ArcBytes;
-}
-
-export interface UserConfig {
-    user: UserBaseConfig;
-    admin: AdminConfig;
-}
-
-export interface UserBaseConfig {}
-
-export interface AdminConfig {
-    embed_config: EmbedConfig;
-    llm_config: LlmConfig;
 }
 
 export interface SubRequirementMapping {
@@ -467,60 +525,18 @@ declare namespace ComplianceGrade {
 
 export type ComplianceGrade = "C" | "PC" | "NC";
 
-export interface EmbedConfig {
-    model: EmbedModel;
-    regulation_vector_search_limit: number;
-    user_documentation_vector_search_limit: number;
-    tokens_per_chunk: number;
-    token_overlap: number;
+export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
+
+export interface UserConfig {
+    user: UserBaseConfig;
+    admin: AdminConfig;
 }
 
-export interface Requirement {
-    id: VersionedIdType;
-    name: string;
-    prompts: RequirementPrompts;
-    reference: string | undefined;
-}
+export interface UserBaseConfig {}
 
-export interface Category {
-    id: VersionedIdType;
-    name: string;
-    prompts: CategoryPrompts;
-}
-
-export interface File {
-    id: IdType;
-    multipart_upload_id: string | undefined;
-    multipart_upload_part_ids: string[] | undefined;
-    path: string;
-    title: string;
-    extension: FileExtension;
-    size: number;
-    total_chunks: number;
-    uploaded: boolean;
-    created_date: DateTime<Utc>;
-    status: FileStatus;
-}
-
-export interface Report {
-    id: IdType;
-    status: ReportStatus;
-    regulatory_framework: RegulatoryFramework;
-    created_date: DateTime<Utc>;
-    title: string;
-    abstract_text: string;
-    overall_compliance: OverallCompliance;
-    category_mappings: CategoryMapping[];
-}
-
-export interface User {
-    id: IdType;
-    first_name: string;
-    last_name: string;
-    email: Email;
-    job_title: string | undefined;
-    company: string | undefined;
-    config?: UserConfig;
+export interface AdminConfig {
+    embed_config: EmbedConfig;
+    llm_config: LlmConfig;
 }
 
 export class IntoUnderlyingByteSource {
@@ -569,7 +585,6 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly hydrate: () => void;
   readonly echo: (a: number) => number;
   readonly get_public_auth0_config: () => number;
   readonly exchange_code_for_identity: (a: number) => number;
@@ -585,6 +600,8 @@ export interface InitOutput {
   readonly create_file: (a: number) => number;
   readonly user_exists: () => number;
   readonly is_admin: () => number;
+  readonly hydrate: () => void;
+  readonly set_websocket_event_callback: (a: number) => void;
   readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
   readonly intounderlyingsink_write: (a: number, b: number) => number;
   readonly intounderlyingsink_close: (a: number) => number;
@@ -601,10 +618,13 @@ export interface InitOutput {
   readonly __wbindgen_export_0: (a: number, b: number) => number;
   readonly __wbindgen_export_1: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_export_2: WebAssembly.Table;
-  readonly __wbindgen_export_3: (a: number, b: number, c: number) => void;
+  readonly __wbindgen_export_3: (a: number, b: number) => void;
   readonly __wbindgen_export_4: (a: number, b: number, c: number) => void;
-  readonly __wbindgen_export_5: (a: number) => void;
-  readonly __wbindgen_export_6: (a: number, b: number, c: number, d: number) => void;
+  readonly __wbindgen_export_5: (a: number, b: number) => void;
+  readonly __wbindgen_export_6: (a: number, b: number, c: number) => void;
+  readonly __wbindgen_export_7: (a: number, b: number, c: number) => void;
+  readonly __wbindgen_export_8: (a: number) => void;
+  readonly __wbindgen_export_9: (a: number, b: number, c: number, d: number) => void;
 }
 
 export type SyncInitInput = BufferSource | WebAssembly.Module;
