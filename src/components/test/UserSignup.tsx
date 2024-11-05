@@ -13,6 +13,8 @@ const UserSignup = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userExists, setUserExists] = useState<boolean | null>(null);
+  const [isCheckingUser, setIsCheckingUser] = useState(true);
 
   const [formData, setFormData] = useState({
     first_name: "",
@@ -21,21 +23,42 @@ const UserSignup = () => {
     company: "",
   });
 
-  // Fetch claims when component mounts
+  // Check if user exists and fetch claims when component mounts
   useEffect(() => {
-    const fetchClaims = async () => {
-      if (!wasmModule || !idToken) return;
+    const initializeComponent = async () => {
+      if (!wasmModule || !idToken) {
+        setIsCheckingUser(false);
+        return;
+      }
 
       try {
-        const response = await wasmModule.token_to_claims({ token: idToken });
-        if (response.error) {
-          setError(`Failed to get claims: ${response.error.message}`);
+        // Check if user exists
+        const existsResponse = await wasmModule.user_exists();
+        if (existsResponse.error) {
+          setError(`Error checking user: ${existsResponse.error.message}`);
           return;
         }
 
-        if (response.output) {
-          const claimsData = response.output.output;
-          // Pre-fill form with claims data
+        if (existsResponse.output) {
+          setUserExists(existsResponse.output.output);
+          if (existsResponse.output.output) {
+            // If user exists, we don't need to fetch claims
+            setIsCheckingUser(false);
+            return;
+          }
+        }
+
+        // Only fetch claims if user doesn't exist
+        const claimsResponse = await wasmModule.token_to_claims({
+          token: idToken,
+        });
+        if (claimsResponse.error) {
+          setError(`Failed to get claims: ${claimsResponse.error.message}`);
+          return;
+        }
+
+        if (claimsResponse.output) {
+          const claimsData = claimsResponse.output.output;
           setFormData((prev) => ({
             ...prev,
             first_name: claimsData.given_name || "",
@@ -43,14 +66,16 @@ const UserSignup = () => {
           }));
         }
       } catch (error: unknown) {
-        setError("Error fetching claims");
+        setError("Error initializing component");
         if (error instanceof Error) {
           console.error(error);
         }
+      } finally {
+        setIsCheckingUser(false);
       }
     };
 
-    fetchClaims();
+    initializeComponent();
   }, [wasmModule, idToken]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,6 +112,7 @@ const UserSignup = () => {
         setError(`${response.error.kind} error: ${response.error.message}`);
       } else {
         setSuccess(true);
+        setUserExists(true); // Update user exists state after successful creation
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -101,11 +127,23 @@ const UserSignup = () => {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isCheckingUser) {
     return (
       <div className="flex items-center justify-center p-4">
         <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
+    );
+  }
+
+  if (userExists) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardContent className="pt-6">
+          <Alert className="bg-blue-50 text-blue-800 border-blue-200">
+            <AlertDescription>User already signed up</AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
     );
   }
 

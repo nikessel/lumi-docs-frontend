@@ -1,4 +1,3 @@
-// TokenExchange.tsx
 "use client";
 import { useState } from "react";
 import { useWasm } from "@/components/WasmProvider";
@@ -59,36 +58,27 @@ export default function TokenExchange() {
           Exchange Code
         </button>
       </div>
+
       {isLoading && (
         <div className="text-blue-600 font-medium">Loading WASM module...</div>
       )}
+
       {(error || wasmError) && (
         <div className="text-red-600 font-medium">
           Error: {error || wasmError}
         </div>
       )}
+
       {authIdentity && (
         <div className="p-4 bg-gray-50 border rounded">
           <h3 className="font-semibold mb-2">Auth Identity:</h3>
           <dl className="space-y-2">
-            <dt className="font-medium">Authenticated:</dt>
-            <dd className="ml-4">
-              {authIdentity.is_authenticated ? "Yes" : "No"}
-            </dd>
-            <dt className="font-medium">Admin:</dt>
-            <dd className="ml-4">
-              {authIdentity.identity.is_admin ? "Yes" : "No"}
-            </dd>
             <dt className="font-medium">Access Token:</dt>
-            <dd className="ml-4 break-all">
-              {authIdentity.identity.access_token}
-            </dd>
+            <dd className="ml-4 break-all">{authIdentity.access_token}</dd>
             <dt className="font-medium">ID Token:</dt>
-            <dd className="ml-4 break-all">{authIdentity.identity.id_token}</dd>
+            <dd className="ml-4 break-all">{authIdentity.id_token}</dd>
             <dt className="font-medium">Refresh Token:</dt>
-            <dd className="ml-4 break-all">
-              {authIdentity.identity.refresh_token}
-            </dd>
+            <dd className="ml-4 break-all">{authIdentity.refresh_token}</dd>
           </dl>
         </div>
       )}

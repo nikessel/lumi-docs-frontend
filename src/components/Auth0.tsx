@@ -14,7 +14,6 @@ import { useRouter } from "next/navigation";
 import { useWasm } from "@/components/WasmProvider";
 import { storage, useStorage } from "@/storage";
 
-// Helper for StorageKey values
 const SK = {
   id_token: "id_token" as StorageKey,
   access_token: "access_token" as StorageKey,
@@ -32,10 +31,8 @@ interface AuthContextType {
   setIsAuthenticated: Dispatch<SetStateAction<boolean>>;
 }
 
-// Auth Context
 const AuthContext = createContext<AuthContextType | null>(null);
 
-// Custom hook for using auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
@@ -44,26 +41,34 @@ export const useAuth = () => {
   return context;
 };
 
-// Login Button Component
+const isTokenExpired = (claims: Claims | null): boolean => {
+  if (!claims?.exp) return true;
+  // Add a 60-second buffer to handle timing differences
+  return claims.exp * 1000 <= Date.now() + 60000;
+};
+
 export function LoginButton() {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error("LoginButton must be used within an AuthProvider");
   }
-  const { login, isLoading } = context;
+  const { login, isLoading, isAuthenticated } = context;
 
   return (
     <button
       onClick={login}
-      disabled={isLoading}
+      disabled={isLoading || isAuthenticated}
       className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-400"
     >
-      {isLoading ? "Loading..." : "Login"}
+      {isLoading
+        ? "Loading..."
+        : isAuthenticated
+          ? "User already logged in"
+          : "Login"}
     </button>
   );
 }
 
-// Auth Provider Component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,18 +76,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const { wasmModule, isLoading: isWasmLoading } = useWasm();
   const [idToken] = useStorage(SK.id_token);
-
-  // Initialize auth state
-  useEffect(() => {
-    const checkAuth = async () => {
-      if (idToken) {
-        setIsAuthenticated(true);
-      }
-      setIsLoading(false);
-    };
-
-    checkAuth();
-  }, [idToken]);
 
   const login = useCallback(async () => {
     if (!wasmModule) {
@@ -92,20 +85,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await wasmModule.get_public_auth0_config();
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-      if (!response.output) {
-        throw new Error("No Auth0 config received");
+      if (response.error || !response.output) {
+        throw new Error(response.error?.message || "No Auth0 config received");
       }
 
       const config = response.output.output;
-
-      // Generate random state
       const state = Math.random().toString(36).substring(7);
       localStorage.setItem("auth_state", state);
 
-      // Construct Auth0 login URL
       const authUrl = new URL(`https://${config.domain}/authorize`);
       authUrl.searchParams.append("response_type", "code");
       authUrl.searchParams.append("client_id", config.client_id);
@@ -116,11 +103,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.location.href = authUrl.toString();
     } catch (err) {
       console.error("Login error:", err);
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unknown error occurred");
-      }
+      setError(
+        err instanceof Error ? err.message : "An unknown error occurred",
+      );
     }
   }, [wasmModule]);
 
@@ -132,16 +117,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await wasmModule.get_public_auth0_config();
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
-      if (!response.output) {
-        throw new Error("No Auth0 config received");
+      if (response.error || !response.output) {
+        throw new Error(response.error?.message || "No Auth0 config received");
       }
 
       const config = response.output.output;
-
-      storage.clear(); // Clear all tokens
+      storage.clear();
       setIsAuthenticated(false);
       setUser(null);
 
@@ -152,13 +133,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.location.href = logoutUrl.toString();
     } catch (err) {
       console.error("Logout error:", err);
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("An unknown error occurred");
-      }
+      setError(
+        err instanceof Error ? err.message : "An unknown error occurred",
+      );
     }
   }, [wasmModule]);
+
+  const checkSession = useCallback(async () => {
+    if (!wasmModule || !idToken) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const claimsResult = await wasmModule.token_to_claims({
+        token: idToken,
+      });
+
+      if (claimsResult.error || !claimsResult.output) {
+        throw new Error(claimsResult.error?.message || "Failed to get claims");
+      }
+
+      const { output: claims } = claimsResult.output;
+
+      if (isTokenExpired(claims)) {
+        storage.clear();
+        setIsAuthenticated(false);
+        setUser(null);
+        await login();
+        return;
+      }
+
+      setUser(claims);
+      setIsAuthenticated(true);
+    } catch (err) {
+      console.error("Session check failed:", err);
+      storage.clear();
+      setIsAuthenticated(false);
+      setUser(null);
+      await login();
+    } finally {
+      setIsLoading(false);
+    }
+  }, [wasmModule, idToken, login]);
+
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const interval = setInterval(() => {
+      if (user && isTokenExpired(user)) {
+        checkSession();
+      }
+    }, 60000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, user, checkSession]);
 
   const contextValue: AuthContextType = {
     isAuthenticated,
@@ -194,13 +227,11 @@ export function AuthCallback() {
 
     let mounted = true;
 
-    // Get URL parameters once at the start
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
     const state = params.get("state");
     const savedState = localStorage.getItem("auth_state");
 
-    // Validate parameters immediately
     if (!code || !state) {
       setError("Missing required parameters");
       setProcessing(false);
@@ -213,18 +244,13 @@ export function AuthCallback() {
       return;
     }
 
-    // Perform the authentication process
     (async () => {
       try {
-        // Exchange code for identity
-        console.log("Exchanging code for identity...");
         const exchangeResult = await wasmModule.exchange_code_for_identity({
           code,
         });
 
         if (!mounted) return;
-
-        console.log("Exchange result:", exchangeResult);
 
         if (exchangeResult.error) {
           throw new Error(exchangeResult.error.message);
@@ -235,29 +261,19 @@ export function AuthCallback() {
         }
 
         const tokens = exchangeResult.output.output;
-        console.log("Tokens:", tokens);
 
         if (!tokens || !tokens.id_token) {
           throw new Error("Missing id_token in response");
         }
 
-        // Store tokens using storage module
         storage.set(SK.id_token, tokens.id_token);
         storage.set(SK.access_token, tokens.access_token);
 
-        if (tokens.refresh_token) {
-          localStorage.setItem("refresh_token", tokens.refresh_token);
-        }
-
-        // Get user claims
-        console.log("Getting user claims...");
         const claimsResult = await wasmModule.token_to_claims({
           token: tokens.id_token,
         });
 
         if (!mounted) return;
-
-        console.log("Claims result:", claimsResult);
 
         if (claimsResult.error) {
           throw new Error(claimsResult.error.message);
@@ -268,7 +284,6 @@ export function AuthCallback() {
         }
 
         const { output: claims } = claimsResult.output;
-        console.log("Claims:", claims);
 
         if (!claims) {
           throw new Error("Invalid claims response structure");
@@ -278,7 +293,6 @@ export function AuthCallback() {
         setIsAuthenticated(true);
         localStorage.removeItem("auth_state");
 
-        // Use setTimeout to ensure state updates have propagated
         setTimeout(() => {
           if (mounted) {
             router.push("/");

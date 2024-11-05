@@ -1,4 +1,5 @@
 "use client";
+import { type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { AuthProvider, LoginButton, useAuth } from "@/components/Auth0";
@@ -40,8 +41,17 @@ const UserSignup = dynamic(() => import("@/components/test/UserSignup"), {
   loading: () => <div>Loading User Signup component...</div>,
 });
 
+const UserProfile = dynamic(() => import("@/components/test/UserProfile"), {
+  ssr: false,
+  loading: () => <div>Loading User Profile component...</div>,
+});
+
+interface ProtectedContentProps {
+  children: ReactNode;
+}
+
 // Protected content wrapper
-const ProtectedContent = ({ children }) => {
+const ProtectedContent = ({ children }: ProtectedContentProps) => {
   const { isAuthenticated, isLoading, user, logout } = useAuth();
 
   if (isLoading) {
@@ -81,8 +91,13 @@ const ProtectedContent = ({ children }) => {
   );
 };
 
+interface TestComponentProps {
+  title: string;
+  children: ReactNode;
+}
+
 // Test component wrapper for consistent styling
-const TestComponent = ({ title, children }) => (
+const TestComponent = ({ title, children }: TestComponentProps) => (
   <div className="bg-white rounded-lg shadow p-6">
     <h2 className="text-xl font-semibold mb-4">{title}</h2>
     {children}
@@ -102,33 +117,49 @@ export default function TestPage() {
               </Link>
             </div>
 
-            <div className="mb-8">
-              <TestComponent title="App Version">
-                <AppVersion />
-              </TestComponent>
+            {/* Unauthenticated Section */}
+            <h2 className="text-2xl font-semibold mb-6">
+              Unauthenticated Components
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="mb-8">
+                <TestComponent title="App Version">
+                  <AppVersion />
+                </TestComponent>
+              </div>
+
+              <div className="mb-8">
+                <TestComponent title="Authentication">
+                  <div className="p-4 border rounded">
+                    <LoginButton />
+                  </div>
+                </TestComponent>
+              </div>
+
+              <div className="mb-8">
+                <TestComponent title="Auth0 Config">
+                  <Auth0Config />
+                </TestComponent>
+              </div>
+
+              <div className="mb-8">
+                <TestComponent title="Echo Test">
+                  <Echo />
+                </TestComponent>
+              </div>
             </div>
 
-            <div className="mb-8">
-              <TestComponent title="Authentication">
-                <div className="p-4 border rounded">
-                  <LoginButton />
-                </div>
-              </TestComponent>
-            </div>
-
+            {/* Authenticated Section */}
+            <h2 className="text-2xl font-semibold mb-6">
+              Authenticated Components
+            </h2>
             <ProtectedContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <TestComponent title="User Signup">
                   <UserSignup />
                 </TestComponent>
 
-                <TestComponent title="Auth0 Config">
-                  <Auth0Config />
-                </TestComponent>
-
-                <TestComponent title="Echo Test">
-                  <Echo />
-                </TestComponent>
+                <UserProfile />
 
                 <TestComponent title="Token Exchange">
                   <TokenExchange />
