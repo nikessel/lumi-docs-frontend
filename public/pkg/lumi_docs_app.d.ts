@@ -1,6 +1,11 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
+ * @param {GetFileDataInput} input
+ * @returns {Promise<GetFileDataResponse>}
+ */
+export function get_file_data(input: GetFileDataInput): Promise<GetFileDataResponse>;
+/**
  * @param {EchoInput} input
  * @returns {Promise<EchoResponse>}
  */
@@ -23,11 +28,6 @@ export function token_to_claims(input: TokenToClaimsInput): Promise<TokenToClaim
  * @returns {Promise<AppVersionResponse>}
  */
 export function app_version(): Promise<AppVersionResponse>;
-/**
- * @param {GetFileDataInput} input
- * @returns {Promise<GetFileDataResponse>}
- */
-export function get_file_data(input: GetFileDataInput): Promise<GetFileDataResponse>;
 /**
  * @param {UploadFileChunkInput} input
  * @returns {Promise<UploadFileChunkResponse>}
@@ -101,6 +101,45 @@ export function hydrate(): void;
  * @param {Function} callback
  */
 export function set_websocket_event_callback(callback: Function): void;
+export interface GetFileDataInput {
+    input: IdType;
+}
+
+export interface GetFileDataOutput {
+    output: Uint8Array;
+}
+
+export interface GetFileDataResponse {
+    output: GetFileDataOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+declare namespace ErrorKind {
+    export type Validation = "Validation";
+    export type NotFound = "NotFound";
+    export type AlreadyExists = "AlreadyExists";
+    export type EmailNotVerified = "EmailNotVerified";
+    export type Unauthorized = "Unauthorized";
+    export type Timeout = "Timeout";
+    export type Deserialization = "Deserialization";
+    export type Serialization = "Serialization";
+    export type Server = "Server";
+}
+
+export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "EmailNotVerified" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
+
+export interface ClientSideError {
+    kind: ErrorKind;
+    message: string;
+}
+
+declare namespace StorageKey {
+    export type id_token = "id_token";
+    export type access_token = "access_token";
+}
+
+export type StorageKey = "id_token" | "access_token";
+
 export interface EchoInput {
     input: string;
 }
@@ -155,19 +194,6 @@ export interface AppVersionOutput {
 
 export interface AppVersionResponse {
     output: AppVersionOutput | undefined;
-    error: ClientSideError | undefined;
-}
-
-export interface GetFileDataInput {
-    input: IdType;
-}
-
-export interface GetFileDataOutput {
-    output: ArcBytes;
-}
-
-export interface GetFileDataResponse {
-    output: GetFileDataOutput | undefined;
     error: ClientSideError | undefined;
 }
 
@@ -339,113 +365,9 @@ export interface IsAdminResponse {
     error: ClientSideError | undefined;
 }
 
-declare namespace StorageKey {
-    export type id_token = "id_token";
-    export type access_token = "access_token";
-}
-
-export type StorageKey = "id_token" | "access_token";
-
-declare namespace ErrorKind {
-    export type Validation = "Validation";
-    export type NotFound = "NotFound";
-    export type AlreadyExists = "AlreadyExists";
-    export type EmailNotVerified = "EmailNotVerified";
-    export type Unauthorized = "Unauthorized";
-    export type Timeout = "Timeout";
-    export type Deserialization = "Deserialization";
-    export type Serialization = "Serialization";
-    export type Server = "Server";
-}
-
-export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "EmailNotVerified" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
-
-export interface ClientSideError {
-    kind: ErrorKind;
-    message: string;
-}
-
-export interface ChunkId {
-    parent_id: string;
-    index: number;
-}
-
-export type VersionedIdType = [string, number];
-
-export type IdType = string;
-
-export interface EmbedConfig {
-    model: EmbedModel;
-    regulation_vector_search_limit: number;
-    user_documentation_vector_search_limit: number;
-    tokens_per_chunk: number;
-    token_overlap: number;
-}
-
-export type ProgressEvent = { Report: [IdType, number] };
-
-export type UpdateEvent = { File: IdType } | { User: IdType } | { Requirement: VersionedIdType };
-
-export type DeleteEvent = { File: IdType };
-
-export type CreateEvent = { File: IdType } | { Report: IdType };
-
-export interface ReportFilterConfig {
-    categories_to_include: VersionedIdType[] | undefined;
-    requirements_to_include: VersionedIdType[] | undefined;
-}
-
 export interface LlmConfig {
     model: LlmModel;
     temperature: number | undefined;
-}
-
-export interface Requirement {
-    id: VersionedIdType;
-    name: string;
-    prompts: RequirementPrompts;
-    reference: string | undefined;
-}
-
-export interface Category {
-    id: VersionedIdType;
-    name: string;
-    prompts: CategoryPrompts;
-}
-
-export interface File {
-    id: IdType;
-    multipart_upload_id: string | undefined;
-    multipart_upload_part_ids: string[] | undefined;
-    path: string;
-    title: string;
-    extension: FileExtension;
-    size: number;
-    total_chunks: number;
-    uploaded: boolean;
-    created_date: DateTime<Utc>;
-    status: FileStatus;
-}
-
-export interface Report {
-    id: IdType;
-    status: ReportStatus;
-    regulatory_framework: RegulatoryFramework;
-    created_date: DateTime<Utc>;
-    title: string;
-    abstract_text: string;
-    overall_compliance: OverallCompliance;
-    category_mappings: CategoryMapping[];
-}
-
-export interface User {
-    id: IdType;
-    first_name: string;
-    last_name: string;
-    email: Email;
-    job_title: string | undefined;
-    company: string | undefined;
-    config?: UserConfig;
 }
 
 export interface Claims {
@@ -618,7 +540,58 @@ declare namespace ComplianceGrade {
 
 export type ComplianceGrade = "C" | "PC" | "NC";
 
-export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
+export interface ReportFilterConfig {
+    categories_to_include: VersionedIdType[] | undefined;
+    requirements_to_include: VersionedIdType[] | undefined;
+}
+
+export interface Requirement {
+    id: VersionedIdType;
+    name: string;
+    prompts: RequirementPrompts;
+    reference: string | undefined;
+}
+
+export interface Category {
+    id: VersionedIdType;
+    name: string;
+    prompts: CategoryPrompts;
+}
+
+export interface File {
+    id: IdType;
+    multipart_upload_id: string | undefined;
+    multipart_upload_part_ids: string[] | undefined;
+    path: string;
+    title: string;
+    extension: FileExtension;
+    size: number;
+    total_chunks: number;
+    uploaded: boolean;
+    created_date: DateTime<Utc>;
+    status: FileStatus;
+}
+
+export interface Report {
+    id: IdType;
+    status: ReportStatus;
+    regulatory_framework: RegulatoryFramework;
+    created_date: DateTime<Utc>;
+    title: string;
+    abstract_text: string;
+    overall_compliance: OverallCompliance;
+    category_mappings: CategoryMapping[];
+}
+
+export interface User {
+    id: IdType;
+    first_name: string;
+    last_name: string;
+    email: Email;
+    job_title: string | undefined;
+    company: string | undefined;
+    config?: UserConfig;
+}
 
 export interface UserConfig {
     user: UserBaseConfig;
@@ -631,6 +604,33 @@ export interface AdminConfig {
     embed_config: EmbedConfig;
     llm_config: LlmConfig;
 }
+
+export interface EmbedConfig {
+    model: EmbedModel;
+    regulation_vector_search_limit: number;
+    user_documentation_vector_search_limit: number;
+    tokens_per_chunk: number;
+    token_overlap: number;
+}
+
+export type ProgressEvent = { Report: [IdType, number] };
+
+export type UpdateEvent = { File: IdType } | { User: IdType } | { Requirement: VersionedIdType };
+
+export type DeleteEvent = { File: IdType };
+
+export type CreateEvent = { File: IdType } | { Report: IdType };
+
+export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
+
+export interface ChunkId {
+    parent_id: string;
+    index: number;
+}
+
+export type VersionedIdType = [string, number];
+
+export type IdType = string;
 
 export class IntoUnderlyingByteSource {
   free(): void;
@@ -678,12 +678,12 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
+  readonly get_file_data: (a: number) => number;
   readonly echo: (a: number) => number;
   readonly get_public_auth0_config: () => number;
   readonly exchange_code_for_identity: (a: number) => number;
   readonly token_to_claims: (a: number) => number;
   readonly app_version: () => number;
-  readonly get_file_data: (a: number) => number;
   readonly upload_file_chunk: (a: number) => number;
   readonly get_user: () => number;
   readonly get_report: (a: number) => number;

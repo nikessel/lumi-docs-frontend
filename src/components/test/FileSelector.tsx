@@ -10,6 +10,40 @@ import { ulid } from "ulid";
 
 const SUPPORTED_EXTENSIONS: FileExtension[] = ["pdf", "txt", "md", "zip"];
 
+const processFile = async (file: File) => {
+  const fileId = ulid().toLowerCase();
+  console.debug(`Processing file ${file.name} with ID ${fileId}`);
+  const chunks: Uint8Array[] = [];
+
+  // Process in chunks
+  for (let start = 0; start < file.size; start += FILE_CHUNK_SIZE) {
+    const end = Math.min(start + FILE_CHUNK_SIZE, file.size);
+    const blob = file.slice(start, end);
+    // Convert blob to array buffer then to Uint8Array in one step
+    const arrayBuffer = await blob.arrayBuffer();
+    const chunk = new Uint8Array(arrayBuffer);
+
+    // Debug log for first and last chunk
+    if (start === 0 || end === file.size) {
+      console.debug(
+        `Chunk ${start}-${end} first 10 bytes:`,
+        Array.from(chunk.slice(0, 10)),
+      );
+    }
+
+    chunks.push(chunk);
+  }
+
+  return {
+    file: {
+      id: fileId,
+      path: file.name,
+      size: file.size,
+    },
+    chunks,
+  };
+};
+
 export function FileSelector() {
   const [dragging, setDragging] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -32,28 +66,7 @@ export function FileSelector() {
 
     try {
       const processedFiles = await Promise.all(
-        selectedFiles.map(async (file) => {
-          const fileId = ulid().toLowerCase();
-          console.debug(`Processing file ${file.name} with ID ${fileId}`);
-          const chunks: Uint8Array[] = [];
-
-          for (let start = 0; start < file.size; start += FILE_CHUNK_SIZE) {
-            const end = Math.min(start + FILE_CHUNK_SIZE, file.size);
-            const blob = file.slice(start, end);
-            const buffer = await blob.arrayBuffer();
-            const chunk = new Uint8Array(buffer);
-            chunks.push(chunk);
-          }
-
-          return {
-            file: {
-              id: fileId,
-              path: file.name,
-              size: file.size,
-            },
-            chunks,
-          };
-        }),
+        selectedFiles.map((file) => processFile(file)),
       );
 
       await uploadManager.uploadFiles(processedFiles);

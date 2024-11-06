@@ -1,12 +1,12 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
+export function get_file_data(a: number): number;
 export function echo(a: number): number;
 export function get_public_auth0_config(): number;
 export function exchange_code_for_identity(a: number): number;
 export function token_to_claims(a: number): number;
 export function app_version(): number;
-export function get_file_data(a: number): number;
 export function upload_file_chunk(a: number): number;
 export function get_user(): number;
 export function get_report(a: number): number;
