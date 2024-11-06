@@ -467,26 +467,11 @@ export interface FullFile {
     data: ArcBytes;
 }
 
-export interface SubRequirementMapping {
-    sub_requirement_id: Id;
-    assessment: SubRequirementAssessment;
-}
-
-export interface RequirementMapping {
-    requirement_id: Id;
-    assessment: RequirementAssessment;
-    sub_requirement_mappings: SubRequirementMapping[];
-}
-
-export interface CategoryMapping {
-    category_id: Id;
-    assessment: CategoryAssessment;
-    requirement_mappings: RequirementMapping[];
-}
-
 export interface CategoryAssessment {
+    category_id?: VersionedIdType | undefined;
     abstract_text: ArcStr;
     overall_compliance: OverallCompliance;
+    requirement_assements: RequirementAssessment[];
 }
 
 export interface ReportAbstractAndTitle {
@@ -495,12 +480,15 @@ export interface ReportAbstractAndTitle {
 }
 
 export interface RequirementAssessment {
+    requirement_id?: VersionedIdType | undefined;
     overall_compliance_grade: ComplianceGrade;
     detailed_compliance_explanation: ArcStr;
     referenced_documents: ArcStr[];
+    sub_requirement_assessments: SubRequirementAssessment[];
 }
 
 export interface SubRequirementAssessment {
+    sub_requirement_id?: VersionedIdType | undefined;
     compliance_grade: ComplianceGrade;
     detailed_compliance_explanation: ArcStr;
     non_conformities: ArcStr[];
@@ -580,7 +568,7 @@ export interface Report {
     title: string;
     abstract_text: string;
     overall_compliance: OverallCompliance;
-    category_mappings: CategoryMapping[];
+    category_mappings: CategoryAssessment[];
 }
 
 export interface User {
