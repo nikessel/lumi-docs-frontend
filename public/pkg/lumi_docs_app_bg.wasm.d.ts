@@ -1,6 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
+export function hydrate(): void;
+export function set_websocket_event_callback(a: number): void;
 export function get_file_data(a: number): number;
 export function echo(a: number): number;
 export function get_public_auth0_config(): number;
@@ -22,8 +24,6 @@ export function create_report(a: number): number;
 export function create_file(a: number): number;
 export function user_exists(): number;
 export function is_admin(): number;
-export function hydrate(): void;
-export function set_websocket_event_callback(a: number): void;
 export function __wbg_intounderlyingsink_free(a: number, b: number): void;
 export function intounderlyingsink_write(a: number, b: number): number;
 export function intounderlyingsink_close(a: number): number;
