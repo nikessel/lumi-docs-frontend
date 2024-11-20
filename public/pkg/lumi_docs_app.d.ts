@@ -1,10 +1,5 @@
 /* tslint:disable */
 /* eslint-disable */
-export function hydrate(): void;
-/**
- * @param {Function} callback
- */
-export function set_websocket_event_callback(callback: Function): void;
 /**
  * @param {GetFileDataInput} input
  * @returns {Promise<GetFileDataResponse>}
@@ -101,13 +96,11 @@ export function user_exists(): Promise<UserExistsResponse>;
  * @returns {Promise<IsAdminResponse>}
  */
 export function is_admin(): Promise<IsAdminResponse>;
-declare namespace StorageKey {
-    export type id_token = "id_token";
-    export type access_token = "access_token";
-}
-
-export type StorageKey = "id_token" | "access_token";
-
+export function hydrate(): void;
+/**
+ * @param {Function} callback
+ */
+export function set_websocket_event_callback(callback: Function): void;
 export interface GetFileDataInput {
     input: IdType;
 }
@@ -121,24 +114,12 @@ export interface GetFileDataResponse {
     error: ClientSideError | undefined;
 }
 
-declare namespace ErrorKind {
-    export type Validation = "Validation";
-    export type NotFound = "NotFound";
-    export type AlreadyExists = "AlreadyExists";
-    export type EmailNotVerified = "EmailNotVerified";
-    export type Unauthorized = "Unauthorized";
-    export type Timeout = "Timeout";
-    export type Deserialization = "Deserialization";
-    export type Serialization = "Serialization";
-    export type Server = "Server";
+declare namespace StorageKey {
+    export type id_token = "id_token";
+    export type access_token = "access_token";
 }
 
-export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "EmailNotVerified" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
-
-export interface ClientSideError {
-    kind: ErrorKind;
-    message: string;
-}
+export type StorageKey = "id_token" | "access_token";
 
 export interface EchoInput {
     input: string;
@@ -256,7 +237,7 @@ export interface GetFileResponse {
 }
 
 export interface GetRequirementInput {
-    input: VersionedIdType;
+    input: IdType;
 }
 
 export interface GetRequirementOutput {
@@ -269,7 +250,7 @@ export interface GetRequirementResponse {
 }
 
 export interface GetCategoriesOutput {
-    output: Category[];
+    output: Section[];
 }
 
 export interface GetCategoriesResponse {
@@ -296,7 +277,7 @@ export interface GetRequirementsResponse {
 }
 
 export interface GetSubRequirementsInput {
-    input: VersionedIdType;
+    input: IdType;
 }
 
 export interface GetSubRequirementsOutput {
@@ -365,14 +346,36 @@ export interface IsAdminResponse {
     error: ClientSideError | undefined;
 }
 
-export interface ChunkId {
-    parent_id: string;
-    index: number;
+declare namespace ErrorKind {
+    export type Validation = "Validation";
+    export type NotFound = "NotFound";
+    export type AlreadyExists = "AlreadyExists";
+    export type EmailNotVerified = "EmailNotVerified";
+    export type Unauthorized = "Unauthorized";
+    export type Timeout = "Timeout";
+    export type Deserialization = "Deserialization";
+    export type Serialization = "Serialization";
+    export type Server = "Server";
 }
 
-export type VersionedIdType = [string, number];
+export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "EmailNotVerified" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
 
-export type IdType = string;
+export interface ClientSideError {
+    kind: ErrorKind;
+    message: string;
+}
+
+export interface UserConfig {
+    user: UserBaseConfig;
+    admin: AdminConfig;
+}
+
+export interface UserBaseConfig {}
+
+export interface AdminConfig {
+    embed_config: EmbedConfig;
+    llm_config: LlmConfig;
+}
 
 export interface Claims {
     nickname: string;
@@ -433,7 +436,26 @@ export interface FileChunk {
     data: ArcBytes;
 }
 
-export type OverallCompliance = number;
+export type Percentage = number;
+
+export type ComplianceRating = number;
+
+declare namespace TaskStatus {
+    export type open = "open";
+    export type completed = "completed";
+    export type ignored = "ignored";
+}
+
+export type TaskStatus = "open" | "completed" | "ignored";
+
+declare namespace SuggestionKind {
+    export type edit_paragraph = "edit_paragraph";
+    export type add_paragraph = "add_paragraph";
+    export type remove_paragraph = "remove_paragraph";
+    export type new_document = "new_document";
+}
+
+export type SuggestionKind = "edit_paragraph" | "add_paragraph" | "remove_paragraph" | "new_document";
 
 export interface Auth0ConfigPublic {
     domain: ArcStr;
@@ -448,20 +470,6 @@ export interface AuthIdentity {
     refresh_token: ArcStr;
 }
 
-export interface RequirementPrompts {
-    system: ArcStr;
-    instructions: ArcStr;
-    specific: ArcStr;
-    regulation_vector: ArcStr;
-    user_documentation_vector: ArcStr;
-}
-
-export interface CategoryPrompts {
-    system: ArcStr;
-    instructions: ArcStr;
-    specific: ArcStr;
-}
-
 export type ArcStr = string;
 
 export type ArcBytes = Uint8Array;
@@ -471,105 +479,36 @@ export interface FullFile {
     data: ArcBytes;
 }
 
-export interface UserConfig {
-    user: UserBaseConfig;
-    admin: AdminConfig;
-}
-
-export interface UserBaseConfig {}
-
-export interface AdminConfig {
-    embed_config: EmbedConfig;
-    llm_config: LlmConfig;
-}
-
-export interface LlmConfig {
-    model: LlmModel;
-    temperature: number | undefined;
-}
-
-export interface CategoryAssessment {
-    category_id?: VersionedIdType | undefined;
-    abstract_text: ArcStr;
-    overall_compliance: OverallCompliance;
-    requirement_assements: RequirementAssessment[];
-}
-
-export interface ReportAbstractAndTitle {
-    abstract_text: ArcStr;
-    title: ArcStr;
-}
-
-export interface RequirementAssessment {
-    requirement_id?: VersionedIdType | undefined;
-    overall_compliance_grade: ComplianceGrade;
-    detailed_compliance_explanation: ArcStr;
-    referenced_documents: ArcStr[];
-    sub_requirement_assessments: SubRequirementAssessment[];
-}
-
-export interface SubRequirementAssessment {
-    sub_requirement_id?: VersionedIdType | undefined;
-    compliance_grade: ComplianceGrade;
-    detailed_compliance_explanation: ArcStr;
-    non_conformities: ArcStr[];
-    referenced_documents: ArcStr[];
-    tasks: Task[];
+export interface EmbedConfig {
+    model: EmbedModel;
+    regulation_vector_search_limit: number;
+    user_documentation_vector_search_limit: number;
+    tokens_per_chunk: number;
+    token_overlap: number;
+    vector_store_id: string | undefined;
 }
 
 export interface Task {
-    completed?: boolean;
-    title: ArcStr;
+    id: IdType;
+    status?: TaskStatus;
+    title: string;
     description: ArcStr;
     task: ArcStr;
     suggestion: Suggestion | undefined;
-    associated_document: ArcStr | undefined;
+    associated_document: string | undefined;
 }
-
-export interface Suggestion {
-    kind: SuggestionKind;
-    description: ArcStr;
-    content: ArcStr;
-}
-
-declare namespace SuggestionKind {
-    export type edit_paragraph = "edit_paragraph";
-    export type add_paragraph = "add_paragraph";
-    export type remove_paragraph = "remove_paragraph";
-    export type new_document = "new_document";
-}
-
-export type SuggestionKind = "edit_paragraph" | "add_paragraph" | "remove_paragraph" | "new_document";
-
-declare namespace ComplianceGrade {
-    export type C = "C";
-    export type PC = "PC";
-    export type NC = "NC";
-}
-
-export type ComplianceGrade = "C" | "PC" | "NC";
-
-export type ProgressEvent = { Report: [IdType, number] };
-
-export type UpdateEvent = { File: IdType } | { User: IdType } | { Requirement: VersionedIdType };
-
-export type DeleteEvent = { File: IdType };
-
-export type CreateEvent = { File: IdType } | { Report: IdType };
-
-export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
 
 export interface Requirement {
-    id: VersionedIdType;
+    id: IdType;
     name: string;
-    prompts: RequirementPrompts;
+    description: ArcStr;
     reference: string | undefined;
 }
 
-export interface Category {
-    id: VersionedIdType;
+export interface Section {
+    id: IdType;
     name: string;
-    prompts: CategoryPrompts;
+    description: ArcStr;
 }
 
 export interface File {
@@ -593,8 +532,8 @@ export interface Report {
     created_date: DateTime<Utc>;
     title: string;
     abstract_text: string;
-    overall_compliance: OverallCompliance;
-    category_mappings: CategoryAssessment[];
+    compliance_rating: ComplianceRating;
+    section_assessments: SectionAssessment[];
 }
 
 export interface User {
@@ -607,19 +546,81 @@ export interface User {
     config?: UserConfig;
 }
 
+export interface ChunkId {
+    parent_id: string;
+    index: number;
+}
+
+export type IdType = string;
+
 export interface ReportFilterConfig {
     categories_to_include: VersionedIdType[] | undefined;
     requirements_to_include: VersionedIdType[] | undefined;
 }
 
-export interface EmbedConfig {
-    model: EmbedModel;
-    regulation_vector_search_limit: number;
-    user_documentation_vector_search_limit: number;
-    tokens_per_chunk: number;
-    token_overlap: number;
-    vector_store_id: string | undefined;
+export interface SectionAssessment {
+    section_id?: IdType | undefined;
+    abstract_text: ArcStr;
+    compliance_rating: ComplianceRating;
+    requirement_assements: RequirementAssessment[];
 }
+
+export interface ReportAbstractAndTitle {
+    abstract_text: ArcStr;
+    title: ArcStr;
+}
+
+export interface RequirementAssessment {
+    /**
+     * ID reference to the requirement being assessed
+     */
+    requirement_id?: IdType | undefined;
+    /**
+     * The compliance rating indicating the level of conformity with the requirement
+     */
+    compliance_rating: ComplianceRating;
+    /**
+     * Comprehensive explanation of the compliance assessment, including methodology and findings
+     */
+    details: ArcStr;
+    /**
+     * Brief overview of the compliance status and key findings
+     */
+    summary: ArcStr;
+    /**
+     * List of identified non-conformities, gaps, or issues that need to be addressed
+     */
+    findings: ArcStr[];
+    /**
+     * Set of document identifiers that were analyzed during the assessment
+     */
+    sources: string[];
+    /**
+     * Set of specific citations and references supporting the assessment findings
+     */
+    references: Citation[];
+}
+
+export interface Suggestion {
+    kind: SuggestionKind;
+    description: ArcStr;
+    content: ArcStr;
+}
+
+export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
+
+export interface LlmConfig {
+    model: LlmModel;
+    temperature: number | undefined;
+}
+
+export type ProgressEvent = { Report: [IdType, number] };
+
+export type UpdateEvent = { File: IdType } | { User: IdType } | { Requirement: IdType };
+
+export type DeleteEvent = { File: IdType };
+
+export type CreateEvent = { File: IdType } | { Report: IdType };
 
 export class IntoUnderlyingByteSource {
   free(): void;
@@ -667,8 +668,6 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly hydrate: () => void;
-  readonly set_websocket_event_callback: (a: number) => void;
   readonly get_file_data: (a: number) => number;
   readonly echo: (a: number) => number;
   readonly get_public_auth0_config: () => number;
@@ -690,6 +689,8 @@ export interface InitOutput {
   readonly create_file: (a: number) => number;
   readonly user_exists: () => number;
   readonly is_admin: () => number;
+  readonly hydrate: () => void;
+  readonly set_websocket_event_callback: (a: number) => void;
   readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
   readonly intounderlyingsink_write: (a: number, b: number) => number;
   readonly intounderlyingsink_close: (a: number) => number;
