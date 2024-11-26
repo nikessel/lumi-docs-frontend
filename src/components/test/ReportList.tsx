@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useWasm } from "@/components/WasmProvider";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button"; // Import the Button component
+import { Button } from "@/components/ui/button";
 import { eventBus } from "@/components/EventBus";
 import { WrappedEvent } from "@/components/EventHelpers";
 import type { Report } from "@wasm";
@@ -36,9 +36,10 @@ export function ReportList() {
         });
 
         // Revoke previous Blob URLs
-        Object.values(blobUrls).forEach((url) => URL.revokeObjectURL(url));
-
-        setBlobUrls(newBlobUrls);
+        setBlobUrls(oldUrls => {
+          Object.values(oldUrls).forEach(url => URL.revokeObjectURL(url));
+          return newBlobUrls;
+        });
       } else if (response.error) {
         setError(response.error.message);
       }
@@ -46,33 +47,30 @@ export function ReportList() {
       console.error("Error fetching reports:", err);
       setError("Failed to fetch reports");
     }
-  }, [wasmModule, blobUrls]);
+  }, [wasmModule]); // Remove blobUrls dependency
 
-  // Fetch reports on component mount
+  // Fetch reports on component mount and when events occur
   useEffect(() => {
     fetchReports();
 
     const handleCreatedEvent = (event: WrappedEvent) => {
-      if (event.type === "Created") {
-        const payload = event.payload;
-        if ("Report" in payload) {
-          // A new report has been created, refetch the reports
-          fetchReports();
-        }
+      if (event.type === "Created" && "Report" in event.payload) {
+        fetchReports();
       }
     };
 
     // Subscribe to "Created" events
     eventBus.subscribe("Created", handleCreatedEvent);
 
-    // Cleanup: Unsubscribe when the component unmounts and revoke Blob URLs
+    // Cleanup: Unsubscribe and revoke Blob URLs when unmounting
     return () => {
       eventBus.unsubscribe("Created", handleCreatedEvent);
-
-      // Revoke all Blob URLs to prevent memory leaks
-      Object.values(blobUrls).forEach((url) => URL.revokeObjectURL(url));
+      setBlobUrls(oldUrls => {
+        Object.values(oldUrls).forEach(url => URL.revokeObjectURL(url));
+        return {};
+      });
     };
-  }, [wasmModule, fetchReports, blobUrls]);
+  }, [fetchReports]); // Only depend on fetchReports
 
   if (error) {
     return (
@@ -97,7 +95,7 @@ export function ReportList() {
                     window.open(
                       blobUrls[report.id],
                       "_blank",
-                      "noopener,noreferrer",
+                      "noopener,noreferrer"
                     );
                   }}
                 >
