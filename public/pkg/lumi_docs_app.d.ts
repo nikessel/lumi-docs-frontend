@@ -2,6 +2,15 @@
 /* eslint-disable */
 export function hydrate(): void;
 /**
+ * @param {Function} callback
+ */
+export function set_websocket_event_callback(callback: Function): void;
+/**
+ * @param {GetFileDataInput} input
+ * @returns {Promise<GetFileDataResponse>}
+ */
+export function get_file_data(input: GetFileDataInput): Promise<GetFileDataResponse>;
+/**
  * @param {EchoInput} input
  * @returns {Promise<EchoResponse>}
  */
@@ -92,15 +101,45 @@ export function user_exists(): Promise<UserExistsResponse>;
  * @returns {Promise<IsAdminResponse>}
  */
 export function is_admin(): Promise<IsAdminResponse>;
-/**
- * @param {GetFileDataInput} input
- * @returns {Promise<GetFileDataResponse>}
- */
-export function get_file_data(input: GetFileDataInput): Promise<GetFileDataResponse>;
-/**
- * @param {Function} callback
- */
-export function set_websocket_event_callback(callback: Function): void;
+declare namespace StorageKey {
+    export type id_token = "id_token";
+    export type access_token = "access_token";
+}
+
+export type StorageKey = "id_token" | "access_token";
+
+declare namespace ErrorKind {
+    export type Validation = "Validation";
+    export type NotFound = "NotFound";
+    export type AlreadyExists = "AlreadyExists";
+    export type EmailNotVerified = "EmailNotVerified";
+    export type Unauthorized = "Unauthorized";
+    export type Timeout = "Timeout";
+    export type Deserialization = "Deserialization";
+    export type Serialization = "Serialization";
+    export type Server = "Server";
+}
+
+export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "EmailNotVerified" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
+
+export interface ClientSideError {
+    kind: ErrorKind;
+    message: string;
+}
+
+export interface GetFileDataInput {
+    input: IdType;
+}
+
+export interface GetFileDataOutput {
+    output: Uint8Array;
+}
+
+export interface GetFileDataResponse {
+    output: GetFileDataOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
 export interface EchoInput {
     input: string;
 }
@@ -326,107 +365,121 @@ export interface IsAdminResponse {
     error: ClientSideError | undefined;
 }
 
-export interface GetFileDataInput {
-    input: IdType;
+export interface ChunkId {
+    parent_id: string;
+    index: number;
 }
 
-export interface GetFileDataOutput {
-    output: Uint8Array;
+export type IdType = string;
+
+export interface EmbedConfig {
+    model: EmbedModel;
+    regulation_vector_search_limit: number;
+    user_documentation_vector_search_limit: number;
+    tokens_per_chunk: number;
+    token_overlap: number;
+    vector_store_id: string | undefined;
 }
 
-export interface GetFileDataResponse {
-    output: GetFileDataOutput | undefined;
-    error: ClientSideError | undefined;
+/**
+ * Collection of processed and analyzed text chunks extracted from a document
+ */
+export interface DocumentDataExtractionResponse {
+    /**
+     * Vector of processed text chunks with their quality metrics and content analysis
+     */
+    chunks: DocumentTextChunk[];
 }
 
-declare namespace ErrorKind {
-    export type Validation = "Validation";
-    export type NotFound = "NotFound";
-    export type AlreadyExists = "AlreadyExists";
-    export type EmailNotVerified = "EmailNotVerified";
-    export type Unauthorized = "Unauthorized";
-    export type Timeout = "Timeout";
-    export type Deserialization = "Deserialization";
-    export type Serialization = "Serialization";
-    export type Server = "Server";
+export interface DocumentTextChunk {
+    /**
+     * The processed and potentially reformatted text content. While the content may be reformatted in terms of punctuation and line breaks, the actual content must be replicated exactly.
+     */
+    content: ArcStr;
+    /**
+     * Information value score indicating the chunk\'s relevance and usefulness. Score from 0.0 to 1.0 indicating the information value of the chunk
+     */
+    information_value: number;
+    /**
+     * Ratio of well-formed, meaningful sentences to total sentences. Score from 0.0 to 1.0 indicating the ratio of meaningful sentences in the chunk
+     */
+    meaningful_sentence_ratio: number;
+    /**
+     * Score indicating the level of content repetition. Score from 0.0 to 1.0 indicating the level of content repetition (lower is better)
+     */
+    repetition_score: number;
+    /**
+     * The type of content in this chunk. Classification of the content type in this chunk
+     */
+    content_type: ContentType;
 }
 
-export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "EmailNotVerified" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
-
-export interface ClientSideError {
-    kind: ErrorKind;
-    message: string;
-}
-
-declare namespace StorageKey {
-    export type id_token = "id_token";
-    export type access_token = "access_token";
-}
-
-export type StorageKey = "id_token" | "access_token";
-
-export interface LlmConfig {
-    model: LlmModel;
-    temperature: number | undefined;
-}
-
-export interface Task {
-    id?: IdType;
-    status?: TaskStatus;
-    title: string;
-    description: ArcStr;
-    task: ArcStr;
-    suggestion: Suggestion | undefined;
-    associated_document: string | undefined;
-}
-
-export interface Requirement {
-    id: IdType;
-    name: string;
-    description: ArcStr;
-    reference: string | undefined;
-}
-
-export interface Section {
-    id: IdType;
-    name: string;
-    description: ArcStr;
-}
-
-export interface File {
-    id: IdType;
-    multipart_upload_id: string | undefined;
-    multipart_upload_part_ids: string[] | undefined;
-    path: string;
-    title: string;
-    extension: FileExtension;
-    size: number;
-    total_chunks: number;
-    uploaded: boolean;
-    created_date: DateTime<Utc>;
-    status: FileStatus;
-    openai_file_id: string | undefined;
-}
-
-export interface Report {
-    id: IdType;
-    status: ReportStatus;
-    regulatory_framework: RegulatoryFramework;
-    created_date: DateTime<Utc>;
-    title: string;
-    abstract_text: string;
+export interface SectionAssessment {
+    section_id?: IdType | undefined;
+    abstract_text: ArcStr;
     compliance_rating: ComplianceRating;
-    section_assessments: SectionAssessment[];
+    requirement_assessments?: RequirementAssessment[];
 }
 
-export interface User {
-    id: IdType;
-    first_name: string;
-    last_name: string;
-    email: Email;
-    job_title: string | undefined;
-    company: string | undefined;
-    config?: UserConfig;
+export interface ReportAbstractAndTitle {
+    abstract_text: ArcStr;
+    title: ArcStr;
+}
+
+export interface RequirementAssessment {
+    /**
+     * ID reference to the requirement being assessed
+     */
+    requirement_id?: IdType | undefined;
+    /**
+     * The compliance rating indicating the level of conformity with the requirement
+     */
+    compliance_rating: ComplianceRating;
+    /**
+     * Comprehensive explanation of the compliance assessment, including methodology and findings
+     */
+    details: ArcStr;
+    /**
+     * Brief overview of the compliance status and key findings
+     */
+    summary: ArcStr;
+    /**
+     * List of identified non-conformities, gaps, or issues that need to be addressed
+     */
+    findings: ArcStr[];
+    /**
+     * Set of document identifiers that were analyzed during the assessment
+     */
+    sources: string[];
+    /**
+     * Set of specific citations and references supporting the assessment findings
+     */
+    references?: Citation[];
+}
+
+export interface Suggestion {
+    kind: SuggestionKind;
+    description: ArcStr;
+    content: ArcStr;
+}
+
+export interface UserConfig {
+    user: UserBaseConfig;
+    admin: AdminConfig;
+}
+
+export interface UserBaseConfig {}
+
+export interface AdminConfig {
+    embed_config: EmbedConfig;
+    llm_config: LlmConfig;
+}
+
+export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
+
+export interface ReportFilterConfig {
+    sections_to_include: VersionedIdType[] | undefined;
+    requirements_to_include: VersionedIdType[] | undefined;
 }
 
 export interface Claims {
@@ -541,122 +594,69 @@ export type DeleteEvent = { File: IdType };
 
 export type CreateEvent = { File: IdType } | { Report: IdType };
 
-export interface ReportFilterConfig {
-    sections_to_include: VersionedIdType[] | undefined;
-    requirements_to_include: VersionedIdType[] | undefined;
+export interface LlmConfig {
+    model: LlmModel;
+    temperature: number | undefined;
 }
 
-/**
- * Collection of processed and analyzed text chunks extracted from a document
- */
-export interface DocumentDataExtractionResponse {
-    /**
-     * Vector of processed text chunks with their quality metrics and content analysis
-     */
-    chunks: DocumentTextChunk[];
-}
-
-export interface DocumentTextChunk {
-    /**
-     * The processed and potentially reformatted text content. While the content may be reformatted in terms of punctuation and line breaks, the actual content must be replicated exactly.
-     */
-    content: ArcStr;
-    /**
-     * Information value score indicating the chunk\'s relevance and usefulness. Score from 0.0 to 1.0 indicating the information value of the chunk
-     */
-    information_value: number;
-    /**
-     * Ratio of well-formed, meaningful sentences to total sentences. Score from 0.0 to 1.0 indicating the ratio of meaningful sentences in the chunk
-     */
-    meaningful_sentence_ratio: number;
-    /**
-     * Score indicating the level of content repetition. Score from 0.0 to 1.0 indicating the level of content repetition (lower is better)
-     */
-    repetition_score: number;
-    /**
-     * The type of content in this chunk. Classification of the content type in this chunk
-     */
-    content_type: ContentType;
-}
-
-export interface SectionAssessment {
-    section_id?: IdType | undefined;
-    abstract_text: ArcStr;
-    compliance_rating: ComplianceRating;
-    requirement_assessments?: RequirementAssessment[];
-}
-
-export interface ReportAbstractAndTitle {
-    abstract_text: ArcStr;
-    title: ArcStr;
-}
-
-export interface RequirementAssessment {
-    /**
-     * ID reference to the requirement being assessed
-     */
-    requirement_id?: IdType | undefined;
-    /**
-     * The compliance rating indicating the level of conformity with the requirement
-     */
-    compliance_rating: ComplianceRating;
-    /**
-     * Comprehensive explanation of the compliance assessment, including methodology and findings
-     */
-    details: ArcStr;
-    /**
-     * Brief overview of the compliance status and key findings
-     */
-    summary: ArcStr;
-    /**
-     * List of identified non-conformities, gaps, or issues that need to be addressed
-     */
-    findings: ArcStr[];
-    /**
-     * Set of document identifiers that were analyzed during the assessment
-     */
-    sources: string[];
-    /**
-     * Set of specific citations and references supporting the assessment findings
-     */
-    references?: Citation[];
-}
-
-export interface Suggestion {
-    kind: SuggestionKind;
+export interface Task {
+    id?: IdType;
+    status?: TaskStatus;
+    title: string;
     description: ArcStr;
-    content: ArcStr;
+    task: ArcStr;
+    suggestion: Suggestion | undefined;
+    associated_document: string | undefined;
 }
 
-export interface ChunkId {
-    parent_id: string;
-    index: number;
+export interface Requirement {
+    id: IdType;
+    name: string;
+    description: ArcStr;
+    reference: string | undefined;
 }
 
-export type IdType = string;
-
-export interface UserConfig {
-    user: UserBaseConfig;
-    admin: AdminConfig;
+export interface Section {
+    id: IdType;
+    name: string;
+    description: ArcStr;
 }
 
-export interface UserBaseConfig {}
-
-export interface AdminConfig {
-    embed_config: EmbedConfig;
-    llm_config: LlmConfig;
+export interface File {
+    id: IdType;
+    multipart_upload_id: string | undefined;
+    multipart_upload_part_ids: string[] | undefined;
+    path: string;
+    title: string;
+    extension: FileExtension;
+    size: number;
+    total_chunks: number;
+    uploaded: boolean;
+    created_date: DateTime<Utc>;
+    status: FileStatus;
+    openai_file_id: string | undefined;
 }
 
-export interface EmbedConfig {
-    model: EmbedModel;
-    regulation_vector_search_limit: number;
-    user_documentation_vector_search_limit: number;
-    tokens_per_chunk: number;
-    token_overlap: number;
-    vector_store_id: string | undefined;
+export interface Report {
+    id: IdType;
+    status: ReportStatus;
+    regulatory_framework: RegulatoryFramework;
+    created_date: DateTime<Utc>;
+    title: string;
+    abstract_text: string;
+    compliance_rating: ComplianceRating;
+    section_assessments: SectionAssessment[];
 }
 
-export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
+export interface User {
+    id: IdType;
+    first_name: string;
+    last_name: string;
+    email: Email;
+    job_title: string | undefined;
+    company: string | undefined;
+    config?: UserConfig;
+}
 
 export class IntoUnderlyingByteSource {
   free(): void;
@@ -705,6 +705,8 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
   readonly hydrate: () => void;
+  readonly set_websocket_event_callback: (a: number) => void;
+  readonly get_file_data: (a: number) => number;
   readonly echo: (a: number) => number;
   readonly get_public_auth0_config: () => number;
   readonly exchange_code_for_identity: (a: number) => number;
@@ -725,27 +727,25 @@ export interface InitOutput {
   readonly create_file: (a: number) => number;
   readonly user_exists: () => number;
   readonly is_admin: () => number;
-  readonly get_file_data: (a: number) => number;
-  readonly set_websocket_event_callback: (a: number) => void;
-  readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
-  readonly intounderlyingsink_write: (a: number, b: number) => number;
-  readonly intounderlyingsink_close: (a: number) => number;
-  readonly intounderlyingsink_abort: (a: number, b: number) => number;
+  readonly __wbg_intounderlyingsource_free: (a: number, b: number) => void;
+  readonly intounderlyingsource_pull: (a: number, b: number) => number;
+  readonly intounderlyingsource_cancel: (a: number) => void;
   readonly __wbg_intounderlyingbytesource_free: (a: number, b: number) => void;
   readonly intounderlyingbytesource_type: (a: number) => number;
   readonly intounderlyingbytesource_autoAllocateChunkSize: (a: number) => number;
   readonly intounderlyingbytesource_start: (a: number, b: number) => void;
   readonly intounderlyingbytesource_pull: (a: number, b: number) => number;
   readonly intounderlyingbytesource_cancel: (a: number) => void;
-  readonly __wbg_intounderlyingsource_free: (a: number, b: number) => void;
-  readonly intounderlyingsource_pull: (a: number, b: number) => number;
-  readonly intounderlyingsource_cancel: (a: number) => void;
+  readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
+  readonly intounderlyingsink_write: (a: number, b: number) => number;
+  readonly intounderlyingsink_close: (a: number) => number;
+  readonly intounderlyingsink_abort: (a: number, b: number) => number;
   readonly __wbindgen_export_0: (a: number, b: number) => number;
   readonly __wbindgen_export_1: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_export_2: WebAssembly.Table;
   readonly __wbindgen_export_3: (a: number, b: number) => void;
-  readonly __wbindgen_export_4: (a: number, b: number) => void;
-  readonly __wbindgen_export_5: (a: number, b: number, c: number) => void;
+  readonly __wbindgen_export_4: (a: number, b: number, c: number) => void;
+  readonly __wbindgen_export_5: (a: number, b: number) => void;
   readonly __wbindgen_export_6: (a: number, b: number, c: number) => void;
   readonly __wbindgen_export_7: (a: number, b: number, c: number) => void;
   readonly __wbindgen_export_8: (a: number) => void;

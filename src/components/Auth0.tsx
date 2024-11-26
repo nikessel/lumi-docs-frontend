@@ -49,9 +49,11 @@ const isTokenExpired = (claims: Claims | null): boolean => {
 
 export function LoginButton() {
   const context = useContext(AuthContext);
+
   if (!context) {
     throw new Error("LoginButton must be used within an AuthProvider");
   }
+
   const { login, isLoading, isAuthenticated } = context;
 
   return (

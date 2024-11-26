@@ -78,7 +78,7 @@ const ProtectedContent = ({ children }: ProtectedContentProps) => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8 p-4 bg-gray-50 rounded">
+      <div className="flex justify-between items-center ">
         <div>
           <p className="text-sm text-gray-600">Welcome, {user?.given_name}</p>
           <p className="text-xs text-gray-500">{user?.email}</p>
@@ -119,8 +119,8 @@ export default function TestPage() {
   return (
     <WasmProvider>
       <AuthProvider>
-        <div className="min-h-screen bg-gray-50">
-          <div className="container mx-auto p-8">
+        <div className="">
+          <div className="">
             <div className="flex justify-between items-center mb-8">
               <h1 className="text-3xl font-bold">Test Components</h1>
               <Link href="/">
