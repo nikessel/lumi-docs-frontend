@@ -3,46 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Upload } from "lucide-react";
 import { useUploadManager } from "@/components/test/UploadManagerStore";
-import { FILE_CHUNK_SIZE } from "@/lib/constants";
 import type { FileExtension } from "@wasm";
 import { toast } from "sonner";
-import { ulid } from "ulid";
 
 const SUPPORTED_EXTENSIONS: FileExtension[] = ["pdf", "txt", "md", "zip"];
-
-const processFile = async (file: File) => {
-  const fileId = ulid().toLowerCase();
-  console.debug(`Processing file ${file.name} with ID ${fileId}`);
-  const chunks: Uint8Array[] = [];
-
-  // Process in chunks
-  for (let start = 0; start < file.size; start += FILE_CHUNK_SIZE) {
-    const end = Math.min(start + FILE_CHUNK_SIZE, file.size);
-    const blob = file.slice(start, end);
-    // Convert blob to array buffer then to Uint8Array in one step
-    const arrayBuffer = await blob.arrayBuffer();
-    const chunk = new Uint8Array(arrayBuffer);
-
-    // Debug log for first and last chunk
-    if (start === 0 || end === file.size) {
-      console.debug(
-        `Chunk ${start}-${end} first 10 bytes:`,
-        Array.from(chunk.slice(0, 10)),
-      );
-    }
-
-    chunks.push(chunk);
-  }
-
-  return {
-    file: {
-      id: fileId,
-      path: file.name,
-      size: file.size,
-    },
-    chunks,
-  };
-};
 
 export function FileSelector() {
   const [dragging, setDragging] = useState(false);
@@ -65,13 +29,8 @@ export function FileSelector() {
     if (!selectedFiles.length) return;
 
     try {
-      const processedFiles = await Promise.all(
-        selectedFiles.map((file) => processFile(file)),
-      );
-
-      await uploadManager.uploadFiles(processedFiles);
+      await uploadManager.uploadFiles(selectedFiles);
       setSelectedFiles([]);
-      toast.success("Files uploaded successfully");
     } catch (error) {
       console.error("Upload error:", error);
       toast.error(
@@ -161,11 +120,22 @@ export function FileSelector() {
               Files selected: {selectedFiles.length}
             </p>
             <Button onClick={handleUpload} disabled={uploadManager.isUploading}>
-              {uploadManager.isUploading ? "Uploading..." : "Upload Files"}
+              {uploadManager.isUploading ? (
+                <>
+                  Uploading {uploadManager.uploadedFiles} of {uploadManager.totalFiles}...
+                </>
+              ) : (
+                "Upload Files"
+              )}
             </Button>
           </div>
           {uploadManager.isUploading && (
-            <Progress value={uploadManager.progress * 100} />
+            <div className="space-y-2">
+              <Progress value={uploadManager.progress * 100} />
+              <p className="text-sm text-gray-600 text-center">
+                {Math.round(uploadManager.progress * 100)}% complete
+              </p>
+            </div>
           )}
           <div className="max-h-40 overflow-y-auto space-y-2">
             {selectedFiles.map((file, index) => (
@@ -186,7 +156,7 @@ export function FileSelector() {
       <div className="text-sm text-gray-500">
         <p>Supported file types: {SUPPORTED_EXTENSIONS.join(", ")}</p>
         <p className="text-red-500 mt-1">
-          Note: Drag & drop for folders and nested zip files are not supported
+          Note: Nested zip files are not supported
         </p>
       </div>
     </div>
