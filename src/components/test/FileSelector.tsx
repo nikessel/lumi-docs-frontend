@@ -7,6 +7,7 @@ import type { FileExtension } from "@wasm";
 import { toast } from "sonner";
 
 const SUPPORTED_EXTENSIONS: FileExtension[] = ["pdf", "txt", "md", "zip"];
+const IGNORED_PATHS = ["__MACOSX", ".DS_Store"];
 
 export function FileSelector() {
   const [dragging, setDragging] = useState(false);
@@ -15,15 +16,56 @@ export function FileSelector() {
   const folderInputRef = useRef<HTMLInputElement>(null);
   const uploadManager = useUploadManager();
 
-  const processFiles = useCallback((files: File[]) => {
-    const validFiles = files.filter((file) => {
-      const ext = file.name.split(".").pop()?.toLowerCase() as FileExtension;
-      return ext && SUPPORTED_EXTENSIONS.includes(ext);
-    });
+  const shouldIgnoreFile = (file: File): boolean => {
+    return IGNORED_PATHS.some(ignoredPath => 
+      file.webkitRelativePath?.includes(ignoredPath) || 
+      file.name.includes(ignoredPath)
+    );
+  };
 
-    console.debug(`Processing ${validFiles.length} valid files`);
-    setSelectedFiles((prev) => [...prev, ...validFiles]);
-  }, []);
+  const processFiles = useCallback((files: File[]) => {
+      // Filter out ignored files first
+      const afterIgnoreFilter = files.filter((file) => !shouldIgnoreFile(file));
+      
+      const validFiles = afterIgnoreFilter.filter((file) => {
+        const ext = file.name.split(".").pop()?.toLowerCase() as FileExtension;
+        return ext && SUPPORTED_EXTENSIONS.includes(ext);
+      });
+
+      // Create a map to track files by name and find duplicates
+      const fileMap = new Map<string, File[]>();
+      validFiles.forEach(file => {
+        const existingFiles = fileMap.get(file.name) || [];
+        fileMap.set(file.name, [...existingFiles, file]);
+      });
+
+      // Find duplicate file names
+      const duplicateNames = Array.from(fileMap.entries())
+        .filter(([, files]) => files.length > 1)
+        .map(([name]) => name);
+
+      // Show warning if duplicates found
+      if (duplicateNames.length > 0) {
+        const message = duplicateNames.length === 1
+          ? `Multiple files named "${duplicateNames[0]}" were selected. Only the first occurrence will be used.`
+          : `Multiple files with the same names were selected: ${duplicateNames.join(", ")}. Only the first occurrence of each will be used.`;
+        
+        toast.warning(message);
+      }
+
+      // Take only the first occurrence of each filename
+      const dedupedFiles = Array.from(fileMap.values()).map(files => files[0]);
+
+      console.debug(`Processing ${dedupedFiles.length} valid files (excluded ${files.length - afterIgnoreFilter.length} ignored files and ${afterIgnoreFilter.length - validFiles.length} unsupported files)`);
+      
+      // Add to existing selection, avoiding duplicates with previously selected files
+      setSelectedFiles((prev) => {
+        const newFiles = dedupedFiles.filter(
+          (newFile) => !prev.some((existingFile) => existingFile.name === newFile.name)
+        );
+        return [...prev, ...newFiles];
+      });
+    }, []);
 
   const handleUpload = async () => {
     if (!selectedFiles.length) return;

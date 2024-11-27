@@ -1,6 +1,5 @@
 import { create } from "zustand";
-import { upload_file_chunk, create_file } from "@wasm";
-import type { FileExtension } from "@wasm";
+import { upload_file_chunk, new_file } from "@wasm";
 import { toast } from "sonner";
 import JSZip from "jszip";
 import { ulid } from "ulid";
@@ -57,25 +56,12 @@ async function processAndUploadFile(
   try {
     console.debug(`Processing file ${file.name} with ID ${fileId}`);
     const fileName = file.name;
-    const extension = fileName.split(".").pop()?.toLowerCase() as FileExtension;
     const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
     
-    // Create file first and wait for response
-    const createResponse = await create_file({
-      input: {
-        id: fileId,
-        path: fileName,
-        title: fileName.split("/").pop() || fileName,
-        extension,
-        size: file.size,
-        total_chunks: totalChunks,
-        uploaded: false,
-        multipart_upload_id: undefined,
-        multipart_upload_part_ids: undefined,
-        created_date: new Date().toISOString(),
-        status: "uploading",
-        openai_file_id: undefined
-      },
+    // Use `new_file` to create the file
+    const createResponse = new_file({
+      path: fileName,
+      size: file.size,
     });
 
     if (createResponse.error) {
