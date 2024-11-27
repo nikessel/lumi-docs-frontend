@@ -4463,6 +4463,15 @@
     "read-cache" "^1.0.0"
     "resolve" "^1.1.7"
 
+"postcss-import@^16.1.0":
+  "integrity" "sha512-7hsAZ4xGXl4MW+OKEWCnF6T5jqBw80/EE9aXg1r2yyn1RsVEU8EtKXbijEODa+rg7iih4bKf7vlvTGYR4CnPNg=="
+  "resolved" "https://registry.npmjs.org/postcss-import/-/postcss-import-16.1.0.tgz"
+  "version" "16.1.0"
+  dependencies:
+    "postcss-value-parser" "^4.0.0"
+    "read-cache" "^1.0.0"
+    "resolve" "^1.1.7"
+
 "postcss-js@^4.0.1":
   "integrity" "sha512-dDLF8pEO191hJMtlHFPRa8xsizHaM82MLfNkUHdUtVEV3tgTp5oj+8qbEqYM57SLfc74KSbw//4SeJma2LRVIw=="
   "resolved" "https://registry.npmjs.org/postcss-js/-/postcss-js-4.0.1.tgz"
@@ -4493,6 +4502,11 @@
     "cssesc" "^3.0.0"
     "util-deprecate" "^1.0.2"
 
+"postcss-simple-vars@^7.0.1":
+  "integrity" "sha512-5GLLXaS8qmzHMOjVxqkk1TZPf1jMqesiI7qLhnlyERalG0sMbHIbJqrcnrpmZdKCLglHnRHoEBB61RtGTsj++A=="
+  "resolved" "https://registry.npmjs.org/postcss-simple-vars/-/postcss-simple-vars-7.0.1.tgz"
+  "version" "7.0.1"
+
 "postcss-value-parser@^3.3.0":
   "integrity" "sha512-pISE66AbVkp4fDQ7VHBwRNXzAAKJjw4Vw7nWI/+Q3vuly7SNfgYXvm6i5IgFylHGK5sP/xHAbB7N49OS4gWNyQ=="
   "resolved" "https://registry.npmjs.org/postcss-value-parser/-/postcss-value-parser-3.3.1.tgz"
@@ -4503,7 +4517,7 @@
   "resolved" "https://registry.npmjs.org/postcss-value-parser/-/postcss-value-parser-4.2.0.tgz"
   "version" "4.2.0"
 
-"postcss@^8.0.0", "postcss@^8.1.0", "postcss@^8.2.14", "postcss@^8.4.21", "postcss@^8.4.47", "postcss@^8.4.49", "postcss@>=8.0.9":
+"postcss@^8.0.0", "postcss@^8.1.0", "postcss@^8.2.1", "postcss@^8.2.14", "postcss@^8.4.21", "postcss@^8.4.47", "postcss@^8.4.49", "postcss@>=8.0.9":
   "integrity" "sha512-OCVPnIObs4N29kxTjzLfUryOkvZEq+pf8jTF0lg8E7uETuWHA+v7j3c/xJmiqpX450191LlmZfUKkXxkTry7nA=="
   "resolved" "https://registry.npmjs.org/postcss/-/postcss-8.4.49.tgz"
   "version" "8.4.49"
@@ -5029,7 +5043,7 @@
     "invariant" "^2.2.4"
     "tslib" "^2.0.0"
 
-"react@*", "react@^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0-rc", "react@^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc", "react@^16.8.0 || ^17.0.0 || ^18.0.0", "react@^16.x || ^17.x || ^18.x || ^19.x", "react@^18.0.0 || ^19.0.0 || ^19.0.0-rc", "react@^18.2.0", "react@^18.2.0 || 19.0.0-rc-02c0e824-20241028", "react@^18.3.1", "react@>= 16.8.0 || 17.x.x || ^18.0.0-0 || ^19.0.0-0", "react@>=16.0.0", "react@>=16.11.0", "react@>=16.9.0", "react@>=18.0.0":
+"react@*", "react@^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0-rc", "react@^16.8 || ^17.0 || ^18.0 || ^19.0 || ^19.0.0-rc", "react@^16.8.0 || ^17.0.0 || ^18.0.0", "react@^16.x || ^17.x || ^18.x || ^19.x", "react@^18", "react@^18.0.0 || ^19.0.0 || ^19.0.0-rc", "react@^18.2.0 || 19.0.0-rc-02c0e824-20241028", "react@^18.3.1", "react@>= 16.8.0 || 17.x.x || ^18.0.0-0 || ^19.0.0-0", "react@>=16.0.0", "react@>=16.11.0", "react@>=16.9.0", "react@>=18.0.0":
   "integrity" "sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ=="
   "resolved" "https://registry.npmjs.org/react/-/react-18.3.1.tgz"
   "version" "18.3.1"

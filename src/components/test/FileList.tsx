@@ -182,8 +182,8 @@ export function FileList() {
                         downloadFile(
                           file.id,
                           file.title ||
-                            file.path ||
-                            `${file.id}.${file.extension}`,
+                          file.path ||
+                          `${file.id}.${file.extension}`,
                           file.extension === "pdf"
                             ? "application/pdf"
                             : "application/octet-stream",

@@ -1,6 +1,5 @@
 import type { Config } from "tailwindcss";
-const colors = require('./src/styles/colors');
-import { selectedTheme } from "./antd-config";
+const theme = require('./src/styles/theme');
 
 const config: Config = {
   darkMode: ["class"],
@@ -12,29 +11,37 @@ const config: Config = {
   theme: {
     extend: {
       fontSize: {
-        small_custom: '12px',
-        default_custom: '14px',
-        h1_custom: '38px',
-        h2_custom: '30px',
-        h3_custom: '24px',
-        h4_custom: '20px',
-        h5_custom: '16px',
-        h6_custom: '14px',
+        small_custom: theme.fontSizes.small,
+        default_custom: theme.fontSizes.default,
+        h1_custom: theme.fontSizes.h1,
+        h2_custom: theme.fontSizes.h2,
+        h3_custom: theme.fontSizes.h3,
+        h4_custom: theme.fontSizes.h4,
+        h5_custom: theme.fontSizes.h5,
+        h6_custom: theme.fontSizes.h6,
       },
       colors: {
-        'primary': colors[selectedTheme].primary,
-        'text_primary': colors[selectedTheme].text_primary,
-        'text_secondary': colors[selectedTheme].text_secondary,
+        primary: theme.colors.primary,
+        text_primary: theme.colors.text_primary,
+        text_secondary: theme.colors.text_secondary,
+        bg_primary: theme.colors.bg_primary,
+        bg_secondary: theme.colors.bg_secondary,
+        muted: theme.colors.muted,
+      },
+      borderRadius: {
+        default: theme.borderRadius.default,
+        large: theme.borderRadius.large,
       },
     },
     container: {
       center: true,
-      padding: '2rem',
+      padding: "2rem",
       screens: {
         "2xl": "1400px",
       },
-    }
+    },
   },
-  plugins: [require("tailwindcss-animate"), require('tailwind-scrollbar')],
+  plugins: [require("tailwindcss-animate"), require("tailwind-scrollbar")],
 };
+
 export default config;

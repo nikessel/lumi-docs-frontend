@@ -1,30 +1,29 @@
 import type { ThemeConfig } from 'antd';
-const colors = require('./src/styles/colors');
+const theme = require('./src/styles/theme');
 
 export const selectedTheme = "defaultTheme"
 
 export const antdconfig: ThemeConfig = {
     token: {
-        colorPrimary: colors[selectedTheme].primary,
-        colorBgLayout: colors[selectedTheme].bg_content,
-        colorTextDescription: colors[selectedTheme].text_secondary,
+        colorPrimary: theme.colors.primary,
+        colorBgLayout: theme.colors.bg_content,
+        colorTextDescription: theme.colors.text_secondary,
     },
     components: {
         Layout: {
-            siderBg: colors[selectedTheme].bg_primary,
+            siderBg: theme.colors.bg_primary,
         },
         Button: {
-            defaultHoverColor: colors[selectedTheme].fg_primary_dim,
+            defaultHoverColor: theme.colors.fg_primary_dim,
             defaultHoverBorderColor: "none",
-            colorLink: colors[selectedTheme].primary,
-            colorLinkHover: colors[selectedTheme].primary
+            colorLink: theme.colors.primary,
+            colorLinkHover: theme.colors.primary,
         },
         Menu: {
-            itemBg: colors[selectedTheme].bg_primary,
-            itemColor: colors[selectedTheme].fg_primary,
-            itemSelectedBg: colors[selectedTheme].bg_secondary,
-            itemSelectedColor: colors[selectedTheme].fg_primary,
-            itemHoverColor: colors[selectedTheme].fg_secondary_dim,
+            itemBg: theme.colors.bg_primary,
+            itemColor: theme.colors.fg_primary,
+            itemSelectedBg: theme.colors.bg_secondary,
+            itemSelectedColor: theme.colors.fg_primary,
         },
-    }
+    },
 };

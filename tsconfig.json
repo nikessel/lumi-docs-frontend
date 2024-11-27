@@ -48,6 +48,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "eslint.config.mjs" // Add this line
+    ,
+    "src/utils/report-utils"
   ],
   "exclude": [
     "node_modules",

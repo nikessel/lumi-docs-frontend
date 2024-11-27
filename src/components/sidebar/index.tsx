@@ -3,11 +3,10 @@
 'use client';
 import React, { useState, useEffect } from "react";
 import { Layout, Menu, Divider } from "antd";
-import { FilePdfOutlined, FileDoneOutlined, BarChartOutlined, SettingOutlined } from "@ant-design/icons";
+import { FilePdfOutlined, FileDoneOutlined, BarChartOutlined, FileSearchOutlined, SettingOutlined, CreditCardOutlined, LogoutOutlined } from "@ant-design/icons";
 import SidebarToggleButton from "./sider-toggle-button";
 import SiderLogo from "./sider-logo";
 import Link from 'next/link';
-import UserSettings from "./user-settings";
 
 const { Sider } = Layout;
 
@@ -49,8 +48,7 @@ const AppSiderComponent: React.FC = ({ }) => {
                 <div>
                     {showToggleButton && <SidebarToggleButton collapsed={collapsed} onToggle={toggleCollapse} />}
                     <SiderLogo collapsed={collapsed} />
-                    <Divider style={{ borderColor: '#EAF3FF' }} />
-
+                    <Divider ></Divider>
                     <Menu
                         mode="inline"
                         defaultSelectedKeys={["1"]}
@@ -69,9 +67,37 @@ const AppSiderComponent: React.FC = ({ }) => {
                                 key: "3",
                                 icon: <FilePdfOutlined />,
                                 label: <Link href="/files">Files</Link>,
+                            },
+                            {
+                                key: "4",
+                                icon: <FileSearchOutlined />,
+                                label: <Link href="/files">Standards</Link>,
                             }
                         ]}
                     />
+                    <Divider orientation="left"><div className="text-xs">Account</div></Divider>
+                    <Menu
+                        mode="inline"
+                        defaultSelectedKeys={["1"]}
+                        items={[
+                            {
+                                key: "5",
+                                icon: <SettingOutlined />,
+                                label: <Link href="/">Settings</Link>,
+                            },
+                            {
+                                key: "6",
+                                icon: <CreditCardOutlined />,
+                                label: <Link href="/">Billing</Link>,
+                            },
+                            {
+                                key: "7",
+                                icon: <LogoutOutlined />,
+                                label: <Link href="/">Sign out</Link>,
+                            }
+                        ]}
+                    />
+
                 </div>
 
             </div>
