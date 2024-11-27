@@ -5,65 +5,56 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { Category, Requirement, VersionedIdType } from "@wasm";
+import type { Section, Requirement, IdType } from "@wasm";
 
 export function ReportCreator() {
   const { wasmModule } = useWasm();
   const { isAuthenticated } = useAuth();
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
   const [requirements, setRequirements] = useState<Requirement[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<
-    VersionedIdType[]
-  >([]);
-  const [selectedRequirements, setSelectedRequirements] = useState<
-    VersionedIdType[]
-  >([]);
-  const [showCategorySelection, setShowCategorySelection] = useState(false);
-  const [showRequirementSelection, setShowRequirementSelection] =
-    useState(false);
+  const [selectedSections, setSelectedSections] = useState<IdType[]>([]);
+  const [selectedRequirements, setSelectedRequirements] = useState<IdType[]>([]);
+  const [showSectionSelection, setShowSectionSelection] = useState(false);
+  const [showRequirementSelection, setShowRequirementSelection] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch categories and requirements when the component mounts
+  // Fetch sections and requirements when the component mounts
   useEffect(() => {
     const fetchData = async () => {
       if (!wasmModule) return;
 
       try {
-        const categoriesResponse = await wasmModule.get_categories();
+        const sectionsResponse = await wasmModule.get_categories(); // Assuming get_categories now returns sections
         const requirementsResponse = await wasmModule.get_requirements();
 
-        if (categoriesResponse.output && requirementsResponse.output) {
-          setCategories(categoriesResponse.output.output);
+        if (sectionsResponse.output && requirementsResponse.output) {
+          setSections(sectionsResponse.output.output);
           setRequirements(requirementsResponse.output.output);
         }
       } catch (err) {
         console.error("Error fetching data:", err);
-        setError("Failed to fetch categories and requirements");
+        setError("Failed to fetch sections and requirements");
       }
     };
 
     fetchData();
   }, [wasmModule]);
 
-  const handleCategoryChange = (id: VersionedIdType, checked: boolean) => {
-    setSelectedCategories((prev) =>
-      checked
-        ? [...prev, id]
-        : prev.filter((item) => !(item[0] === id[0] && item[1] === id[1])),
+  const handleSectionChange = (id: IdType, checked: boolean) => {
+    setSelectedSections((prev) =>
+      checked ? [...prev, id] : prev.filter((item) => item !== id)
     );
   };
 
-  const handleRequirementChange = (id: VersionedIdType, checked: boolean) => {
+  const handleRequirementChange = (id: IdType, checked: boolean) => {
     setSelectedRequirements((prev) =>
-      checked
-        ? [...prev, id]
-        : prev.filter((item) => !(item[0] === id[0] && item[1] === id[1])),
+      checked ? [...prev, id] : prev.filter((item) => item !== id)
     );
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setSuccessMessage("");
@@ -78,9 +69,9 @@ export function ReportCreator() {
     try {
       const input = {
         input: {
-          categories_to_include:
-            showCategorySelection && selectedCategories.length > 0
-              ? selectedCategories
+          sections_to_include:
+            showSectionSelection && selectedSections.length > 0
+              ? selectedSections
               : undefined,
           requirements_to_include:
             showRequirementSelection && selectedRequirements.length > 0
@@ -92,13 +83,20 @@ export function ReportCreator() {
       const response = await wasmModule.create_report(input);
       if (response.output) {
         setSuccessMessage(
-          `Report created successfully with ID: ${response.output.output}`,
+          `Report created successfully with ID: ${response.output.output}`
         );
-        // Optionally reset selections
-        setSelectedCategories([]);
+        setSelectedSections([]);
         setSelectedRequirements([]);
       } else if (response.error) {
-        setError(response.error.message);
+        // Format error details including the error kind
+        const errorMessage = `${response.error.kind}: ${response.error.message}`;
+        setError(errorMessage);
+        
+        // Log full error object for debugging
+        console.error("Report creation failed:", {
+          kind: response.error.kind,
+          message: response.error.message
+        });
       }
     } catch (err) {
       console.error("Error creating report:", err);
@@ -106,7 +104,7 @@ export function ReportCreator() {
     } finally {
       setIsSubmitting(false);
     }
-  };
+};
 
   if (!isAuthenticated) {
     return (
@@ -135,16 +133,16 @@ export function ReportCreator() {
             </Alert>
           )}
 
-          {/* Toggle Buttons for Category and Requirement Selections */}
+          {/* Toggle Buttons for Section and Requirement Selections */}
           <div className="flex space-x-2">
             <Button
               type="button"
-              onClick={() => setShowCategorySelection(!showCategorySelection)}
+              onClick={() => setShowSectionSelection(!showSectionSelection)}
               className="w-full"
             >
-              {showCategorySelection
-                ? "Hide Category Selection"
-                : "Select Categories"}
+              {showSectionSelection
+                ? "Hide Section Selection"
+                : "Select Sections"}
             </Button>
 
             <Button
@@ -160,33 +158,29 @@ export function ReportCreator() {
             </Button>
           </div>
 
-          {/* Conditionally Render Category Selection Menu */}
-          {showCategorySelection && (
+          {/* Conditionally Render Section Selection Menu */}
+          {showSectionSelection && (
             <div>
-              <h3 className="text-lg font-semibold mb-2">Select Categories</h3>
-              {categories.length === 0 && <p>No categories available.</p>}
+              <h3 className="text-lg font-semibold mb-2">Select Sections</h3>
+              {sections.length === 0 && <p>No sections available.</p>}
               <div className="max-h-64 overflow-y-auto border p-2 rounded">
-                {categories.map((category) => (
+                {sections.map((section) => (
                   <div
-                    key={`${category.id[0]}-${category.id[1]}`}
+                    key={`section-${section.id}`}
                     className="flex items-center mb-2"
                   >
                     <Checkbox
-                      id={`category-${category.id[0]}-${category.id[1]}`}
-                      checked={selectedCategories.some(
-                        (item) =>
-                          item[0] === category.id[0] &&
-                          item[1] === category.id[1],
-                      )}
+                      id={`section-${section.id}`}
+                      checked={selectedSections.includes(section.id)}
                       onCheckedChange={(checked) =>
-                        handleCategoryChange(category.id, checked as boolean)
+                        handleSectionChange(section.id, checked as boolean)
                       }
                     />
                     <label
-                      htmlFor={`category-${category.id[0]}-${category.id[1]}`}
+                      htmlFor={`section-${section.id}`}
                       className="ml-2"
                     >
-                      {category.name}
+                      {section.name}
                     </label>
                   </div>
                 ))}
@@ -204,25 +198,21 @@ export function ReportCreator() {
               <div className="max-h-64 overflow-y-auto border p-2 rounded">
                 {requirements.map((requirement) => (
                   <div
-                    key={`${requirement.id[0]}-${requirement.id[1]}`}
+                    key={`requirement-${requirement.id}`}
                     className="flex items-center mb-2"
                   >
                     <Checkbox
-                      id={`requirement-${requirement.id[0]}-${requirement.id[1]}`}
-                      checked={selectedRequirements.some(
-                        (item) =>
-                          item[0] === requirement.id[0] &&
-                          item[1] === requirement.id[1],
-                      )}
+                      id={`requirement-${requirement.id}`}
+                      checked={selectedRequirements.includes(requirement.id)}
                       onCheckedChange={(checked) =>
                         handleRequirementChange(
                           requirement.id,
-                          checked as boolean,
+                          checked as boolean
                         )
                       }
                     />
                     <label
-                      htmlFor={`requirement-${requirement.id[0]}-${requirement.id[1]}`}
+                      htmlFor={`requirement-${requirement.id}`}
                       className="ml-2"
                     >
                       {requirement.name}
