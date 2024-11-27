@@ -26,7 +26,6 @@ const config: Config = {
         'text_primary': colors[selectedTheme].text_primary,
         'text_secondary': colors[selectedTheme].text_secondary,
       },
-
     },
     container: {
       center: true,
