@@ -3,28 +3,27 @@ import type { Section } from "@wasm";
 
 import type * as WasmModule from "@wasm";
 
-const DB_NAME = "CategoriesCacheDB";
-const STORE_NAME = "categories";
-const META_STORE_NAME = "meta";
+const DB_NAME = "SectionsCacheDB";
+const STORE_NAME = "sections";
 const DB_VERSION = 1;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
-export async function fetchCategories(
+export async function fetchSections(
     wasmModule: typeof WasmModule | null
 ): Promise<{
-    categories: Section[];
+    sections: Section[];
     error: string | null;
 }> {
     const result: {
-        categories: Section[];
+        sections: Section[];
         error: string | null;
     } = {
-        categories: [],
+        sections: [],
         error: null,
     };
 
-    // Fetch cached categories
-    const cachedCategories = await getData<Section>(DB_NAME, STORE_NAME, DB_VERSION);
+    // Fetch cached sections
+    const cachedSections = await getData<Section>(DB_NAME, STORE_NAME, DB_VERSION);
     const isFullFetch = await getMetadata(DB_NAME, "fullFetch", DB_VERSION);
     const lastFetchTimestamp = await getMetadata(DB_NAME, "lastFetch", DB_VERSION);
 
@@ -32,9 +31,9 @@ export async function fetchCategories(
         ? Date.now() - lastFetchTimestamp > CACHE_TTL
         : true;
 
-    if (cachedCategories.length > 0 && !isExpired && isFullFetch) {
-        console.log("Using cached categories data");
-        result.categories = cachedCategories;
+    if (cachedSections.length > 0 && !isExpired && isFullFetch) {
+        console.log("Using cached sections data");
+        result.sections = cachedSections;
         return result;
     }
 
@@ -43,26 +42,26 @@ export async function fetchCategories(
         return result;
     }
 
-    console.log("Fetching fresh categories data");
+    console.log("Fetching refreshing sections data");
 
     try {
-        const response = await wasmModule.get_categories();
+        const response = await wasmModule.get_all_sections();
 
         if (response.output) {
-            const categoriesData = response.output.output;
+            const sectionsData = response.output.output;
 
-            // Save categories and metadata
-            await saveData(DB_NAME, STORE_NAME, categoriesData, DB_VERSION, true);
+            // Save sections and metadata
+            await saveData(DB_NAME, STORE_NAME, sectionsData, DB_VERSION, true);
             await saveMetadata(DB_NAME, "fullFetch", true, DB_VERSION);
             await saveMetadata(DB_NAME, "lastFetch", Date.now(), DB_VERSION);
 
-            result.categories = categoriesData;
+            result.sections = sectionsData;
         } else if (response.error) {
             result.error = response.error.message;
         }
     } catch (err) {
-        console.error("Error fetching categories:", err);
-        result.error = "Failed to fetch categories";
+        console.error("Error fetching sections:", err);
+        result.error = "Failed to fetch sections";
     }
 
     return result;

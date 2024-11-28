@@ -26,8 +26,8 @@ export function ReportCreator() {
       if (!wasmModule) return;
 
       try {
-        const sectionsResponse = await wasmModule.get_categories(); // Assuming get_categories now returns sections
-        const requirementsResponse = await wasmModule.get_requirements();
+        const sectionsResponse = await wasmModule.get_all_sections(); // Assuming get_categories now returns sections
+        const requirementsResponse = await wasmModule.get_all_requirements();
 
         if (sectionsResponse.output && requirementsResponse.output) {
           setSections(sectionsResponse.output.output);

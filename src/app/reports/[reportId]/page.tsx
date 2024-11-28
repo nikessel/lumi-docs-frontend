@@ -11,7 +11,7 @@ import { useWasm } from "@/components/WasmProvider";
 import { formatRegulatoryFramework } from '@/utils/helpers';
 import SectionCard from './sections-selector';
 import SectionMetaList from './section-meta-list';
-import { fetchCategories } from '@/utils/sections-utils';
+import { fetchSections } from '@/utils/sections-utils';
 
 const { Option } = Select;
 
@@ -59,7 +59,7 @@ const ReportPage = () => {
 
         const getCategoriesTest = async () => {
             console.log("RUNNING GET CATEGORIES")
-            const res = await fetchCategories(wasmModule)
+            const res = await fetchSections(wasmModule)
             console.log("?????", res)
         }
         getCategoriesTest()

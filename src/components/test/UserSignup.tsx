@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface UserSignupProps {
-  onProfileUpdate: () => void; // New prop to notify profile update
+  onProfileUpdate: () => void;  // Takes no parameters
 }
 
 const UserSignup = ({ onProfileUpdate }: UserSignupProps) => {
@@ -78,6 +78,7 @@ const UserSignup = ({ onProfileUpdate }: UserSignupProps) => {
       }
     } catch (error) {
       setError("Failed to create user");
+      console.error("Error creating user:", error);
     } finally {
       setIsSubmitting(false);
     }
