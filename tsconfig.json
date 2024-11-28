@@ -35,10 +35,10 @@
         "./public/pkg/*"
       ],
       "@wasm": [
-        "./public/pkg/lumi_docs_app"
+        "./public/pkg/app"
       ],
       "@wasm/*": [
-        "./public/pkg/lumi_docs_app/*"
+        "./public/pkg/app/*"
       ]
     }
   },

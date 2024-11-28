@@ -11,10 +11,10 @@ import { useWasm } from "@/components/WasmProvider";
 import { formatRegulatoryFramework } from '@/utils/helpers';
 import SectionCard from './sections-selector';
 import SectionMetaList from './section-meta-list';
-import { fetchCategories } from '@/utils/sections-utils';
 import { useSearchParams } from 'next/navigation'; // Import useSearchParams
 import ReportSectionSelector from './report-section-selector'; // Import new helper component
 import ReportCreatedOn from './created-on'; // Import new component
+import { fetchSections } from '@/utils/sections-utils';
 
 const { Option } = Select;
 
@@ -71,6 +71,7 @@ const ReportPage = () => {
 
         if (selectedReportsIds.length > 0) {
             fetchReports();
+
         }
     }, []);
 

@@ -1,11 +1,14 @@
 import { saveData, getData, getMetadata, saveMetadata } from "@/utils/db-utils"
-
 import type { Report } from "@wasm";
 import type * as WasmModule from "@wasm";
 
+// Extended type for cached reports
+interface CachedReport extends Report {
+  timestamp?: number;
+}
+
 const DB_NAME = "ReportsCacheDB";
 const STORE_NAME = "reports";
-const META_STORE_NAME = "meta";
 const DB_VERSION = 1;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
@@ -26,7 +29,7 @@ export async function fetchReports(
         error: null,
     };
 
-    const cachedReports = await getData<Report>(DB_NAME, STORE_NAME, DB_VERSION);
+    const cachedReports = await getData<CachedReport>(DB_NAME, STORE_NAME, DB_VERSION);
     const isFullFetch = await getMetadata(DB_NAME, "fullFetch", DB_VERSION);
     const lastFetchTimestamp = await getMetadata(DB_NAME, "lastFetch", DB_VERSION);
 
@@ -46,13 +49,12 @@ export async function fetchReports(
     }
 
     try {
-        const response = await wasmModule.get_reports();
+        const response = await wasmModule.get_all_reports();
         console.log("WASM response:", response);
 
         if (response.output) {
             const reportsData = response.output.output;
             console.log("Reports data:", reportsData);
-
 
             // Save reports and metadata
             console.log("about to save data")
@@ -67,7 +69,7 @@ export async function fetchReports(
             console.error("WASM error:", response.error.message);
             result.error = response.error.message;
         }
-    } catch (err) {
+    } catch (err: unknown) {
         console.error("Error fetching reports:", err);
         result.error = "Failed to fetch reports";
     }
@@ -85,11 +87,11 @@ export async function fetchReportById(
     };
 
     // Fetch cached report
-    const cachedReports = await getData<Report>(DB_NAME, STORE_NAME, DB_VERSION);
+    const cachedReports = await getData<CachedReport>(DB_NAME, STORE_NAME, DB_VERSION);
     const cachedReport = cachedReports.find((report) => report.id === reportId);
 
-    const isExpired = cachedReport
-        ? Date.now() - (cachedReport as any).timestamp > CACHE_TTL
+    const isExpired = cachedReport?.timestamp
+        ? Date.now() - cachedReport.timestamp > CACHE_TTL
         : true;
 
     if (cachedReport && !isExpired) {
@@ -118,7 +120,7 @@ export async function fetchReportById(
         } else if (response.error) {
             result.error = response.error.message;
         }
-    } catch (err) {
+    } catch (err: unknown) {
         console.error(`Error fetching report for ID: ${reportId}`, err);
         result.error = "Failed to fetch report";
     }

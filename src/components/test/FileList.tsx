@@ -107,7 +107,7 @@ export function FileList() {
     }
 
     try {
-      const response = await wasmModule.get_files();
+      const response = await wasmModule.get_all_files();
       if (response.output) {
         setFiles(response.output.output);
       } else if (response.error) {

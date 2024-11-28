@@ -1,6 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { ReactNode } from 'react';
 import { AuthProvider, LoginButton, useAuth } from "@/components/Auth0";
 import { Button } from "@/components/ui/button";
 
@@ -10,38 +11,42 @@ const WasmProvider = dynamic(() => import("@/components/WasmProvider"), {
   loading: () => <div>Loading WASM provider...</div>,
 });
 
-const Echo = dynamic(() => import("@/components/Echo"), {
+const Echo = dynamic(() => import("@/components/test/Echo"), {
   ssr: false,
   loading: () => <div>Loading Echo component...</div>,
 });
 
-const Auth0Config = dynamic(() => import("@/components/Auth0Config"), {
+const Auth0Config = dynamic(() => import("@/components/test/Auth0Config"), {
   ssr: false,
   loading: () => <div>Loading Auth0Config component...</div>,
 });
 
-const TokenExchange = dynamic(() => import("@/components/TokenExchange"), {
+const TokenExchange = dynamic(() => import("@/components/test/TokenExchange"), {
   ssr: false,
   loading: () => <div>Loading Token Exchange component...</div>,
 });
 
-const TokenClaims = dynamic(() => import("@/components/TokenClaims"), {
+const TokenClaims = dynamic(() => import("@/components/test/TokenClaims"), {
   ssr: false,
   loading: () => <div>Loading Token Claims component...</div>,
 });
 
-const AppVersion = dynamic(() => import("@/components/AppVersion"), {
+const AppVersion = dynamic(() => import("@/components/test/AppVersion"), {
   ssr: false,
   loading: () => <div>Loading App Version component...</div>,
 });
 
-const UserSignup = dynamic(() => import("@/components/UserSignup"), {
+const UserSignup = dynamic(() => import("@/components/test/UserSignup"), {
   ssr: false,
   loading: () => <div>Loading User Signup component...</div>,
 });
 
 // Protected content wrapper
-const ProtectedContent = ({ children }) => {
+type ProtectedContentProps = {
+  children: ReactNode;
+};
+
+const ProtectedContent = ({ children }: ProtectedContentProps) => {
   const { isAuthenticated, isLoading, user, logout } = useAuth();
 
   if (isLoading) {
@@ -70,7 +75,7 @@ const ProtectedContent = ({ children }) => {
           <p className="text-xs text-gray-500">{user?.email}</p>
         </div>
         <button
-          onClick={logout}
+          onClick={() => logout()}
           className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
         >
           Logout
@@ -82,7 +87,12 @@ const ProtectedContent = ({ children }) => {
 };
 
 // Test component wrapper for consistent styling
-const TestComponent = ({ title, children }) => (
+type TestComponentProps = {
+  title: string;
+  children: ReactNode;
+};
+
+const TestComponent = ({ title, children }: TestComponentProps) => (
   <div className="bg-white rounded-lg shadow p-6">
     <h2 className="text-xl font-semibold mb-4">{title}</h2>
     {children}
@@ -90,6 +100,12 @@ const TestComponent = ({ title, children }) => (
 );
 
 export default function TestPage() {
+  const handleProfileUpdate = () => {
+    // No parameters needed since UserSignupProps expects a function with no parameters
+    console.log('Profile updated');
+    // Handle profile update logic here
+  };
+
   return (
     <WasmProvider>
       <AuthProvider>
@@ -119,7 +135,7 @@ export default function TestPage() {
             <ProtectedContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <TestComponent title="User Signup">
-                  <UserSignup />
+                  <UserSignup onProfileUpdate={handleProfileUpdate} />
                 </TestComponent>
 
                 <TestComponent title="Auth0 Config">

@@ -27,7 +27,7 @@ const nextConfig = {
      ...config.resolve.alias,
      "@": path.resolve(__dirname, "./src"),
      "@pkg": path.resolve(__dirname, "./public/pkg"),
-     "@wasm": path.resolve(__dirname, "./public/pkg/lumi_docs_app"),
+     "@wasm": path.resolve(__dirname, "./public/pkg/app"),
    };
    // Optimize for WebAssembly
    if (!isServer) {

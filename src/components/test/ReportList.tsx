@@ -21,7 +21,7 @@ export function ReportList() {
     }
 
     try {
-      const response = await wasmModule.get_reports();
+      const response = await wasmModule.get_all_reports();
       if (response.output) {
         const reportsData = response.output.output;
         setReports(reportsData);

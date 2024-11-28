@@ -1,16 +1,11 @@
 import { create } from "zustand";
-import { upload_file_chunk, create_file } from "@wasm";
-import type { FileExtension } from "@wasm";
+import { upload_file_chunk, create_file, new_file } from "@wasm";
 import { toast } from "sonner";
+import JSZip from "jszip";
 
-export interface ProcessedFile {
-  file: {
-    id: string;
-    path: string;
-    size: number;
-  };
-  chunks: Uint8Array[];
-}
+const BATCH_SIZE = 10; // Number of files to process simultaneously
+const MAX_RETRIES = 3;
+const CHUNK_SIZE = 1024 * 1024 * 5; // 5MB chunks
 
 interface UploadManagerState {
   isUploading: boolean;
@@ -19,12 +14,124 @@ interface UploadManagerState {
   totalFiles: number;
   estimatedTimeRemaining: number;
   startTime: Date | null;
+  failedFiles: string[];
   setIsUploading: (isUploading: boolean) => void;
   setProgress: (progress: number) => void;
   setUploadedFiles: (uploadedFiles: number) => void;
   setTotalFiles: (totalFiles: number) => void;
-  uploadFiles: (files: ProcessedFile[]) => Promise<void>;
+  uploadFiles: (files: File[]) => Promise<void>;
 }
+
+async function extractFilesFromZip(zipFile: File): Promise<File[]> {
+  const zip = new JSZip();
+  const content = await zip.loadAsync(zipFile);
+  const extractedFiles: File[] = [];
+
+  for (const [path, zipEntry] of Object.entries(content.files)) {
+    if (zipEntry.dir || path.toLowerCase().endsWith('.zip')) {
+      continue;
+    }
+
+    const extension = path.split('.').pop()?.toLowerCase();
+    if (!['pdf', 'txt', 'md'].includes(extension || '')) {
+      continue;
+    }
+
+    const blob = await zipEntry.async('blob');
+    const file = new File([blob], path.split('/').pop() || path, {
+      type: `application/${extension}`,
+    });
+    extractedFiles.push(file);
+  }
+
+  return extractedFiles;
+}
+
+async function processAndUploadFile(
+  file: File,
+  onProgress: (processed: number) => void
+): Promise<void> {
+  try {
+    console.debug(`Processing file ${file.name}`);
+    const fileName = file.name;
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+
+    // Use `new_file` to create the file synchronously and retrieve the response
+    const newFileResponse = new_file({
+      path: fileName,
+      size: file.size,
+    });
+
+    if (!newFileResponse.output) {
+      throw new Error("Failed to generate new file with `new_file`.");
+    }
+
+    // Get the generated File object directly
+    const newFile = newFileResponse.output.output;
+
+    console.debug(`Generated new file:`, newFile);
+
+    // Use `create_file` to finalize file creation asynchronously
+    const createResponse = await create_file({ input: newFile });
+
+    if (createResponse.error) {
+      throw new Error(`File creation error: ${createResponse.error.kind} - ${createResponse.error.message}`);
+    }
+
+    console.debug(`File successfully created on the backend:`, createResponse);
+
+    // Add a small delay after file creation to ensure backend consistency
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+      const start = chunkIndex * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, file.size);
+      const blob = file.slice(start, end);
+      const arrayBuffer = await blob.arrayBuffer();
+      const chunk = new Uint8Array(arrayBuffer);
+
+      let retries = 0;
+      let lastError = null;
+
+      while (retries < MAX_RETRIES) {
+        try {
+          const response = await upload_file_chunk({
+            file_id: newFile.id,
+            chunk: {
+              id: { parent_id: newFile.id, index: chunkIndex },
+              data: chunk,
+            },
+          });
+
+          if (response.error) {
+            throw new Error(`Upload error: ${response.error.kind} - ${response.error.message}`);
+          }
+
+          // If successful, update progress and break retry loop
+          onProgress(chunk.length);
+          break;
+        } catch (error) {
+          lastError = error;
+          retries++;
+          if (retries === MAX_RETRIES) {
+            console.error(`Failed to upload chunk ${chunkIndex} after ${MAX_RETRIES} retries:`, error);
+            throw error;
+          }
+          // Exponential backoff
+          await new Promise((resolve) => setTimeout(resolve, 1000 * Math.pow(2, retries)));
+        }
+      }
+
+      if (lastError) {
+        throw lastError;
+      }
+    }
+  } catch (error) {
+    console.error(`Error processing file ${file.name}:`, error);
+    throw error;
+  }
+}
+
 
 export const useUploadManager = create<UploadManagerState>()((set, get) => ({
   isUploading: false,
@@ -33,13 +140,14 @@ export const useUploadManager = create<UploadManagerState>()((set, get) => ({
   totalFiles: 0,
   estimatedTimeRemaining: 0,
   startTime: null,
+  failedFiles: [],
 
   setIsUploading: (isUploading: boolean) => set({ isUploading }),
   setProgress: (progress: number) => set({ progress }),
   setUploadedFiles: (uploadedFiles: number) => set({ uploadedFiles }),
   setTotalFiles: (totalFiles: number) => set({ totalFiles }),
 
-  uploadFiles: async (files: ProcessedFile[]) => {
+  uploadFiles: async (files: File[]) => {
     const state = get();
     if (state.isUploading) {
       toast.error("An upload is already in progress");
@@ -50,84 +158,69 @@ export const useUploadManager = create<UploadManagerState>()((set, get) => ({
       isUploading: true,
       progress: 0,
       uploadedFiles: 0,
-      totalFiles: files.length,
+      totalFiles: 0,
       startTime: new Date(),
+      failedFiles: [],
     });
 
-    const totalSize = files.reduce((sum, file) => sum + file.file.size, 0);
-    let uploadedSize = 0;
-
     try {
-      // Process files sequentially
+      let allFiles: File[] = [];
+      
+      // Process zip files first
       for (const file of files) {
-        console.debug(`Creating file: ${file.file.path}`);
-
-        await create_file({
-          input: {
-            id: file.file.id,
-            path: file.file.path,
-            title: file.file.path.split("/").pop() || file.file.path,
-            extension: file.file.path
-              .split(".")
-              .pop()
-              ?.toLowerCase() as FileExtension,
-            size: file.file.size,
-            total_chunks: file.chunks.length,
-            uploaded: false,
-            multipart_upload_id: undefined,
-            multipart_upload_part_ids: undefined,
-            created_date: new Date().toISOString(),
-            status: "uploading",
-          },
-        });
-
-        // Upload chunks
-        for (let i = 0; i < file.chunks.length; i++) {
-          console.debug(
-            `Uploading chunk ${i + 1}/${file.chunks.length} for file ${file.file.path}`,
-          );
-
-          const chunk = {
-            id: { parent_id: file.file.id, index: i },
-            data: file.chunks[i],
-          };
-
-          const response = await upload_file_chunk({
-            file_id: file.file.id,
-            chunk,
-          });
-
-          // Check for client-side error in response
-          if (response.error) {
-            const errorKind = response.error.kind || "Unknown Error Kind";
-            const errorMessage =
-              response.error.message || "Unknown Error Message";
-
-            // Log the entire error object for detailed inspection
-            console.error(`Chunk upload error: ${errorKind} - ${errorMessage}`);
-
-            toast.error(
-              `Error uploading chunk: ${errorKind} - ${errorMessage}`,
-            );
-            throw new Error(`Upload failed for chunk ${i + 1}`);
+        if (file.name.toLowerCase().endsWith('.zip')) {
+          try {
+            const extractedFiles = await extractFilesFromZip(file);
+            console.debug(`Extracted ${extractedFiles.length} files from ${file.name}`);
+            allFiles.push(...extractedFiles);
+          } catch (error) {
+            console.error(`Failed to process zip file ${file.name}:`, error);
+            toast.error(`Failed to process zip file: ${file.name}`);
           }
-
-          uploadedSize += file.chunks[i].length;
-          set({
-            progress: uploadedSize / totalSize,
-            uploadedFiles: get().uploadedFiles + 1,
-          });
+        } else {
+          allFiles.push(file);
         }
-
-        console.debug(`Completed upload for file: ${file.file.path}`);
       }
 
-      toast.success(`Upload complete: ${files.length} files uploaded`);
+      const totalSize = allFiles.reduce((sum, file) => sum + file.size, 0);
+      let uploadedSize = 0;
+      const failedFiles: string[] = [];
+
+      set({ totalFiles: allFiles.length });
+      console.debug(`Starting upload of ${allFiles.length} files`);
+
+      // Process files in smaller batches
+      for (let i = 0; i < allFiles.length; i += BATCH_SIZE) {
+        const batch = allFiles.slice(i, i + BATCH_SIZE);
+        await Promise.all(
+          batch.map(async (file) => {
+            try {
+              await processAndUploadFile(file, (processed: number) => {
+                uploadedSize += processed;
+                set({
+                  progress: uploadedSize / totalSize,
+                  uploadedFiles: get().uploadedFiles + 1,
+                });
+              });
+            } catch (error) {
+              failedFiles.push(file.name);
+              console.error(`Failed to upload ${file.name}:`, error);
+            }
+          })
+        );
+
+        // Add a small delay between batches
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      if (failedFiles.length > 0) {
+        toast.error(`Upload completed with ${failedFiles.length} failed files`);
+      } else {
+        toast.success(`Successfully uploaded ${allFiles.length} files`);
+      }
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to upload files",
-      );
+      toast.error(error instanceof Error ? error.message : "Failed to upload files");
     } finally {
       set({ isUploading: false });
     }
