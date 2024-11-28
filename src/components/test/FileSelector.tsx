@@ -104,11 +104,10 @@ export function FileSelector() {
   return (
     <div className="space-y-6">
       <div
-        className={`w-full border-2 rounded-lg flex flex-col items-center justify-center transition-colors p-8 ${
-          dragging
+        className={`w-full border-2 rounded-lg flex flex-col items-center justify-center transition-colors p-8 ${dragging
             ? "border-blue-500 bg-blue-50"
             : "border-dashed border-gray-300 hover:border-blue-400 hover:bg-blue-50"
-        }`}
+          }`}
         onDragOver={(e) => {
           e.preventDefault();
           setDragging(true);
