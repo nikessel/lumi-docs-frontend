@@ -26,9 +26,20 @@ const AdminUploadReport = dynamic(() => import("@/components/test/AdminUploadRep
   loading: () => <div>Loading Report Uploader component...</div>,
 });
 
+const FetchTasks = dynamic(() => import("@/components/test/FetchTasks"), {
+  ssr: false,
+  loading: () => <div>Loading Fetch Tasks component...</div>,
+});
+
+
 const UpdateUserPreferences = dynamic(() => import("@/components/test/UpdateUserPreferences"), {
   ssr: false,
   loading: () => <div>Loading Update User Preferences component...</div>,
+});
+
+const UpdateTaskMisc = dynamic(() => import("@/components/test/UpdateTaskMisc"), {
+  ssr: false,
+  loading: () => <div>Loading Update Task Misc component...</div>,
 });
 
 
@@ -218,6 +229,13 @@ export default function TestPage() {
                   <UpdateUserPreferences />
                 </TestComponent>
 
+                <TestComponent title="Fetch Tasks">
+                  <FetchTasks />
+                </TestComponent>
+
+                <TestComponent title="Update Task Misc Field">
+                  <UpdateTaskMisc />
+                </TestComponent>
 
               </div>
             </ProtectedContent>
