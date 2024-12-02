@@ -1,6 +1,7 @@
 export async function openDatabase(
     dbName: string,
     dbVersion: number,
+    storeName: string,
     onUpgrade: (db: IDBDatabase) => void
 ): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
@@ -9,9 +10,9 @@ export async function openDatabase(
         request.onupgradeneeded = (event) => {
             const db = request.result;
             console.log("Upgrading database...");
-            if (!db.objectStoreNames.contains("reports")) {
-                db.createObjectStore("reports", { keyPath: "id" });
-                console.log("Created 'reports' object store.");
+            if (!db.objectStoreNames.contains(storeName)) {
+                db.createObjectStore(storeName, { keyPath: "id" });
+                console.log(`Created  ${storeName} object store.`);
             }
             if (!db.objectStoreNames.contains("meta")) {
                 db.createObjectStore("meta", { keyPath: "key" });
@@ -32,7 +33,7 @@ export async function saveData<T>(
     dbVersion: number,
     clearStore = false
 ): Promise<void> {
-    const db = await openDatabase(dbName, dbVersion, (db) => {
+    const db = await openDatabase(dbName, dbVersion, storeName, (db) => {
         // Create the object store if it doesn't exist
         if (!db.objectStoreNames.contains(storeName)) {
             db.createObjectStore(storeName, { keyPath: "id" });
@@ -70,7 +71,7 @@ export async function getData<T>(
     storeName: string,
     dbVersion: number
 ): Promise<T[]> {
-    const db = await openDatabase(dbName, dbVersion, (db) => {
+    const db = await openDatabase(dbName, dbVersion, storeName, (db) => {
         // Create the object store if it doesn't exist
         if (!db.objectStoreNames.contains(storeName)) {
             db.createObjectStore(storeName, { keyPath: "id" });
@@ -103,7 +104,7 @@ export async function getMetadata(
     key: string,
     dbVersion: number
 ): Promise<any | null> {
-    const db = await openDatabase(dbName, dbVersion, (db) => {
+    const db = await openDatabase(dbName, dbVersion, "meta", (db) => {
         if (!db.objectStoreNames.contains("meta")) {
             db.createObjectStore("meta", { keyPath: "key" });
         }
@@ -135,7 +136,7 @@ export async function saveMetadata(
     dbVersion: number
 ): Promise<void> {
     console.log("saveMetadata started")
-    const db = await openDatabase(dbName, dbVersion, (db) => {
+    const db = await openDatabase(dbName, dbVersion, "meta", (db) => {
         if (!db.objectStoreNames.contains("meta")) {
             db.createObjectStore("meta", { keyPath: "key" });
         }

@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 // import { useParams } from 'next/navigation';
-import { fetchReportById } from '@/utils/report-utils'; // Update this path based on your project structure
-import type { Report } from '@wasm';
+import { fetchReportsByIds } from '@/utils/report-utils'; // Update this path based on your project structure
+import type { Report, Section, IdType } from '@wasm';
 import Typography from "@/components/typography";
 import { Button, Divider, Select, Progress, Slider } from "antd";
 import "@/styles/globals.css";
@@ -11,15 +11,18 @@ import { useWasm } from "@/components/WasmProvider";
 import { formatRegulatoryFramework } from '@/utils/helpers';
 import SectionCard from './sections-selector';
 import SectionMetaList from './section-meta-list';
-import { useSearchParams } from 'next/navigation'; // Import useSearchParams
+import { useSearchParams, useRouter } from 'next/navigation'; // Import useSearchParams
 import ReportSectionSelector from './report-section-selector'; // Import new helper component
 import ReportCreatedOn from './created-on'; // Import new component
-import { fetchSections } from '@/utils/sections-utils';
+import LoadingLogoScreen from '@/components/loading-screen';
+import { fetchSectionsByIds } from '@/utils/sections-utils';
+import { ArrowRightOutlined, SaveOutlined } from "@ant-design/icons"
+import FilterBar from './filter-bar';
 
 const { Option } = Select;
 
 const ReportPage = () => {
-    const { wasmModule } = useWasm();
+    const { wasmModule, isLoading: wasmLoading } = useWasm(); // Check if WASM is loading
     // const { reportId } = useParams() as { reportId: string }; // Ensure `reportId` is treated as a string
 
     const searchParams = useSearchParams(); // Access query parameters
@@ -28,59 +31,95 @@ const ReportPage = () => {
     const [reports, setReports] = useState<Report[]>([]);  // Store all selected reports
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const router = useRouter();
+    const [sections, setSections] = useState<Section[]>([]);
 
 
     const [view, setView] = useState<string>("Findings view"); // Default selected view
     const [acceptanceLevel, setAcceptanceLevel] = useState(20)
 
-    const data = [
-        { title: "Ethical Considerations", compliance_rating: 88 },
-        { title: "Clinical Investigation Planning", compliance_rating: 92 },
-        { title: "Clinical Investigation Conduct", compliance_rating: 78 },
-        { title: "Ethical Considerations", compliance_rating: 88 },
-        { title: "Clinical Investigation Planning", compliance_rating: 92 },
-        { title: "Clinical Investigation Conduct", compliance_rating: 78 },
-        { title: "Ethical Considerations", compliance_rating: 88 },
-        { title: "Clinical Investigation Planning", compliance_rating: 92 },
-        { title: "Clinical Investigation Conduct", compliance_rating: 78 },
-        { title: "Ethical Considerations", compliance_rating: 88 },
-        { title: "Clinical Investigation Planning", compliance_rating: 92 },
-        { title: "Clinical Investigation Conduct", compliance_rating: 78 },
-    ];
-
-    console.log("selectedReportsIds", selectedReportsIds)
+    const [sectionListData, setSectionListData] = useState<{ compliance_rating: number, title: string }[]>([])
 
     useEffect(() => {
-        const fetchReports = async () => {
-            console.log("FETCHING DATA")
+        const fetchReportsAndSections = async () => {
             setLoading(true);
-            const fetchedReports: Report[] = [];
-            for (const reportId of selectedReportsIds) {
-                const { report, error } = await fetchReportById(wasmModule, reportId);
-                console.log("FETCHed report", report, error)
 
-                if (error) {
-                    setError(error);
-                } else {
-                    report && fetchedReports.push(report);
-                }
+            if (!wasmModule) {
+                setError("WASM module not loaded");
+                setLoading(false);
+                return;
             }
-            setReports(fetchedReports);
-            setLoading(false);
+
+            try {
+                // Fetch selected reports
+                const { reports: fetchedReports, errors } = await fetchReportsByIds(wasmModule, selectedReportsIds);
+
+                if (Object.keys(errors).length > 0) {
+                    console.error("Errors fetching reports:", errors);
+                    setError("Some reports could not be fetched.");
+                    return;
+                }
+
+                setReports(fetchedReports);
+
+                // Extract unique section IDs
+                const sectionIds = Array.from(
+                    new Set(
+                        fetchedReports
+                            .flatMap((report) =>
+                                report.section_assessments
+                                    .map((assessment) => assessment.section_id)
+                            )
+                            .filter((id): id is string => Boolean(id))
+                    )
+                );
+
+                // Fetch sections by IDs
+                const { sections: fetchedSections, error: sectionError } = await fetchSectionsByIds(wasmModule, sectionIds);
+
+                if (sectionError) {
+                    console.error("Error fetching sections:", sectionError);
+                } else {
+                    setError(null)
+                    setSections(fetchedSections);
+                }
+            } catch (err) {
+                console.error("Error fetching reports and sections:", err);
+                setError("Failed to fetch data");
+            } finally {
+                setLoading(false);
+            }
         };
 
         if (selectedReportsIds.length > 0) {
-            fetchReports();
-
+            fetchReportsAndSections();
         }
-    }, []);
+    }, [wasmModule]);
 
-    const handleViewChange = (value: string) => {
-        setView(value);
-    };
+    console.log("reports", reports)
 
-    if (loading) {
-        return <p>Loading...</p>;
+    useEffect(() => {
+        const sectionMetaData = sections.map(section => {
+            const relatedAssessments = reports
+                .flatMap(report => report.section_assessments)
+                .filter(assessment => assessment.section_id === section.id);
+
+            const averageComplianceRating =
+                relatedAssessments.reduce((sum, assessment) => sum + (assessment.compliance_rating || 0), 0) /
+                (relatedAssessments.length || 1);
+
+            return {
+                title: section.name,
+                compliance_rating: Math.round(averageComplianceRating) // Rounded to the nearest integer
+            };
+        });
+
+        setSectionListData(sectionMetaData)
+
+    }, [sections])
+
+    if (loading || wasmLoading) {
+        return <div className="w-full h-full bg-red-500">loadingtbr</div>;
     }
 
     if (error) {
@@ -100,27 +139,18 @@ const ReportPage = () => {
                     </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                    <Select
-                        defaultValue="Findings view"
-                        style={{ width: 200 }}
-                        onChange={handleViewChange}
-                    >
-                        <Option value="Findings view">Findings view</Option>
-                        <Option value="Implementations view">Implementations view</Option>
-                        <Option value="References">References</Option>
-                    </Select>
+                    <Button icon={<SaveOutlined />}>Save view</Button>
+                    <Button iconPosition='end' icon={<ArrowRightOutlined />} type="primary">Go to implementation</Button>
                 </div>
             </div>
             <Divider className="border-thin mt-2 mb-2" />
             <div className="flex justify-between items-center">
-                {/* <Typography color="secondary">
-                    Created On: {new Date(report.created_date).toLocaleDateString()}
-                </Typography> */}
+
                 <div className="flex justify-between w-full">
 
                     <ReportCreatedOn reports={reports} />
-                    <div className="flex gap-4">
-                        <Typography color="secondary" textSize="small">
+                    <div className="flex items-center gap-4">
+                        {/* <Typography color="secondary" textSize="small">
                             Acceptance level: {100 - acceptanceLevel}
                         </Typography>
                         <div className="w-32">
@@ -133,13 +163,13 @@ const ReportPage = () => {
                                 tooltip={{ formatter: (val) => `${100 - (val ?? 0)}`, }}
                                 trackStyle={{ backgroundColor: "var(--success)" }}
                             />
-                        </div>
-
+                        </div> */}
+                        <FilterBar reports={reports} />
                     </div>
                 </div>
             </div>
             <div>
-                <SectionMetaList data={data} />
+                <SectionMetaList data={sectionListData} />
             </div>
         </div>
     );
