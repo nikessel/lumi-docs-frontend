@@ -26,6 +26,12 @@ const AdminUploadReport = dynamic(() => import("@/components/test/AdminUploadRep
   loading: () => <div>Loading Report Uploader component...</div>,
 });
 
+const UpdateUserPreferences = dynamic(() => import("@/components/test/UpdateUserPreferences"), {
+  ssr: false,
+  loading: () => <div>Loading Update User Preferences component...</div>,
+});
+
+
 const Auth0Config = dynamic(() => import("@/components/test/Auth0Config"), {
   ssr: false,
   loading: () => <div>Loading Auth0Config component...</div>,
@@ -207,6 +213,11 @@ export default function TestPage() {
                 <TestComponent title="Admin Report Upload">
                   <AdminUploadReport />
                 </TestComponent>
+
+                <TestComponent title="Update User Preferences">
+                  <UpdateUserPreferences />
+                </TestComponent>
+
 
               </div>
             </ProtectedContent>
