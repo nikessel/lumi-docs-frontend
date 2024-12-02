@@ -9,6 +9,7 @@ import { ReportCreator } from "@/components/test/ReportCreator";
 import { ReportList } from "@/components/test/ReportList";
 import { FileList } from "@/components/test/FileList";
 
+
 // Dynamic imports for components
 const WasmProvider = dynamic(() => import("@/components/WasmProvider"), {
   ssr: false,
@@ -18,6 +19,11 @@ const WasmProvider = dynamic(() => import("@/components/WasmProvider"), {
 const Echo = dynamic(() => import("@/components/test/Echo"), {
   ssr: false,
   loading: () => <div>Loading Echo component...</div>,
+});
+
+const AdminUploadReport = dynamic(() => import("@/components/test/AdminUploadReport"), {
+  ssr: false,
+  loading: () => <div>Loading Report Uploader component...</div>,
 });
 
 const Auth0Config = dynamic(() => import("@/components/test/Auth0Config"), {
@@ -197,6 +203,11 @@ export default function TestPage() {
                 <TestComponent title="Files">
                   <FileList />
                 </TestComponent>
+
+                <TestComponent title="Admin Report Upload">
+                  <AdminUploadReport />
+                </TestComponent>
+
               </div>
             </ProtectedContent>
           </div>
