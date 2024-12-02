@@ -73,7 +73,6 @@ export async function fetchSectionsByIds(
             let fetchedSections = response.output.output;
             console.log("***********************", fetchedSections, missingIds)
 
-
             // Combine cached and fetched sections
             const combinedSections = [...foundSections, ...fetchedSections];
 
