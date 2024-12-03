@@ -10,36 +10,17 @@ import type { Report } from "@wasm";
 export function ReportList() {
   const { wasmModule } = useWasm();
   const [reports, setReports] = useState<Report[]>([]);
-  const [blobUrls, setBlobUrls] = useState<{ [id: string]: string }>({});
   const [error, setError] = useState("");
 
-  // Function to fetch all reports
   const fetchReports = useCallback(async () => {
     if (!wasmModule) {
       setError("WASM module not loaded");
       return;
     }
-
     try {
       const response = await wasmModule.get_all_reports();
       if (response.output) {
-        const reportsData = response.output.output;
-        setReports(reportsData);
-
-        // Create Blob URLs for each report
-        const newBlobUrls: { [id: string]: string } = {};
-        reportsData.forEach((report) => {
-          const jsonString = JSON.stringify(report, null, 2);
-          const blob = new Blob([jsonString], { type: "application/json" });
-          const url = URL.createObjectURL(blob);
-          newBlobUrls[report.id] = url;
-        });
-
-        // Revoke previous Blob URLs
-        setBlobUrls(oldUrls => {
-          Object.values(oldUrls).forEach(url => URL.revokeObjectURL(url));
-          return newBlobUrls;
-        });
+        setReports(response.output.output);
       } else if (response.error) {
         setError(response.error.message);
       }
@@ -47,30 +28,21 @@ export function ReportList() {
       console.error("Error fetching reports:", err);
       setError("Failed to fetch reports");
     }
-  }, [wasmModule]); // Remove blobUrls dependency
+  }, [wasmModule]);
 
-  // Fetch reports on component mount and when events occur
   useEffect(() => {
     fetchReports();
-
     const handleCreatedEvent = (event: WrappedEvent) => {
       if (event.type === "Created" && "Report" in event.payload) {
         fetchReports();
       }
     };
-
-    // Subscribe to "Created" events
     eventBus.subscribe("Created", handleCreatedEvent);
-
-    // Cleanup: Unsubscribe and revoke Blob URLs when unmounting
+    
     return () => {
       eventBus.unsubscribe("Created", handleCreatedEvent);
-      setBlobUrls(oldUrls => {
-        Object.values(oldUrls).forEach(url => URL.revokeObjectURL(url));
-        return {};
-      });
     };
-  }, [fetchReports]); // Only depend on fetchReports
+  }, [fetchReports]);
 
   if (error) {
     return (
@@ -93,9 +65,9 @@ export function ReportList() {
                 <Button
                   onClick={() => {
                     window.open(
-                      blobUrls[report.id],
-                      "_blank",
-                      "noopener,noreferrer"
+                      `/test/reports/${report.id}`,
+                      '_blank',
+                      'noopener,noreferrer'
                     );
                   }}
                 >
