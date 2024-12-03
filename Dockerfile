@@ -56,7 +56,7 @@ USER nextjs
 EXPOSE 3000
 
 # Set default environment variables
-ENV API_URL=http://api:8080/api
+ENV API_URL=http://localhost:8080/api
 ENV FORWARDED_HOST=localhost:3000
 ENV FORWARDED_PROTO=http
 
