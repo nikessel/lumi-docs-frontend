@@ -101,10 +101,10 @@ const FilterBar: React.FC<FilterBarProps> = ({ reports }) => {
 
                 {/* Acceptance Level Slider */}
                 <div className="py-2 mb-4 flex items-center justify-between w-full border-b b">
-                    <Typography color="secondary">Acceptance level: {100 - acceptanceLevel}</Typography>
+                    <Typography color="secondary">Acceptance level: {acceptanceLevel}</Typography>
                     <Slider
-                        value={acceptanceLevel}
-                        onChange={setAcceptanceLevel}
+                        value={100 - acceptanceLevel}
+                        onChange={(val) => setAcceptanceLevel(100 - val)}
                         max={100}
                         min={0}
                         reverse

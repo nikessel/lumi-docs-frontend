@@ -1,29 +1,22 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-// import { useParams } from 'next/navigation';
 import { fetchReportsByIds } from '@/utils/report-utils'; // Update this path based on your project structure
-import type { Report, Section, IdType } from '@wasm';
-import Typography from "@/components/typography";
-import { Button, Divider, Select, Progress, Slider } from "antd";
+import type { Report, Section } from '@wasm';
+import { Button, Divider } from "antd";
 import "@/styles/globals.css";
 import { useWasm } from "@/components/WasmProvider";
-import { formatRegulatoryFramework } from '@/utils/helpers';
-import SectionCard from './sections-selector';
 import SectionMetaList from './section-meta-list';
-import { useSearchParams, useRouter } from 'next/navigation'; // Import useSearchParams
+import { useSearchParams, } from 'next/navigation'; // Import useSearchParams
 import ReportSectionSelector from './report-section-selector'; // Import new helper component
 import ReportCreatedOn from './created-on'; // Import new component
-import LoadingLogoScreen from '@/components/loading-screen';
 import { fetchSectionsByIds } from '@/utils/sections-utils';
 import { ArrowRightOutlined, SaveOutlined } from "@ant-design/icons"
 import FilterBar from './filter-bar';
-
-const { Option } = Select;
+import RequirementGroups from './show-requirement-group';
 
 const ReportPage = () => {
     const { wasmModule, isLoading: wasmLoading } = useWasm(); // Check if WASM is loading
-    // const { reportId } = useParams() as { reportId: string }; // Ensure `reportId` is treated as a string
 
     const searchParams = useSearchParams(); // Access query parameters
     const selectedReportsIds = searchParams.get('selectedReports')?.split(",").map(report => decodeURIComponent(report)) || [];
@@ -31,12 +24,7 @@ const ReportPage = () => {
     const [reports, setReports] = useState<Report[]>([]);  // Store all selected reports
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const router = useRouter();
     const [sections, setSections] = useState<Section[]>([]);
-
-
-    const [view, setView] = useState<string>("Findings view"); // Default selected view
-    const [acceptanceLevel, setAcceptanceLevel] = useState(20)
 
     const [sectionListData, setSectionListData] = useState<{ compliance_rating: number, title: string }[]>([])
 
@@ -150,20 +138,6 @@ const ReportPage = () => {
 
                     <ReportCreatedOn reports={reports} />
                     <div className="flex items-center gap-4">
-                        {/* <Typography color="secondary" textSize="small">
-                            Acceptance level: {100 - acceptanceLevel}
-                        </Typography>
-                        <div className="w-32">
-                            <Slider
-                                value={acceptanceLevel}
-                                onChange={(val) => setAcceptanceLevel(val)}
-                                max={100}
-                                min={0}
-                                reverse={true}
-                                tooltip={{ formatter: (val) => `${100 - (val ?? 0)}`, }}
-                                trackStyle={{ backgroundColor: "var(--success)" }}
-                            />
-                        </div> */}
                         <FilterBar reports={reports} />
                     </div>
                 </div>
@@ -171,6 +145,7 @@ const ReportPage = () => {
             <div>
                 <SectionMetaList data={sectionListData} />
             </div>
+            <RequirementGroups />
         </div>
     );
 };
