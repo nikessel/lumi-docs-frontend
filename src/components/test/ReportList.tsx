@@ -10,6 +10,7 @@ import type { Report } from "@wasm";
 export function ReportList() {
   const { wasmModule } = useWasm();
   const [reports, setReports] = useState<Report[]>([]);
+  const [blobUrls, setBlobUrls] = useState<{ [id: string]: string }>({});
   const [error, setError] = useState("");
 
   const fetchReports = useCallback(async () => {
@@ -20,7 +21,23 @@ export function ReportList() {
     try {
       const response = await wasmModule.get_all_reports();
       if (response.output) {
-        setReports(response.output.output);
+        const reportsData = response.output.output;
+        setReports(reportsData);
+
+        // Create Blob URLs for each report
+        const newBlobUrls: { [id: string]: string } = {};
+        reportsData.forEach((report) => {
+          const jsonString = JSON.stringify(report, null, 2);
+          const blob = new Blob([jsonString], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          newBlobUrls[report.id] = url;
+        });
+
+        // Revoke previous Blob URLs before setting new ones
+        setBlobUrls(oldUrls => {
+          Object.values(oldUrls).forEach(url => URL.revokeObjectURL(url));
+          return newBlobUrls;
+        });
       } else if (response.error) {
         setError(response.error.message);
       }
@@ -41,8 +58,10 @@ export function ReportList() {
     
     return () => {
       eventBus.unsubscribe("Created", handleCreatedEvent);
+      // Clean up blob URLs on unmount
+      Object.values(blobUrls).forEach(url => URL.revokeObjectURL(url));
     };
-  }, [fetchReports]);
+  }, [fetchReports, blobUrls]);
 
   if (error) {
     return (
@@ -60,9 +79,10 @@ export function ReportList() {
         ) : (
           <ul className="list-none pl-0">
             {reports.map((report) => (
-              <li key={report.id} className="flex items-center mb-2">
+              <li key={report.id} className="flex items-center gap-2 mb-2">
                 <span className="flex-1">{report.title || report.id}</span>
                 <Button
+                  variant="outline"
                   onClick={() => {
                     window.open(
                       `/test/reports/${report.id}`,
@@ -73,6 +93,18 @@ export function ReportList() {
                 >
                   View
                 </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    window.open(
+                      blobUrls[report.id],
+                      '_blank',
+                      'noopener,noreferrer'
+                    );
+                  }}
+                >
+                  Open JSON
+                </Button>
               </li>
             ))}
           </ul>
@@ -81,3 +113,5 @@ export function ReportList() {
     </Card>
   );
 }
+
+export default ReportList;
