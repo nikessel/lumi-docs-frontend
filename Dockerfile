@@ -14,7 +14,7 @@ RUN if [ ! -f public/pkg/app_bg.wasm ]; then \
     exit 1; \
     fi
 
-RUN NODE_ENV=production npm run build || npm run build -- --no-lint
+RUN NODE_ENV=production npm run build -- --no-lint
 
 # Stage 2: Runner
 FROM node:23.3.0-alpine AS runner
@@ -34,7 +34,4 @@ RUN chown -R nextjs:nodejs /app
 USER nextjs
 # Configure environment and startup
 EXPOSE 3000
-ENV API_URL=https://app.lumi-docs.com/api \
-    FORWARDED_HOST=app.lumi-docs.com \
-    FORWARDED_PROTO=https
 CMD ["node", "server.js"]
