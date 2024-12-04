@@ -33,8 +33,8 @@ USER nextjs
 
 # Configure environment and startup
 EXPOSE 3000
-ENV API_URL=http://localhost:8080/api \
-    FORWARDED_HOST=localhost:3000 \
-    FORWARDED_PROTO=http
+ENV API_URL=https://app.lumi-docs.com/api \
+    FORWARDED_HOST=app.lumi-docs.com \
+    FORWARDED_PROTO=https
 
 CMD ["node", "server.js"]
