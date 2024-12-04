@@ -149,8 +149,8 @@ dist
 /dist
 
 # WASM
-*.wasm
-!public/wasm/*.wasm
+# *.wasm
+# !public/wasm/*.wasm
 
 # Misc
 .DS_Store
