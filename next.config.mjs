@@ -44,17 +44,14 @@ const nextConfig = {
     }
     return config;
   },
-async rewrites() {
+  async rewrites() {
     console.log('Configuring rewrites...');
-    const serverSideApiUrl = 'http://localhost:8080/api';  // For server-side requests
-    const clientSideApiUrl = process.env.API_URL || 'http://localhost:8080/api';  // For client-side requests
-    
     return {
       beforeFiles: [],
       afterFiles: [
         {
           source: '/api/:path*',
-          destination: process.env.NODE_ENV === 'production' ? serverSideApiUrl : clientSideApiUrl + '/:path*',
+          destination: process.env.API_URL || 'http://127.0.0.1:8080/api/:path*', // Make API URL configurable
           basePath: false,
           has: [
             {
@@ -68,7 +65,7 @@ async rewrites() {
       fallback: [
         {
           source: '/api/:path*',
-          destination: process.env.NODE_ENV === 'production' ? serverSideApiUrl : clientSideApiUrl + '/:path*',
+          destination: process.env.API_URL || 'http://localhost:8080/api/:path*', // Make API URL configurable
         }
       ]
     };

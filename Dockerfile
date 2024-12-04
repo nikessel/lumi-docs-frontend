@@ -34,4 +34,8 @@ RUN chown -R nextjs:nodejs /app
 USER nextjs
 # Configure environment and startup
 EXPOSE 3000
+ENV API_URL=http://localhost:8180 \
+    FORWARDED_HOST=localhost \
+    FORWARDED_PROTO=http
+
 CMD ["node", "server.js"]
