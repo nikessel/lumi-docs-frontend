@@ -156,6 +156,26 @@ export function admin_upload_report(input: AdminUploadReportInput): Promise<Admi
  */
 export function new_file(input: NewFileInput): NewFileResponse;
 /**
+ * @param {AdminGetThreadsByReportInput} input
+ * @returns {Promise<AdminGetThreadsByReportResponse>}
+ */
+export function admin_get_threads_by_report(input: AdminGetThreadsByReportInput): Promise<AdminGetThreadsByReportResponse>;
+/**
+ * @param {AdminGetThreadsBySectionInput} input
+ * @returns {Promise<AdminGetThreadsBySectionResponse>}
+ */
+export function admin_get_threads_by_section(input: AdminGetThreadsBySectionInput): Promise<AdminGetThreadsBySectionResponse>;
+/**
+ * @param {AdminGetThreadsByRequirementGroupInput} input
+ * @returns {Promise<AdminGetThreadsByRequirementGroupResponse>}
+ */
+export function admin_get_threads_by_requirement_group(input: AdminGetThreadsByRequirementGroupInput): Promise<AdminGetThreadsByRequirementGroupResponse>;
+/**
+ * @param {AdminGetThreadsByRequirementInput} input
+ * @returns {Promise<AdminGetThreadsByRequirementResponse>}
+ */
+export function admin_get_threads_by_requirement(input: AdminGetThreadsByRequirementInput): Promise<AdminGetThreadsByRequirementResponse>;
+/**
  * @param {Function} callback
  */
 export function set_websocket_event_callback(callback: Function): void;
@@ -558,6 +578,61 @@ export interface NewFileResponse {
     error: ClientSideError | undefined;
 }
 
+export interface AdminGetThreadsByReportInput {
+    input: IdType;
+}
+
+export interface AdminGetThreadsByReportOutput {
+    output: Thread;
+}
+
+export interface AdminGetThreadsByReportResponse {
+    output: AdminGetThreadsByReportOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+export interface AdminGetThreadsBySectionInput {
+    report_id: IdType;
+    section_id: IdType;
+}
+
+export interface AdminGetThreadsBySectionOutput {
+    output: Thread;
+}
+
+export interface AdminGetThreadsBySectionResponse {
+    output: AdminGetThreadsBySectionOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+export interface AdminGetThreadsByRequirementGroupInput {
+    report_id: IdType;
+    group_id: IdType;
+}
+
+export interface AdminGetThreadsByRequirementGroupOutput {
+    output: Thread;
+}
+
+export interface AdminGetThreadsByRequirementGroupResponse {
+    output: AdminGetThreadsByRequirementGroupOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+export interface AdminGetThreadsByRequirementInput {
+    report_id: IdType;
+    requirement_id: IdType;
+}
+
+export interface AdminGetThreadsByRequirementOutput {
+    output: Thread;
+}
+
+export interface AdminGetThreadsByRequirementResponse {
+    output: AdminGetThreadsByRequirementOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
 declare namespace ErrorKind {
     export type Validation = "Validation";
     export type NotFound = "NotFound";
@@ -651,7 +726,7 @@ export interface Report {
     title: string;
     abstract_text: string;
     compliance_rating: ComplianceRating;
-    section_assessments: SectionAssessment[];
+    section_assessments: Map<Id, SectionAssessment>;
 }
 
 export interface User {
@@ -663,6 +738,12 @@ export interface User {
     company: string | undefined;
     config?: UserConfig;
     preferences?: Json | undefined;
+}
+
+export interface Thread {
+    id: IdType;
+    conversation: Messages;
+    logs: string[];
 }
 
 export interface Claims {
@@ -846,10 +927,9 @@ export interface DocumentTextChunk {
 }
 
 export interface SectionAssessment {
-    section_id?: IdType | undefined;
     abstract_text: ArcStr;
     compliance_rating: ComplianceRating;
-    requirement_assessments?: RequirementOrRequirementGroupAssessment[];
+    requirement_assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
 }
 
 export interface ReportAbstractAndTitle {
@@ -858,10 +938,6 @@ export interface ReportAbstractAndTitle {
 }
 
 export interface RequirementGroupAssessment {
-    /**
-     * ID reference to the requirement being assessed
-     */
-    requirement_group_id?: IdType | undefined;
     /**
      * The compliance rating indicating the level of conformity with the requirement
      */
@@ -874,18 +950,15 @@ export interface RequirementGroupAssessment {
      * Brief overview of the compliance status and key findings
      */
     summary: ArcStr;
-    assessments?: RequirementOrRequirementGroupAssessment[];
+    assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
 }
 
 export interface RequirementAssessment {
     /**
-     * ID reference to the requirement being assessed
-     */
-    requirement_id?: IdType | undefined;
-    /**
      * The compliance rating indicating the level of conformity with the requirement
      */
     compliance_rating: ComplianceRating;
+    applicable: boolean;
     /**
      * Comprehensive explanation of the compliance assessment, including methodology and findings
      */
@@ -906,7 +979,14 @@ export interface RequirementAssessment {
      * Set of specific citations and references supporting the assessment findings
      */
     references?: Reference[];
+    /**
+     * Relevant quotes from the documents. It is vital that quotes are
+     * repeated word for word without deviations from the orignal quote
+     */
+    quotes?: Quote[];
 }
+
+export type RequirementOrRequirementGroupAssessment = { Requirement: RequirementAssessment } | { RequirementGroup: RequirementGroupAssessment };
 
 export interface Suggestion {
     kind: SuggestionKind;
@@ -1001,6 +1081,10 @@ export interface InitOutput {
   readonly is_admin: () => number;
   readonly admin_upload_report: (a: number) => number;
   readonly new_file: (a: number) => number;
+  readonly admin_get_threads_by_report: (a: number) => number;
+  readonly admin_get_threads_by_section: (a: number) => number;
+  readonly admin_get_threads_by_requirement_group: (a: number) => number;
+  readonly admin_get_threads_by_requirement: (a: number) => number;
   readonly set_websocket_event_callback: (a: number) => void;
   readonly hydrate: () => void;
   readonly get_file_data: (a: number) => number;

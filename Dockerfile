@@ -7,13 +7,11 @@ RUN npm ci
 # Copy source code and build
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED 1
-
 # Ensure WASM file exists before build
 RUN if [ ! -f public/pkg/app_bg.wasm ]; then \
     echo "Error: app_bg.wasm is missing from public/pkg/" && \
     exit 1; \
     fi
-
 RUN NODE_ENV=production npm run build -- --no-lint
 
 # Stage 2: Runner
@@ -28,7 +26,6 @@ RUN addgroup --system --gid 1001 nodejs && \
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
-
 # Set permissions and user
 RUN chown -R nextjs:nodejs /app
 USER nextjs
@@ -36,6 +33,7 @@ USER nextjs
 EXPOSE 3000
 ENV API_URL=http://localhost:8180 \
     FORWARDED_HOST=localhost \
-    FORWARDED_PROTO=http
-
+    FORWARDED_PROTO=http \
+    HOST=0.0.0.0 \
+    PORT=3000
 CMD ["node", "server.js"]

@@ -7,6 +7,15 @@ import { eventBus } from "@/components/EventBus";
 import { WrappedEvent } from "@/components/EventHelpers";
 import type { Report } from "@wasm";
 
+
+function mapReplacer(_key: string, value: unknown): unknown {
+  if (value instanceof Map) {
+    // Cast to a Map of string to unknown to satisfy Object.fromEntries type checking
+    return Object.fromEntries(value as Map<string, unknown>);
+  }
+  return value;
+}
+
 export function ReportList() {
   const { wasmModule } = useWasm();
   const [reports, setReports] = useState<Report[]>([]);
@@ -18,8 +27,10 @@ export function ReportList() {
       setError("WASM module not loaded");
       return;
     }
+
     try {
       const response = await wasmModule.get_all_reports();
+
       if (response.output) {
         const reportsData = response.output.output;
         setReports(reportsData);
@@ -27,7 +38,7 @@ export function ReportList() {
         // Create Blob URLs for each report
         const newBlobUrls: { [id: string]: string } = {};
         reportsData.forEach((report) => {
-          const jsonString = JSON.stringify(report, null, 2);
+          const jsonString = JSON.stringify(report, mapReplacer, 2);
           const blob = new Blob([jsonString], { type: "application/json" });
           const url = URL.createObjectURL(blob);
           newBlobUrls[report.id] = url;
@@ -47,21 +58,27 @@ export function ReportList() {
     }
   }, [wasmModule]);
 
-  useEffect(() => {
-    fetchReports();
-    const handleCreatedEvent = (event: WrappedEvent) => {
-      if (event.type === "Created" && "Report" in event.payload) {
-        fetchReports();
-      }
-    };
-    eventBus.subscribe("Created", handleCreatedEvent);
-    
-    return () => {
-      eventBus.unsubscribe("Created", handleCreatedEvent);
-      // Clean up blob URLs on unmount
-      Object.values(blobUrls).forEach(url => URL.revokeObjectURL(url));
-    };
-  }, [fetchReports, blobUrls]);
+useEffect(() => {
+  fetchReports();
+  const handleCreatedEvent = (event: WrappedEvent) => {
+    if (event.type === "Created" && "Report" in event.payload) {
+      fetchReports();
+    }
+  };
+  eventBus.subscribe("Created", handleCreatedEvent);
+
+  return () => {
+    eventBus.unsubscribe("Created", handleCreatedEvent);
+    // Don't clean up blobUrls here
+  };
+}, [fetchReports]);
+
+// Separate effect for cleaning up old blob URLs when they change
+useEffect(() => {
+  return () => {
+    Object.values(blobUrls).forEach(url => URL.revokeObjectURL(url));
+  };
+}, [blobUrls]);
 
   if (error) {
     return (

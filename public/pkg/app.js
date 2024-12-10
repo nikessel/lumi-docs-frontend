@@ -515,6 +515,42 @@ export function new_file(input) {
 }
 
 /**
+ * @param {AdminGetThreadsByReportInput} input
+ * @returns {Promise<AdminGetThreadsByReportResponse>}
+ */
+export function admin_get_threads_by_report(input) {
+    const ret = wasm.admin_get_threads_by_report(addHeapObject(input));
+    return takeObject(ret);
+}
+
+/**
+ * @param {AdminGetThreadsBySectionInput} input
+ * @returns {Promise<AdminGetThreadsBySectionResponse>}
+ */
+export function admin_get_threads_by_section(input) {
+    const ret = wasm.admin_get_threads_by_section(addHeapObject(input));
+    return takeObject(ret);
+}
+
+/**
+ * @param {AdminGetThreadsByRequirementGroupInput} input
+ * @returns {Promise<AdminGetThreadsByRequirementGroupResponse>}
+ */
+export function admin_get_threads_by_requirement_group(input) {
+    const ret = wasm.admin_get_threads_by_requirement_group(addHeapObject(input));
+    return takeObject(ret);
+}
+
+/**
+ * @param {AdminGetThreadsByRequirementInput} input
+ * @returns {Promise<AdminGetThreadsByRequirementResponse>}
+ */
+export function admin_get_threads_by_requirement(input) {
+    const ret = wasm.admin_get_threads_by_requirement(addHeapObject(input));
+    return takeObject(ret);
+}
+
+/**
  * @param {Function} callback
  */
 export function set_websocket_event_callback(callback) {
@@ -546,7 +582,7 @@ function getArrayU8FromWasm0(ptr, len) {
     ptr = ptr >>> 0;
     return getUint8ArrayMemory0().subarray(ptr / 1, ptr / 1 + len);
 }
-function __wbg_adapter_328(arg0, arg1, arg2, arg3) {
+function __wbg_adapter_332(arg0, arg1, arg2, arg3) {
     wasm.__wbindgen_export_9(arg0, arg1, addHeapObject(arg2), addHeapObject(arg3));
 }
 
@@ -1327,7 +1363,7 @@ function __wbg_get_imports() {
                 const a = state0.a;
                 state0.a = 0;
                 try {
-                    return __wbg_adapter_328(a, state0.b, arg0, arg1);
+                    return __wbg_adapter_332(a, state0.b, arg0, arg1);
                 } finally {
                     state0.a = a;
                 }
@@ -1423,28 +1459,28 @@ function __wbg_get_imports() {
         const ret = wasm.memory;
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_closure_wrapper1975 = function(arg0, arg1, arg2) {
-        const ret = makeMutClosure(arg0, arg1, 546, __wbg_adapter_50);
+    imports.wbg.__wbindgen_closure_wrapper1984 = function(arg0, arg1, arg2) {
+        const ret = makeMutClosure(arg0, arg1, 570, __wbg_adapter_50);
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_closure_wrapper2306 = function(arg0, arg1, arg2) {
-        const ret = makeMutClosure(arg0, arg1, 635, __wbg_adapter_53);
+    imports.wbg.__wbindgen_closure_wrapper2317 = function(arg0, arg1, arg2) {
+        const ret = makeMutClosure(arg0, arg1, 659, __wbg_adapter_53);
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_closure_wrapper2308 = function(arg0, arg1, arg2) {
-        const ret = makeMutClosure(arg0, arg1, 635, __wbg_adapter_56);
+    imports.wbg.__wbindgen_closure_wrapper2319 = function(arg0, arg1, arg2) {
+        const ret = makeMutClosure(arg0, arg1, 659, __wbg_adapter_56);
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_closure_wrapper2310 = function(arg0, arg1, arg2) {
-        const ret = makeMutClosure(arg0, arg1, 635, __wbg_adapter_53);
+    imports.wbg.__wbindgen_closure_wrapper2321 = function(arg0, arg1, arg2) {
+        const ret = makeMutClosure(arg0, arg1, 659, __wbg_adapter_53);
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_closure_wrapper2312 = function(arg0, arg1, arg2) {
-        const ret = makeMutClosure(arg0, arg1, 635, __wbg_adapter_53);
+    imports.wbg.__wbindgen_closure_wrapper2323 = function(arg0, arg1, arg2) {
+        const ret = makeMutClosure(arg0, arg1, 659, __wbg_adapter_53);
         return addHeapObject(ret);
     };
-    imports.wbg.__wbindgen_closure_wrapper5279 = function(arg0, arg1, arg2) {
-        const ret = makeMutClosure(arg0, arg1, 1400, __wbg_adapter_63);
+    imports.wbg.__wbindgen_closure_wrapper5290 = function(arg0, arg1, arg2) {
+        const ret = makeMutClosure(arg0, arg1, 1424, __wbg_adapter_63);
         return addHeapObject(ret);
     };
 

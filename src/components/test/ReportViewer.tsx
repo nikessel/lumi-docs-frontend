@@ -18,6 +18,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
+import { MessageSquare } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ChevronRight, AlertCircle, CheckCircle2, XCircle, Info, CheckCircle, Clock } from 'lucide-react';
 import type { 
@@ -34,6 +37,59 @@ import type {
 
 type RequirementOrGroupAssessment = RequirementAssessment | RequirementGroupAssessment;
 
+const ThreadViewButton: React.FC<{ 
+  reportId: string;
+  sectionId?: string;
+  groupId?: string;
+  requirementId?: string;
+}> = ({ reportId, sectionId, groupId, requirementId }) => {
+  const router = useRouter();
+  const { wasmModule } = useWasm();
+  const [isAdmin, setIsAdmin] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkAdmin = async () => {
+      if (!wasmModule) return;
+      try {
+        const response = await wasmModule.is_admin();
+        if (response.output) {
+          setIsAdmin(response.output.output);
+        }
+      } catch (err) {
+        console.error("Error checking admin status:", err);
+      }
+    };
+
+    checkAdmin();
+  }, [wasmModule]);
+
+  if (!isAdmin) return null;
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    let path = `/test/reports/${reportId}/threads`;
+    if (requirementId) {
+      path += `/requirement/${requirementId}`;
+    } else if (groupId) {
+      path += `/group/${groupId}`;
+    } else if (sectionId) {
+      path += `/section/${sectionId}`;
+    }
+    router.push(path);
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={handleClick}
+      className="flex items-center gap-1"
+    >
+      <MessageSquare className="h-4 w-4" />
+      View Thread
+    </Button>
+  );
+};
 
 const isRequirementAssessment = (
   assessment: RequirementOrGroupAssessment
@@ -46,7 +102,7 @@ const InfoTooltip: React.FC<{
   description?: string;
   reference?: string;
   id?: string;
-}> = ({ name, description, reference, id }) => {
+}> = ({ name, description, reference }) => {
   return (
     <TooltipProvider>
       <Tooltip>
@@ -174,6 +230,15 @@ const RequirementCard: React.FC<{
     />
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
+<div className="flex items-center gap-4">
+  <ThreadViewButton 
+    reportId={reportId} 
+    requirementId={req.content.requirement_id} 
+  />
+  <div className="flex items-center gap-1 flex-shrink-0">
+    <ComplianceIndicator rating={req.content.compliance_rating} />
+  </div>
+</div>
             <ComplianceIndicator rating={req.content.compliance_rating} />
           </div>
         </div>
@@ -272,6 +337,15 @@ const RequirementGroupCard: React.FC<{
     />
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
+<div className="flex items-center gap-4">
+  <ThreadViewButton 
+    reportId={reportId} 
+    groupId={group.content.requirement_group_id} 
+  />
+  <div className="flex items-center gap-1 flex-shrink-0">
+    <ComplianceIndicator rating={group.content.compliance_rating} />
+  </div>
+</div>
             <ComplianceIndicator rating={group.content.compliance_rating} />
           </div>
         </div>
@@ -343,7 +417,8 @@ const SectionHeader: React.FC<{
   sectionId: string | undefined;
   complianceRating: number;
   index: number;
-}> = ({ sectionId, complianceRating, index }) => {
+  reportId: string;  // Add this
+}> = ({ sectionId, complianceRating, index, reportId }) => {
   const { wasmModule } = useWasm();
   const [sectionDetails, setSectionDetails] = React.useState<Section | undefined>();
 
@@ -378,6 +453,15 @@ const SectionHeader: React.FC<{
 />
       </div>
       <div className="flex items-center gap-1">
+<div className="flex items-center gap-4">
+  <ThreadViewButton 
+    reportId={reportId} 
+    sectionId={sectionId} 
+  />
+  <div className="flex items-center gap-1">
+    <ComplianceIndicator rating={complianceRating} />
+  </div>
+</div>
         <ComplianceIndicator rating={complianceRating} />
       </div>
     </div>
@@ -487,6 +571,13 @@ const ReportViewer = () => {
             <div className="flex items-center gap-2">
               <span className="font-medium">Overall Compliance:</span>
               <div className="flex items-center gap-1">
+<div className="flex justify-between items-center">
+  <CardTitle>{report.title}</CardTitle>
+  <div className="flex items-center gap-4">
+    <ThreadViewButton reportId={report.id} />
+    {getStatusBadge(report.status)}
+  </div>
+</div>
                 <ComplianceIndicator rating={report.compliance_rating} />
               </div>
             </div>
@@ -498,11 +589,12 @@ const ReportViewer = () => {
         {report.section_assessments.map((section, index) => (
           <AccordionItem value={`section-${index}`} key={index} className="border rounded-lg">
             <AccordionTrigger className="px-4 py-2 hover:no-underline">
-  <SectionHeader 
-    sectionId={section.section_id} 
-    complianceRating={section.compliance_rating}
-    index={index}
-  />
+<SectionHeader 
+  sectionId={section.section_id} 
+  complianceRating={section.compliance_rating}
+  index={index}
+  reportId={reportId}  // Add this
+/>
             </AccordionTrigger>
             <AccordionContent className="px-4 py-2">
               <div className="space-y-4">
