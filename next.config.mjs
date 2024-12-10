@@ -6,6 +6,10 @@ const __dirname = path.dirname(__filename);
 
 const nextConfig = {
   output: 'standalone', // Add this line
+  server: {
+    host: '0.0.0.0',
+    port: 3000
+  },
   webpack: (config, { dev, isServer }) => {
     config.experiments = {
       asyncWebAssembly: true,
