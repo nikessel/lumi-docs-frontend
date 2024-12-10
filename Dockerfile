@@ -34,6 +34,6 @@ EXPOSE 3000
 ENV API_URL=http://localhost:8180 \
     FORWARDED_HOST=localhost \
     FORWARDED_PROTO=http \
-    HOST=0.0.0.0 \
-    PORT=3000
+    PORT=3000 \
+    HOSTNAME="0.0.0.0"
 CMD ["node", "server.js"]
