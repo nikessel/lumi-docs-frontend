@@ -979,11 +979,6 @@ export interface RequirementAssessment {
      * Set of specific citations and references supporting the assessment findings
      */
     references?: Reference[];
-    /**
-     * Relevant quotes from the documents. It is vital that quotes are
-     * repeated word for word without deviations from the orignal quote
-     */
-    quotes?: Quote[];
 }
 
 export type RequirementOrRequirementGroupAssessment = { Requirement: RequirementAssessment } | { RequirementGroup: RequirementGroupAssessment };

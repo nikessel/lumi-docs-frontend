@@ -32,10 +32,27 @@ import type {
   Requirement,
   RequirementGroup,
   Task,
-  TaskStatus
+  TaskStatus,
 } from '@wasm';
 
-type RequirementOrGroupAssessment = RequirementAssessment | RequirementGroupAssessment;
+interface RequirementWrapper {
+  content: RequirementAssessment;
+  id: string; // Store the ID from the Map key
+}
+
+interface RequirementGroupWrapper {
+  content: RequirementGroupAssessment;
+  id: string; // Store the ID from the Map key
+}
+
+type AssessmentWrapper = RequirementWrapper | RequirementGroupWrapper;
+
+const isRequirementAssessment = (
+  assessment: AssessmentWrapper
+): assessment is RequirementWrapper => {
+  // Check if it's a requirement wrapper by checking if it has Requirement assessment type properties
+  return 'findings' in assessment.content;
+};
 
 const ThreadViewButton: React.FC<{ 
   reportId: string;
@@ -89,12 +106,6 @@ const ThreadViewButton: React.FC<{
       View Thread
     </Button>
   );
-};
-
-const isRequirementAssessment = (
-  assessment: RequirementOrGroupAssessment
-): assessment is RequirementAssessment => {
-  return 'requirement_id' in assessment && !('requirement_group_id' in assessment);
 };
 
 const InfoTooltip: React.FC<{
@@ -189,8 +200,9 @@ const TaskList: React.FC<{
   );
 };
 
+
 const RequirementCard: React.FC<{ 
-  req: any;
+  req: RequirementWrapper;
   reportId: string;
   index: number;
 }> = ({ req, reportId, index }) => {
@@ -199,10 +211,10 @@ const RequirementCard: React.FC<{
 
   React.useEffect(() => {
     const fetchRequirement = async () => {
-      if (!wasmModule || !req.content.requirement_id) return;
+      if (!wasmModule || !req.id) return;
       
       try {
-        const response = await wasmModule.get_requirement({ input: req.content.requirement_id });
+        const response = await wasmModule.get_requirement({ input: req.id });
         if (response.output) {
           setReqDetails(response.output.output);
         }
@@ -211,10 +223,10 @@ const RequirementCard: React.FC<{
       }
     };
 
-    if (!reqDetails && req.content.requirement_id) {
+    if (!reqDetails && req.id) {
       fetchRequirement();
     }
-  }, [wasmModule, req.content.requirement_id, reqDetails]);
+  }, [wasmModule, req.id, reqDetails]);
 
   return (
     <AccordionItem value={`req-${index}`} className="border rounded-lg bg-white">
@@ -222,80 +234,66 @@ const RequirementCard: React.FC<{
         <div className="flex justify-between items-center w-full gap-4">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <span className="truncate">{reqDetails?.name || `Requirement ${index + 1}`}</span>
-    <InfoTooltip 
-      name={reqDetails?.name}
-      description={reqDetails?.description}
-      reference={reqDetails?.reference}
-      id={reqDetails?.id}
-    />
+            <InfoTooltip 
+              name={reqDetails?.name}
+              description={reqDetails?.description}
+              reference={reqDetails?.reference}
+              id={reqDetails?.id}
+            />
           </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
-<div className="flex items-center gap-4">
-  <ThreadViewButton 
-    reportId={reportId} 
-    requirementId={req.content.requirement_id} 
-  />
-  <div className="flex items-center gap-1 flex-shrink-0">
-    <ComplianceIndicator rating={req.content.compliance_rating} />
-  </div>
-</div>
-            <ComplianceIndicator rating={req.content.compliance_rating} />
+          <div className="flex items-center gap-4">
+            <ThreadViewButton 
+              reportId={reportId} 
+              requirementId={req.id}
+            />
+            <div className="flex items-center gap-1">
+              <ComplianceIndicator rating={req.content.compliance_rating} />
+            </div>
           </div>
         </div>
       </AccordionTrigger>
-<AccordionContent className="px-4 py-2">
-  <div className="space-y-4">
-    {/* Assessment Summary */}
-    <div>
-      <h4 className="font-medium mb-1">Assessment Summary</h4>
-      <p className="text-sm text-gray-700">{req.content.summary}</p>
-    </div>
-
-    {/* Assessment Details */}
-    <div>
-      <h4 className="font-medium mb-1">Assessment Details</h4>
-      <p className="text-sm text-gray-700">{req.content.details}</p>
-    </div>
-
-    {/* Findings */}
-    {req.content.findings?.length > 0 && (
-      <div>
-        <h4 className="font-medium mb-1">Findings</h4>
-        <ul className="list-disc pl-4 space-y-1">
-          {req.content.findings.map((finding: string, i: number) => (
-            <li key={i} className="text-sm text-gray-700">{finding}</li>
-          ))}
-        </ul>
-      </div>
-    )}
-
-    {/* Source Documents */}
-    {req.content.sources?.length > 0 && (
-      <div>
-        <h4 className="font-medium mb-1">Source Documents</h4>
-        <ul className="list-disc pl-4">
-          {req.content.sources.map((source: string, i: number) => (
-            <li key={i} className="text-sm text-gray-700">{source}</li>
-          ))}
-        </ul>
-      </div>
-    )}
-
-    {/* Tasks */}
-    {req.content.requirement_id && (
-      <TaskList 
-        reportId={reportId}
-        requirementId={req.content.requirement_id}
-      />
-    )}
-  </div>
-</AccordionContent>
+      <AccordionContent className="px-4 py-2">
+        <div className="space-y-4">
+          <div>
+            <h4 className="font-medium mb-1">Assessment Summary</h4>
+            <p className="text-sm text-gray-700">{req.content.summary}</p>
+          </div>
+          <div>
+            <h4 className="font-medium mb-1">Assessment Details</h4>
+            <p className="text-sm text-gray-700">{req.content.details}</p>
+          </div>
+          {req.content.findings?.length > 0 && (
+            <div>
+              <h4 className="font-medium mb-1">Findings</h4>
+              <ul className="list-disc pl-4 space-y-1">
+                {req.content.findings.map((finding, i) => (
+                  <li key={i} className="text-sm text-gray-700">{finding}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {req.content.sources?.length > 0 && (
+            <div>
+              <h4 className="font-medium mb-1">Source Documents</h4>
+              <ul className="list-disc pl-4">
+                {req.content.sources.map((source, i) => (
+                  <li key={i} className="text-sm text-gray-700">{source}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <TaskList 
+            reportId={reportId}
+            requirementId={req.id}
+          />
+        </div>
+      </AccordionContent>
     </AccordionItem>
   );
 };
 
 const RequirementGroupCard: React.FC<{
-  group: any;
+  group: RequirementGroupWrapper;
   reportId: string;
   index: number;
 }> = ({ group, reportId, index }) => {
@@ -304,10 +302,10 @@ const RequirementGroupCard: React.FC<{
 
   React.useEffect(() => {
     const fetchRequirementGroup = async () => {
-      if (!wasmModule || !group.content.requirement_group_id) return;
+      if (!wasmModule || !group.id) return;
       
       try {
-        const response = await wasmModule.get_requirement_group({ input: group.content.requirement_group_id });
+        const response = await wasmModule.get_requirement_group({ input: group.id });
         if (response.output) {
           setGroupDetails(response.output.output);
         }
@@ -316,12 +314,12 @@ const RequirementGroupCard: React.FC<{
       }
     };
 
-    if (!groupDetails && group.content.requirement_group_id) {
+    if (!groupDetails && group.id) {
       fetchRequirementGroup();
     }
-  }, [wasmModule, group.content.requirement_group_id, groupDetails]);
+  }, [wasmModule, group.id, groupDetails]);
 
-  if (!group.content.assessments?.length) return null;
+  if (!group.content.assessments) return null;
 
   return (
     <AccordionItem value={`group-${index}`} className="border rounded-lg bg-gray-50">
@@ -329,69 +327,61 @@ const RequirementGroupCard: React.FC<{
         <div className="flex justify-between items-center w-full gap-4">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <span className="truncate">{groupDetails?.name || `Requirement Group ${index + 1}`}</span>
-    <InfoTooltip 
-      name={groupDetails?.name}
-      description={groupDetails?.description}
-      reference={groupDetails?.reference}
-      id={groupDetails?.id}
-    />
+            <InfoTooltip 
+              name={groupDetails?.name}
+              description={groupDetails?.description}
+              reference={groupDetails?.reference}
+              id={groupDetails?.id}
+            />
           </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
-<div className="flex items-center gap-4">
-  <ThreadViewButton 
-    reportId={reportId} 
-    groupId={group.content.requirement_group_id} 
-  />
-  <div className="flex items-center gap-1 flex-shrink-0">
-    <ComplianceIndicator rating={group.content.compliance_rating} />
-  </div>
-</div>
-            <ComplianceIndicator rating={group.content.compliance_rating} />
+          <div className="flex items-center gap-4">
+            <ThreadViewButton 
+              reportId={reportId} 
+              groupId={group.id}
+            />
+            <div className="flex items-center gap-1">
+              <ComplianceIndicator rating={group.content.compliance_rating} />
+            </div>
           </div>
         </div>
       </AccordionTrigger>
-<AccordionContent className="px-4 py-2">
-  <div className="space-y-4">
-    {/* Assessment Summary */}
-    <div>
-      <h4 className="font-medium mb-1">Assessment Summary</h4>
-      <p className="text-sm text-gray-700">{group.content.summary}</p>
-    </div>
-
-    {/* Assessment Details */}
-    <div>
-      <h4 className="font-medium mb-1">Assessment Details</h4>
-      <p className="text-sm text-gray-700">{group.content.details}</p>
-    </div>
-
-    {/* Nested Requirements */}
-    {group.content.assessments?.length > 0 && (
-      <Accordion type="multiple" className="space-y-2">
-        {group.content.assessments.map((assessment: any, i: number) => (
-          isRequirementAssessment(assessment.content) ? (
-            <RequirementCard 
-              key={i} 
-              req={assessment} 
-              reportId={reportId}
-              index={i} 
-            />
-          ) : (
-            <RequirementGroupCard 
-              key={i} 
-              group={assessment} 
-              reportId={reportId}
-              index={i} 
-            />
-          )
-        ))}
-      </Accordion>
-    )}
-  </div>
-</AccordionContent>
+      <AccordionContent className="px-4 py-2">
+        <div className="space-y-4">
+          <div>
+            <h4 className="font-medium mb-1">Assessment Summary</h4>
+            <p className="text-sm text-gray-700">{group.content.summary}</p>
+          </div>
+          <div>
+            <h4 className="font-medium mb-1">Assessment Details</h4>
+            <p className="text-sm text-gray-700">{group.content.details}</p>
+          </div>
+          {group.content.assessments && Object.entries(group.content.assessments).length > 0 && (
+            <Accordion type="multiple" className="space-y-2">
+              {Object.entries(group.content.assessments).map(([key, assessment], i) => {
+                const wrapper = { content: assessment, id: key } as AssessmentWrapper;
+                return isRequirementAssessment(wrapper) ? (
+                  <RequirementCard 
+                    key={key} 
+                    req={wrapper as RequirementWrapper}
+                    reportId={reportId}
+                    index={i} 
+                  />
+                ) : (
+                  <RequirementGroupCard 
+                    key={key} 
+                    group={wrapper as RequirementGroupWrapper}
+                    reportId={reportId}
+                    index={i} 
+                  />
+                );
+              })}
+            </Accordion>
+          )}
+        </div>
+      </AccordionContent>
     </AccordionItem>
   );
 };
-
 
 const ComplianceIndicator: React.FC<{ rating: number }> = ({ rating }) => {
   let Icon = XCircle;
@@ -417,7 +407,7 @@ const SectionHeader: React.FC<{
   sectionId: string | undefined;
   complianceRating: number;
   index: number;
-  reportId: string;  // Add this
+  reportId: string;
 }> = ({ sectionId, complianceRating, index, reportId }) => {
   const { wasmModule } = useWasm();
   const [sectionDetails, setSectionDetails] = React.useState<Section | undefined>();
@@ -446,23 +436,20 @@ const SectionHeader: React.FC<{
       <div className="flex items-center gap-2">
         <ChevronRight className="h-4 w-4" />
         <span className="truncate">{sectionDetails?.name || `Section ${index + 1}`}</span>
-<InfoTooltip 
-  name={sectionDetails?.name}
-  description={sectionDetails?.description}
-  id={sectionDetails?.id}
-/>
+        <InfoTooltip 
+          name={sectionDetails?.name}
+          description={sectionDetails?.description}
+          id={sectionDetails?.id}
+        />
       </div>
-      <div className="flex items-center gap-1">
-<div className="flex items-center gap-4">
-  <ThreadViewButton 
-    reportId={reportId} 
-    sectionId={sectionId} 
-  />
-  <div className="flex items-center gap-1">
-    <ComplianceIndicator rating={complianceRating} />
-  </div>
-</div>
-        <ComplianceIndicator rating={complianceRating} />
+      <div className="flex items-center gap-4">
+        <ThreadViewButton 
+          reportId={reportId} 
+          sectionId={sectionId} 
+        />
+        <div className="flex items-center gap-1">
+          <ComplianceIndicator rating={complianceRating} />
+        </div>
       </div>
     </div>
   );
@@ -515,8 +502,6 @@ const ReportViewer = () => {
     fetchReport();
   }, [wasmModule, reportId, retryCount]);
 
-  console.log("!!", report)
-
   const getStatusBadge = (status: ReportStatus) => {
     const statusStyles: Record<ReportStatus, string> = {
       processing: 'bg-yellow-100 text-yellow-800',
@@ -549,8 +534,6 @@ const ReportViewer = () => {
     );
   }
 
-
-
   if (!report) return null;
 
   return (
@@ -559,7 +542,10 @@ const ReportViewer = () => {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>{report.title}</CardTitle>
-            {getStatusBadge(report.status)}
+            <div className="flex items-center gap-4">
+              <ThreadViewButton reportId={report.id} />
+              {getStatusBadge(report.status)}
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -571,13 +557,6 @@ const ReportViewer = () => {
             <div className="flex items-center gap-2">
               <span className="font-medium">Overall Compliance:</span>
               <div className="flex items-center gap-1">
-<div className="flex justify-between items-center">
-  <CardTitle>{report.title}</CardTitle>
-  <div className="flex items-center gap-4">
-    <ThreadViewButton reportId={report.id} />
-    {getStatusBadge(report.status)}
-  </div>
-</div>
                 <ComplianceIndicator rating={report.compliance_rating} />
               </div>
             </div>
@@ -586,38 +565,38 @@ const ReportViewer = () => {
       </Card>
 
       <Accordion type="multiple" className="space-y-4">
-        {report.section_assessments.map((section, index) => (
-          <AccordionItem value={`section-${index}`} key={index} className="border rounded-lg">
+        {Object.entries(report.section_assessments).map(([sectionId, section], index) => (
+          <AccordionItem value={`section-${index}`} key={sectionId} className="border rounded-lg">
             <AccordionTrigger className="px-4 py-2 hover:no-underline">
-<SectionHeader 
-  sectionId={section.section_id} 
-  complianceRating={section.compliance_rating}
-  index={index}
-  reportId={reportId}  // Add this
-/>
+              <SectionHeader 
+                sectionId={sectionId}
+                complianceRating={section.compliance_rating}
+                index={index}
+                reportId={reportId}
+              />
             </AccordionTrigger>
             <AccordionContent className="px-4 py-2">
               <div className="space-y-4">
                 <p className="text-gray-700">{section.abstract_text}</p>
                 
-{section.requirement_assessments?.map((req, reqIndex) => (
-  isRequirementAssessment(req) ? (
-    <RequirementCard 
-      key={reqIndex} 
-      req={req} 
-      index={reqIndex}
-      reportId={reportId}
-    />
-  ) : (
-    <RequirementGroupCard 
-      key={reqIndex} 
-      group={req} 
-      reportId={reportId}  // Add reportId here
-      index={reqIndex} 
-    />
-  )
-))}
-
+                {section.requirement_assessments && Object.entries(section.requirement_assessments).map(([reqId, req], reqIndex) => {
+                  const wrapper = { content: req } as AssessmentWrapper;
+                  return isRequirementAssessment(wrapper) ? (
+                    <RequirementCard 
+                      key={reqId}
+                      req={wrapper as RequirementWrapper}
+                      index={reqIndex}
+                      reportId={reportId}
+                    />
+                  ) : (
+                    <RequirementGroupCard 
+                      key={reqId}
+                      group={wrapper as RequirementGroupWrapper}
+                      reportId={reportId}
+                      index={reqIndex}
+                    />
+                  );
+                })}
               </div>
             </AccordionContent>
           </AccordionItem>
