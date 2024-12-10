@@ -51,7 +51,7 @@ const nextConfig = {
       afterFiles: [
         {
           source: '/api/:path*',
-          destination: process.env.API_URL || 'http://127.0.0.1:8080/api/:path*', // Make API URL configurable
+          destination: process.env.API_URL || 'http://127.0.0.1:8180/api/:path*', // Make API URL configurable
           basePath: false,
           has: [
             {
@@ -65,7 +65,7 @@ const nextConfig = {
       fallback: [
         {
           source: '/api/:path*',
-          destination: process.env.API_URL || 'http://localhost:8080/api/:path*', // Make API URL configurable
+          destination: process.env.API_URL || 'http://localhost:8180/api/:path*', // Make API URL configurable
         }
       ]
     };
