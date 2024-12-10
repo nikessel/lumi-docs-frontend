@@ -15,7 +15,7 @@ import type {
   GetAllReportsResponse,
   GetTasksByReportResponse,
   GetTasksByReportAndRequirementResponse,
-  GetTasksByDocumentResponse
+  GetTasksByDocumentResponse,
 } from "@wasm";
 
 function TaskTest() {
@@ -71,8 +71,12 @@ function TaskTest() {
         setTasks(reportTasksResponse.output.output);
       }
 
-      // Get first requirement ID from assessments if available
-      const firstRequirementId = selectedReport.section_assessments?.[0]?.requirement_assessments?.[0]?.requirement_id;
+      // Get first requirement ID from section assessments if available
+      const firstSectionId = Array.from(selectedReport.section_assessments.keys())[0];
+      const firstSection = firstSectionId ? selectedReport.section_assessments.get(firstSectionId) : undefined;
+      const firstRequirementId = firstSection?.requirement_assessments ? 
+        Array.from(firstSection.requirement_assessments.keys())[0] : undefined;
+
       if (firstRequirementId) {
         const requirementTasksResponse: GetTasksByReportAndRequirementResponse = 
           await wasmModule.get_tasks_by_report_and_requirement({
