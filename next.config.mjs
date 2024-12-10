@@ -93,4 +93,9 @@ const nextConfig = {
   },
 };
 
+
+if (process.env.HOSTNAME) {
+  process.env.HOST = process.env.HOSTNAME;  // Ensure HOST is also set
+}
+
 export default nextConfig;
