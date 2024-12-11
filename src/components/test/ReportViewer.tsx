@@ -4,8 +4,8 @@ import React from 'react';
 import { useParams } from 'next/navigation';
 import { useWasm } from '@/components/WasmProvider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { FileText, Bookmark, Quote as QuoteIcon } from 'lucide-react';
 import {
   Accordion,
   AccordionContent,
@@ -22,6 +22,8 @@ import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { MessageSquare } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { ChevronRight, AlertCircle, CheckCircle2, XCircle, Info, CheckCircle, Clock } from 'lucide-react';
 import type { 
   Report, 
@@ -32,7 +34,9 @@ import type {
   Requirement,
   RequirementGroup,
   Task,
+  AssessmentQuote,
   TaskStatus,
+  RequirementOrRequirementGroupAssessment,
 } from '@wasm';
 
 interface RequirementWrapper {
@@ -46,6 +50,82 @@ interface RequirementGroupWrapper {
 }
 
 type AssessmentWrapper = RequirementWrapper | RequirementGroupWrapper;
+
+// Add helper function to determine if it's a requirement assessment
+const isRequirementOrGroupAssessment = (
+  assessment: RequirementOrRequirementGroupAssessment
+): assessment is { requirement: RequirementAssessment } => {
+  return 'requirement' in assessment;
+};
+
+// Helper to create wrapper objects
+const createAssessmentWrapper = (content: RequirementOrRequirementGroupAssessment, id: string): AssessmentWrapper => {
+  if (isRequirementOrGroupAssessment(content)) {
+    return {
+      content: content.requirement,
+      id
+    } as RequirementWrapper;
+  } else {
+    return {
+      content: content.requirement_group,
+      id
+    } as RequirementGroupWrapper;
+  }
+};
+
+const QuoteDisplay: React.FC<{
+  quote: AssessmentQuote;
+}> = ({ quote }) => {
+  const relevancy = Math.round(quote.relevancy_score * 100);
+  
+  return (
+    <div className="border rounded-lg bg-white shadow-sm overflow-hidden my-4">
+      {/* Quote content section */}
+      <div className="p-4 relative">
+        {/* Large quote mark in the background */}
+        <div className="absolute top-0 left-0 text-gray-100 p-4">
+          <QuoteIcon className="h-8 w-8" />
+        </div>
+        
+        <div className="relative bg-gray-50 rounded-lg p-6 italic">
+          <div className="prose prose-sm max-w-none prose-p:my-2 prose-p:leading-relaxed prose-headings:mb-3">
+            <ReactMarkdown 
+              remarkPlugins={[remarkGfm]}
+              className="text-gray-700"
+            >
+              {quote.pretty}
+            </ReactMarkdown>
+          </div>
+        </div>
+      </div>
+      
+      {/* Metadata footer */}
+      <div className="border-t bg-gray-50 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            <span className="font-medium">{quote.raw.document_title}</span>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1">
+              <span>Page {quote.raw.page}</span>
+              <span className="text-gray-400">•</span>
+              <span>Lines {quote.raw.start_line}-{quote.raw.end_line}/{quote.raw.total_lines_on_page}</span>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Bookmark className="h-4 w-4 text-blue-500" />
+              <span className={`font-medium ${relevancy >= 80 ? 'text-green-600' : relevancy >= 60 ? 'text-blue-600' : 'text-gray-600'}`}>
+                {relevancy}% Relevant
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const isRequirementAssessment = (
   assessment: AssessmentWrapper
@@ -200,7 +280,6 @@ const TaskList: React.FC<{
   );
 };
 
-
 const RequirementCard: React.FC<{ 
   req: RequirementWrapper;
   reportId: string;
@@ -272,6 +351,16 @@ const RequirementCard: React.FC<{
               </ul>
             </div>
           )}
+          {req.content.quotes && req.content.quotes.length > 0 && (
+            <div>
+              <h4 className="font-medium mb-1">Supporting Evidence</h4>
+              <div className="space-y-2">
+                {req.content.quotes.map((quote, i) => (
+                  <QuoteDisplay key={i} quote={quote} />
+                ))}
+              </div>
+            </div>
+          )}
           {req.content.sources?.length > 0 && (
             <div>
               <h4 className="font-medium mb-1">Source Documents</h4>
@@ -292,6 +381,7 @@ const RequirementCard: React.FC<{
   );
 };
 
+// Update RequirementGroupCard to use the same pattern
 const RequirementGroupCard: React.FC<{
   group: RequirementGroupWrapper;
   reportId: string;
@@ -355,28 +445,24 @@ const RequirementGroupCard: React.FC<{
             <h4 className="font-medium mb-1">Assessment Details</h4>
             <p className="text-sm text-gray-700">{group.content.details}</p>
           </div>
-          {group.content.assessments && Object.entries(group.content.assessments).length > 0 && (
-            <Accordion type="multiple" className="space-y-2">
-              {Object.entries(group.content.assessments).map(([key, assessment], i) => {
-                const wrapper = { content: assessment, id: key } as AssessmentWrapper;
-                return isRequirementAssessment(wrapper) ? (
-                  <RequirementCard 
-                    key={key} 
-                    req={wrapper as RequirementWrapper}
-                    reportId={reportId}
-                    index={i} 
-                  />
-                ) : (
-                  <RequirementGroupCard 
-                    key={key} 
-                    group={wrapper as RequirementGroupWrapper}
-                    reportId={reportId}
-                    index={i} 
-                  />
-                );
-              })}
-            </Accordion>
-          )}
+      {group.content.assessments && Array.from(group.content.assessments.entries()).map(([key, assessment], i) => {
+            const wrapper = createAssessmentWrapper(assessment, key);
+            return isRequirementAssessment(wrapper) ? (
+              <RequirementCard 
+                key={key} 
+                req={wrapper}
+                reportId={reportId}
+                index={i} 
+              />
+            ) : (
+              <RequirementGroupCard 
+                key={key} 
+                group={wrapper}
+                reportId={reportId}
+                index={i} 
+              />
+            );
+          })}
         </div>
       </AccordionContent>
     </AccordionItem>
@@ -455,6 +541,22 @@ const SectionHeader: React.FC<{
   );
 };
 
+
+const getStatusBadge = (status: ReportStatus) => {
+  const statusStyles: Record<ReportStatus, string> = {
+    processing: 'bg-yellow-100 text-yellow-800',
+    ready: 'bg-green-100 text-green-800',
+    partially_failed: 'bg-red-100 text-red-800'
+  };
+
+  return (
+    <Badge className={statusStyles[status]}>
+      {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
+    </Badge>
+  );
+};
+
+
 const ReportViewer = () => {
   const params = useParams();
   const reportId = params?.reportId as string;
@@ -466,6 +568,8 @@ const ReportViewer = () => {
 
   React.useEffect(() => {
     const fetchReport = async () => {
+      console.log('Fetching report, WASM module status:', !!wasmModule);
+      
       if (!wasmModule) {
         if (retryCount < 3) {
           setTimeout(() => {
@@ -485,10 +589,19 @@ const ReportViewer = () => {
       }
 
       try {
+        console.log('Making WASM call with reportId:', reportId);
         const response = await wasmModule.get_report({ input: reportId });
+        console.log('Got report response:', response);
+        
         if (response.output) {
+          console.log('Report data:', {
+            title: response.output.output.title,
+            sectionsCount: Object.keys(response.output.output.section_assessments || {}).length,
+            sections: response.output.output.section_assessments
+          });
           setReport(response.output.output);
         } else if (response.error) {
+          console.error('Report error:', response.error);
           setError(response.error.message);
         }
       } catch (err) {
@@ -502,39 +615,77 @@ const ReportViewer = () => {
     fetchReport();
   }, [wasmModule, reportId, retryCount]);
 
-  const getStatusBadge = (status: ReportStatus) => {
-    const statusStyles: Record<ReportStatus, string> = {
-      processing: 'bg-yellow-100 text-yellow-800',
-      ready: 'bg-green-100 text-green-800',
-      partially_failed: 'bg-red-100 text-red-800'
-    };
 
-    return (
-      <Badge className={statusStyles[status]}>
-        {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
-      </Badge>
-    );
+  const renderSections = () => {
+    if (!report?.section_assessments) {
+      console.log('No section assessments found in report');
+      return null;
+    }
+
+    const sectionEntries = Array.from(report.section_assessments.entries());
+    console.log('Section entries:', sectionEntries);
+
+    return sectionEntries.map(([sectionId, section], index) => {
+      console.log('Rendering section:', {
+        sectionId,
+        abstractText: section.abstract_text,
+        requirementCount: section.requirement_assessments ? Array.from(section.requirement_assessments.entries()).length : 0
+      });
+
+      return (
+        <AccordionItem value={`section-${index}`} key={sectionId} className="border rounded-lg">
+          <AccordionTrigger className="px-4 py-2 hover:no-underline">
+            <SectionHeader 
+              sectionId={sectionId}
+              complianceRating={section.compliance_rating}
+              index={index}
+              reportId={reportId}
+            />
+          </AccordionTrigger>
+          <AccordionContent className="px-4 py-2">
+            <div className="space-y-4">
+              <p className="text-gray-700">{section.abstract_text}</p>
+              
+              {section.requirement_assessments && Array.from(section.requirement_assessments.entries()).map(([reqId, req], reqIndex) => {
+                console.log('Rendering requirement:', {
+                  reqId,
+                  type: isRequirementOrGroupAssessment(req) ? 'requirement' : 'group'
+                });
+
+                const wrapper = createAssessmentWrapper(req, reqId);
+                return isRequirementAssessment(wrapper) ? (
+                  <RequirementCard 
+                    key={reqId}
+                    req={wrapper}
+                    index={reqIndex}
+                    reportId={reportId}
+                  />
+                ) : (
+                  <RequirementGroupCard 
+                    key={reqId}
+                    group={wrapper}
+                    reportId={reportId}
+                    index={reqIndex}
+                  />
+                );
+              })}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      );
+    });
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-4 p-4">
-        <Skeleton className="h-12 w-full" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
+  if (!report) {
+    console.log('No report data available');
+    return null;
   }
 
-  if (error) {
-    return (
-      <Alert variant="destructive">
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
-    );
-  }
-
-  if (!report) return null;
+  console.log('Rendering full report:', {
+    title: report.title,
+    status: report.status,
+    sectionsCount: Object.keys(report.section_assessments || {}).length
+  });
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6">
@@ -565,42 +716,7 @@ const ReportViewer = () => {
       </Card>
 
       <Accordion type="multiple" className="space-y-4">
-        {Object.entries(report.section_assessments).map(([sectionId, section], index) => (
-          <AccordionItem value={`section-${index}`} key={sectionId} className="border rounded-lg">
-            <AccordionTrigger className="px-4 py-2 hover:no-underline">
-              <SectionHeader 
-                sectionId={sectionId}
-                complianceRating={section.compliance_rating}
-                index={index}
-                reportId={reportId}
-              />
-            </AccordionTrigger>
-            <AccordionContent className="px-4 py-2">
-              <div className="space-y-4">
-                <p className="text-gray-700">{section.abstract_text}</p>
-                
-                {section.requirement_assessments && Object.entries(section.requirement_assessments).map(([reqId, req], reqIndex) => {
-                  const wrapper = { content: req } as AssessmentWrapper;
-                  return isRequirementAssessment(wrapper) ? (
-                    <RequirementCard 
-                      key={reqId}
-                      req={wrapper as RequirementWrapper}
-                      index={reqIndex}
-                      reportId={reportId}
-                    />
-                  ) : (
-                    <RequirementGroupCard 
-                      key={reqId}
-                      group={wrapper as RequirementGroupWrapper}
-                      reportId={reportId}
-                      index={reqIndex}
-                    />
-                  );
-                })}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        ))}
+        {renderSections()}
       </Accordion>
     </div>
   );
