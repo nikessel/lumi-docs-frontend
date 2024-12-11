@@ -638,17 +638,19 @@ export interface RequirementAssessment {
      * Set of specific citations and references supporting the assessment findings
      */
     references?: Reference[];
-    quotes?: PrettyQuote[];
+    quotes?: AssessmentQuote[];
 }
 
-export interface PrettyQuote {
-    raw: Quote;
+export interface AssessmentQuote {
+    raw: RawQuote;
+    relevancy_score: Percentage;
     pretty: string;
 }
 
-export interface Quote {
+export interface RawQuote {
     document_title: string;
-    lines: number[];
+    start_line: number;
+    end_line: number;
     total_lines_on_page: number;
     page: number;
     content: string;

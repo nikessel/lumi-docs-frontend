@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface UserSignupProps {
-  onProfileUpdate: () => void;  // Takes no parameters
+  onProfileUpdate: () => void;
 }
 
 const UserSignup = ({ onProfileUpdate }: UserSignupProps) => {
@@ -20,13 +20,13 @@ const UserSignup = ({ onProfileUpdate }: UserSignupProps) => {
   const [userExists, setUserExists] = useState<boolean | null>(null);
   const [isCheckingUser, setIsCheckingUser] = useState(true);
 
-  // Added missing config property to match expected structure
+  // Updated form data to use null for optional fields
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
-    job_title: "",
-    company: "",
-    config: {}, // Empty config object as per expected structure
+    job_title: undefined as string | undefined,
+    company: undefined as string | undefined,
+    config: {},
   });
 
   useEffect(() => {
@@ -53,7 +53,7 @@ const UserSignup = ({ onProfileUpdate }: UserSignupProps) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: value.trim() === "" && (name === "job_title" || name === "company") ? null : value,
     }));
   };
 
@@ -74,7 +74,7 @@ const UserSignup = ({ onProfileUpdate }: UserSignupProps) => {
       if (response.output) {
         setSuccess(true);
         setUserExists(true);
-        onProfileUpdate(); // Notify that the profile was updated
+        onProfileUpdate();
       }
     } catch (error) {
       setError("Failed to create user");
@@ -152,7 +152,7 @@ const UserSignup = ({ onProfileUpdate }: UserSignupProps) => {
             <Input
               id="job_title"
               name="job_title"
-              value={formData.job_title}
+              value={formData.job_title || ""}
               onChange={handleChange}
               className="w-full"
             />
@@ -163,7 +163,7 @@ const UserSignup = ({ onProfileUpdate }: UserSignupProps) => {
             <Input
               id="company"
               name="company"
-              value={formData.company}
+              value={formData.company || ""}
               onChange={handleChange}
               className="w-full"
             />
