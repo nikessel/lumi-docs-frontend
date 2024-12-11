@@ -1,190 +1,90 @@
 /* tslint:disable */
 /* eslint-disable */
-/**
- * @param {EchoInput} input
- * @returns {Promise<EchoResponse>}
- */
+export function hydrate(): void;
+export function set_websocket_event_callback(callback: Function): void;
+export function get_file_data(input: GetFileDataInput): Promise<GetFileDataResponse>;
 export function echo(input: EchoInput): Promise<EchoResponse>;
-/**
- * @returns {Promise<GetPublicAuth0ConfigResponse>}
- */
 export function get_public_auth0_config(): Promise<GetPublicAuth0ConfigResponse>;
-/**
- * @param {ExchangeCodeForIdentityInput} input
- * @returns {Promise<ExchangeCodeForIdentityResponse>}
- */
 export function exchange_code_for_identity(input: ExchangeCodeForIdentityInput): Promise<ExchangeCodeForIdentityResponse>;
-/**
- * @param {TokenToClaimsInput} input
- * @returns {Promise<TokenToClaimsResponse>}
- */
 export function token_to_claims(input: TokenToClaimsInput): Promise<TokenToClaimsResponse>;
-/**
- * @returns {Promise<AppVersionResponse>}
- */
 export function app_version(): Promise<AppVersionResponse>;
-/**
- * @param {UploadFileChunkInput} input
- * @returns {Promise<UploadFileChunkResponse>}
- */
 export function upload_file_chunk(input: UploadFileChunkInput): Promise<UploadFileChunkResponse>;
-/**
- * @returns {Promise<GetUserResponse>}
- */
 export function get_user(): Promise<GetUserResponse>;
-/**
- * @param {GetTaskInput} input
- * @returns {Promise<GetTaskResponse>}
- */
 export function get_task(input: GetTaskInput): Promise<GetTaskResponse>;
-/**
- * @param {GetReportInput} input
- * @returns {Promise<GetReportResponse>}
- */
 export function get_report(input: GetReportInput): Promise<GetReportResponse>;
-/**
- * @returns {Promise<GetAllReportsResponse>}
- */
 export function get_all_reports(): Promise<GetAllReportsResponse>;
-/**
- * @param {GetFileInput} input
- * @returns {Promise<GetFileResponse>}
- */
 export function get_file(input: GetFileInput): Promise<GetFileResponse>;
-/**
- * @param {GetRequirementInput} input
- * @returns {Promise<GetRequirementResponse>}
- */
 export function get_requirement(input: GetRequirementInput): Promise<GetRequirementResponse>;
-/**
- * @param {GetRequirementGroupInput} input
- * @returns {Promise<GetRequirementGroupResponse>}
- */
 export function get_requirement_group(input: GetRequirementGroupInput): Promise<GetRequirementGroupResponse>;
-/**
- * @param {GetSectionsInput} input
- * @returns {Promise<GetSectionsResponse>}
- */
 export function get_sections(input: GetSectionsInput): Promise<GetSectionsResponse>;
-/**
- * @param {GetTasksByReportInput} input
- * @returns {Promise<GetTasksByReportResponse>}
- */
 export function get_tasks_by_report(input: GetTasksByReportInput): Promise<GetTasksByReportResponse>;
-/**
- * @param {GetTasksByReportAndRequirementInput} input
- * @returns {Promise<GetTasksByReportAndRequirementResponse>}
- */
 export function get_tasks_by_report_and_requirement(input: GetTasksByReportAndRequirementInput): Promise<GetTasksByReportAndRequirementResponse>;
-/**
- * @param {GetTasksByDocumentInput} input
- * @returns {Promise<GetTasksByDocumentResponse>}
- */
 export function get_tasks_by_document(input: GetTasksByDocumentInput): Promise<GetTasksByDocumentResponse>;
-/**
- * @param {GetRequirementGroupsBySectionInput} input
- * @returns {Promise<GetRequirementGroupsBySectionResponse>}
- */
 export function get_requirement_groups_by_section(input: GetRequirementGroupsBySectionInput): Promise<GetRequirementGroupsBySectionResponse>;
-/**
- * @param {GetChildRequirementGroupsInput} input
- * @returns {Promise<GetChildRequirementGroupsResponse>}
- */
 export function get_child_requirement_groups(input: GetChildRequirementGroupsInput): Promise<GetChildRequirementGroupsResponse>;
-/**
- * @param {GetRequirementsByGroupInput} input
- * @returns {Promise<GetRequirementsByGroupResponse>}
- */
 export function get_requirements_by_group(input: GetRequirementsByGroupInput): Promise<GetRequirementsByGroupResponse>;
-/**
- * @returns {Promise<GetAllSectionsResponse>}
- */
 export function get_all_sections(): Promise<GetAllSectionsResponse>;
-/**
- * @returns {Promise<GetAllFilesResponse>}
- */
 export function get_all_files(): Promise<GetAllFilesResponse>;
-/**
- * @returns {Promise<GetAllRequirementsResponse>}
- */
 export function get_all_requirements(): Promise<GetAllRequirementsResponse>;
-/**
- * @returns {Promise<GetAllRequirementGroupsResponse>}
- */
 export function get_all_requirement_groups(): Promise<GetAllRequirementGroupsResponse>;
-/**
- * @param {CreateUserInput} input
- * @returns {Promise<CreateUserResponse>}
- */
 export function create_user(input: CreateUserInput): Promise<CreateUserResponse>;
-/**
- * @param {CreateReportInput} input
- * @returns {Promise<CreateReportResponse>}
- */
 export function create_report(input: CreateReportInput): Promise<CreateReportResponse>;
-/**
- * @param {CreateFileInput} input
- * @returns {Promise<CreateFileResponse>}
- */
 export function create_file(input: CreateFileInput): Promise<CreateFileResponse>;
-/**
- * @param {UpdateUserInput} input
- * @returns {Promise<UpdateUserResponse>}
- */
 export function update_user(input: UpdateUserInput): Promise<UpdateUserResponse>;
-/**
- * @param {UpdateTaskInput} input
- * @returns {Promise<UpdateTaskResponse>}
- */
 export function update_task(input: UpdateTaskInput): Promise<UpdateTaskResponse>;
-/**
- * @returns {Promise<UserExistsResponse>}
- */
 export function user_exists(): Promise<UserExistsResponse>;
-/**
- * @returns {Promise<IsAdminResponse>}
- */
 export function is_admin(): Promise<IsAdminResponse>;
-/**
- * @param {AdminUploadReportInput} input
- * @returns {Promise<AdminUploadReportResponse>}
- */
 export function admin_upload_report(input: AdminUploadReportInput): Promise<AdminUploadReportResponse>;
-/**
- * @param {NewFileInput} input
- * @returns {NewFileResponse}
- */
 export function new_file(input: NewFileInput): NewFileResponse;
-/**
- * @param {AdminGetThreadsByReportInput} input
- * @returns {Promise<AdminGetThreadsByReportResponse>}
- */
 export function admin_get_threads_by_report(input: AdminGetThreadsByReportInput): Promise<AdminGetThreadsByReportResponse>;
-/**
- * @param {AdminGetThreadsBySectionInput} input
- * @returns {Promise<AdminGetThreadsBySectionResponse>}
- */
 export function admin_get_threads_by_section(input: AdminGetThreadsBySectionInput): Promise<AdminGetThreadsBySectionResponse>;
-/**
- * @param {AdminGetThreadsByRequirementGroupInput} input
- * @returns {Promise<AdminGetThreadsByRequirementGroupResponse>}
- */
 export function admin_get_threads_by_requirement_group(input: AdminGetThreadsByRequirementGroupInput): Promise<AdminGetThreadsByRequirementGroupResponse>;
-/**
- * @param {AdminGetThreadsByRequirementInput} input
- * @returns {Promise<AdminGetThreadsByRequirementResponse>}
- */
 export function admin_get_threads_by_requirement(input: AdminGetThreadsByRequirementInput): Promise<AdminGetThreadsByRequirementResponse>;
 /**
- * @param {Function} callback
+ * The `ReadableStreamType` enum.
+ *
+ * *This API requires the following crate features to be activated: `ReadableStreamType`*
  */
-export function set_websocket_event_callback(callback: Function): void;
-export function hydrate(): void;
-/**
- * @param {GetFileDataInput} input
- * @returns {Promise<GetFileDataResponse>}
- */
-export function get_file_data(input: GetFileDataInput): Promise<GetFileDataResponse>;
+type ReadableStreamType = "bytes";
+declare namespace StorageKey {
+    export type id_token = "id_token";
+    export type access_token = "access_token";
+}
+
+export type StorageKey = "id_token" | "access_token";
+
+export interface GetFileDataInput {
+    input: IdType;
+}
+
+export interface GetFileDataOutput {
+    output: Uint8Array;
+}
+
+export interface GetFileDataResponse {
+    output: GetFileDataOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+declare namespace ErrorKind {
+    export type Validation = "Validation";
+    export type NotFound = "NotFound";
+    export type AlreadyExists = "AlreadyExists";
+    export type EmailNotVerified = "EmailNotVerified";
+    export type Unauthorized = "Unauthorized";
+    export type Timeout = "Timeout";
+    export type Deserialization = "Deserialization";
+    export type Serialization = "Serialization";
+    export type Server = "Server";
+}
+
+export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "EmailNotVerified" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
+
+export interface ClientSideError {
+    kind: ErrorKind;
+    message: string;
+}
+
 export interface EchoInput {
     input: string;
 }
@@ -633,44 +533,145 @@ export interface AdminGetThreadsByRequirementResponse {
     error: ClientSideError | undefined;
 }
 
-declare namespace ErrorKind {
-    export type Validation = "Validation";
-    export type NotFound = "NotFound";
-    export type AlreadyExists = "AlreadyExists";
-    export type EmailNotVerified = "EmailNotVerified";
-    export type Unauthorized = "Unauthorized";
-    export type Timeout = "Timeout";
-    export type Deserialization = "Deserialization";
-    export type Serialization = "Serialization";
-    export type Server = "Server";
+export interface ChunkId {
+    parent_id: string;
+    index: number;
 }
 
-export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "EmailNotVerified" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
+export type IdType = string;
 
-export interface ClientSideError {
-    kind: ErrorKind;
-    message: string;
+export interface UserConfig {
+    user: UserBaseConfig;
+    admin: AdminConfig;
 }
 
-export interface GetFileDataInput {
-    input: IdType;
+export interface UserBaseConfig {}
+
+export interface AdminConfig {
+    embed_config: EmbedConfig;
+    llm_config: LlmConfig;
 }
 
-export interface GetFileDataOutput {
-    output: Uint8Array;
+/**
+ * Collection of processed and analyzed text chunks extracted from a document
+ */
+export interface DocumentDataExtractionResponse {
+    /**
+     * Vector of processed text chunks with their quality metrics and content analysis
+     */
+    chunks: DocumentTextChunk[];
 }
 
-export interface GetFileDataResponse {
-    output: GetFileDataOutput | undefined;
-    error: ClientSideError | undefined;
+export interface DocumentTextChunk {
+    /**
+     * The processed and potentially reformatted text content. While the content may be reformatted in terms of punctuation and line breaks, the actual content must be replicated exactly.
+     */
+    content: ArcStr;
+    /**
+     * Information value score indicating the chunk\'s relevance and usefulness. Score from 0.0 to 1.0 indicating the information value of the chunk
+     */
+    information_value: number;
+    /**
+     * Ratio of well-formed, meaningful sentences to total sentences. Score from 0.0 to 1.0 indicating the ratio of meaningful sentences in the chunk
+     */
+    meaningful_sentence_ratio: number;
+    /**
+     * Score indicating the level of content repetition. Score from 0.0 to 1.0 indicating the level of content repetition (lower is better)
+     */
+    repetition_score: number;
+    /**
+     * The type of content in this chunk. Classification of the content type in this chunk
+     */
+    content_type: ContentType;
 }
 
-declare namespace StorageKey {
-    export type id_token = "id_token";
-    export type access_token = "access_token";
+export interface SectionAssessment {
+    abstract_text: ArcStr;
+    compliance_rating: ComplianceRating;
+    requirement_assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
 }
 
-export type StorageKey = "id_token" | "access_token";
+export interface ReportAbstractAndTitle {
+    abstract_text: ArcStr;
+    title: ArcStr;
+}
+
+export interface RequirementGroupAssessment {
+    /**
+     * The compliance rating indicating the level of conformity with the requirement
+     */
+    compliance_rating: ComplianceRating;
+    /**
+     * Comprehensive explanation of the compliance assessment, including methodology and findings
+     */
+    details: ArcStr;
+    /**
+     * Brief overview of the compliance status and key findings
+     */
+    summary: ArcStr;
+    assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
+}
+
+export interface RequirementAssessment {
+    /**
+     * The compliance rating indicating the level of conformity with the requirement
+     */
+    compliance_rating: ComplianceRating;
+    applicable: boolean;
+    /**
+     * Comprehensive explanation of the compliance assessment, including methodology and findings
+     */
+    details: ArcStr;
+    /**
+     * Brief overview of the compliance status and key findings
+     */
+    summary: ArcStr;
+    /**
+     * List of identified non-conformities, gaps, or issues that need to be addressed
+     */
+    findings: ArcStr[];
+    /**
+     * Set of document identifiers that were analyzed during the assessment
+     */
+    sources: string[];
+    /**
+     * Set of specific citations and references supporting the assessment findings
+     */
+    references?: Reference[];
+    quotes?: PrettyQuote[];
+}
+
+export interface PrettyQuote {
+    raw: Quote;
+    pretty: string;
+}
+
+export interface Quote {
+    document_title: string;
+    lines: number[];
+    total_lines_on_page: number;
+    page: number;
+    content: string;
+}
+
+export type RequirementOrRequirementGroupAssessment = { requirement: RequirementAssessment } | { requirement_group: RequirementGroupAssessment };
+
+export interface Suggestion {
+    kind: SuggestionKind;
+    description: ArcStr;
+    content: ArcStr;
+}
+
+export interface ReportFilterConfig {
+    sections_to_include: IdType[] | undefined;
+    requirements_to_include: IdType[] | undefined;
+    requirement_groups_to_include: IdType[] | undefined;
+}
+
+export interface LlmConfig {
+    model: LlmModel;
+    temperature: number | undefined;
+}
 
 export interface Task {
     id?: IdType;
@@ -745,6 +746,16 @@ export interface Thread {
     conversation: Messages;
     logs: string[];
 }
+
+export type ProgressEvent = { Report: [IdType, number] };
+
+export type UpdateEvent = { File: IdType } | { User: IdType } | { Requirement: IdType };
+
+export type DeleteEvent = { File: IdType };
+
+export type CreateEvent = { File: IdType } | { Report: IdType };
+
+export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
 
 export interface Claims {
     nickname: string;
@@ -852,13 +863,6 @@ export interface FullFile {
     data: ArcBytes;
 }
 
-export interface ChunkId {
-    parent_id: string;
-    index: number;
-}
-
-export type IdType = string;
-
 export interface EmbedConfig {
     model: EmbedModel;
     regulation_vector_search_limit: number;
@@ -868,173 +872,25 @@ export interface EmbedConfig {
     vector_store_id: string | undefined;
 }
 
-export interface LlmConfig {
-    model: LlmModel;
-    temperature: number | undefined;
-}
-
-export interface ReportFilterConfig {
-    sections_to_include: IdType[] | undefined;
-    requirements_to_include: IdType[] | undefined;
-    requirement_groups_to_include: IdType[] | undefined;
-}
-
-export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
-
-export interface UserConfig {
-    user: UserBaseConfig;
-    admin: AdminConfig;
-}
-
-export interface UserBaseConfig {}
-
-export interface AdminConfig {
-    embed_config: EmbedConfig;
-    llm_config: LlmConfig;
-}
-
-/**
- * Collection of processed and analyzed text chunks extracted from a document
- */
-export interface DocumentDataExtractionResponse {
-    /**
-     * Vector of processed text chunks with their quality metrics and content analysis
-     */
-    chunks: DocumentTextChunk[];
-}
-
-export interface DocumentTextChunk {
-    /**
-     * The processed and potentially reformatted text content. While the content may be reformatted in terms of punctuation and line breaks, the actual content must be replicated exactly.
-     */
-    content: ArcStr;
-    /**
-     * Information value score indicating the chunk\'s relevance and usefulness. Score from 0.0 to 1.0 indicating the information value of the chunk
-     */
-    information_value: number;
-    /**
-     * Ratio of well-formed, meaningful sentences to total sentences. Score from 0.0 to 1.0 indicating the ratio of meaningful sentences in the chunk
-     */
-    meaningful_sentence_ratio: number;
-    /**
-     * Score indicating the level of content repetition. Score from 0.0 to 1.0 indicating the level of content repetition (lower is better)
-     */
-    repetition_score: number;
-    /**
-     * The type of content in this chunk. Classification of the content type in this chunk
-     */
-    content_type: ContentType;
-}
-
-export interface SectionAssessment {
-    abstract_text: ArcStr;
-    compliance_rating: ComplianceRating;
-    requirement_assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
-}
-
-export interface ReportAbstractAndTitle {
-    abstract_text: ArcStr;
-    title: ArcStr;
-}
-
-export interface RequirementGroupAssessment {
-    /**
-     * The compliance rating indicating the level of conformity with the requirement
-     */
-    compliance_rating: ComplianceRating;
-    /**
-     * Comprehensive explanation of the compliance assessment, including methodology and findings
-     */
-    details: ArcStr;
-    /**
-     * Brief overview of the compliance status and key findings
-     */
-    summary: ArcStr;
-    assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
-}
-
-export interface RequirementAssessment {
-    /**
-     * The compliance rating indicating the level of conformity with the requirement
-     */
-    compliance_rating: ComplianceRating;
-    applicable: boolean;
-    /**
-     * Comprehensive explanation of the compliance assessment, including methodology and findings
-     */
-    details: ArcStr;
-    /**
-     * Brief overview of the compliance status and key findings
-     */
-    summary: ArcStr;
-    /**
-     * List of identified non-conformities, gaps, or issues that need to be addressed
-     */
-    findings: ArcStr[];
-    /**
-     * Set of document identifiers that were analyzed during the assessment
-     */
-    sources: string[];
-    /**
-     * Set of specific citations and references supporting the assessment findings
-     */
-    references?: Reference[];
-}
-
-export type RequirementOrRequirementGroupAssessment = { Requirement: RequirementAssessment } | { RequirementGroup: RequirementGroupAssessment };
-
-export interface Suggestion {
-    kind: SuggestionKind;
-    description: ArcStr;
-    content: ArcStr;
-}
-
-export type ProgressEvent = { Report: [IdType, number] };
-
-export type UpdateEvent = { File: IdType } | { User: IdType } | { Requirement: IdType };
-
-export type DeleteEvent = { File: IdType };
-
-export type CreateEvent = { File: IdType } | { Report: IdType };
-
 export class IntoUnderlyingByteSource {
+  private constructor();
   free(): void;
-  /**
-   * @param {ReadableByteStreamController} controller
-   */
   start(controller: ReadableByteStreamController): void;
-  /**
-   * @param {ReadableByteStreamController} controller
-   * @returns {Promise<any>}
-   */
   pull(controller: ReadableByteStreamController): Promise<any>;
   cancel(): void;
+  readonly type: ReadableStreamType;
   readonly autoAllocateChunkSize: number;
-  readonly type: any;
 }
 export class IntoUnderlyingSink {
+  private constructor();
   free(): void;
-  /**
-   * @param {any} chunk
-   * @returns {Promise<any>}
-   */
   write(chunk: any): Promise<any>;
-  /**
-   * @returns {Promise<any>}
-   */
   close(): Promise<any>;
-  /**
-   * @param {any} reason
-   * @returns {Promise<any>}
-   */
   abort(reason: any): Promise<any>;
 }
 export class IntoUnderlyingSource {
+  private constructor();
   free(): void;
-  /**
-   * @param {ReadableStreamDefaultController} controller
-   * @returns {Promise<any>}
-   */
   pull(controller: ReadableStreamDefaultController): Promise<any>;
   cancel(): void;
 }
@@ -1043,6 +899,9 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
+  readonly hydrate: () => void;
+  readonly set_websocket_event_callback: (a: number) => void;
+  readonly get_file_data: (a: number) => number;
   readonly echo: (a: number) => number;
   readonly get_public_auth0_config: () => number;
   readonly exchange_code_for_identity: (a: number) => number;
@@ -1080,12 +939,6 @@ export interface InitOutput {
   readonly admin_get_threads_by_section: (a: number) => number;
   readonly admin_get_threads_by_requirement_group: (a: number) => number;
   readonly admin_get_threads_by_requirement: (a: number) => number;
-  readonly set_websocket_event_callback: (a: number) => void;
-  readonly hydrate: () => void;
-  readonly get_file_data: (a: number) => number;
-  readonly __wbg_intounderlyingsource_free: (a: number, b: number) => void;
-  readonly intounderlyingsource_pull: (a: number, b: number) => number;
-  readonly intounderlyingsource_cancel: (a: number) => void;
   readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
   readonly intounderlyingsink_write: (a: number, b: number) => number;
   readonly intounderlyingsink_close: (a: number) => number;
@@ -1096,15 +949,18 @@ export interface InitOutput {
   readonly intounderlyingbytesource_start: (a: number, b: number) => void;
   readonly intounderlyingbytesource_pull: (a: number, b: number) => number;
   readonly intounderlyingbytesource_cancel: (a: number) => void;
+  readonly __wbg_intounderlyingsource_free: (a: number, b: number) => void;
+  readonly intounderlyingsource_pull: (a: number, b: number) => number;
+  readonly intounderlyingsource_cancel: (a: number) => void;
   readonly __wbindgen_export_0: (a: number, b: number) => number;
   readonly __wbindgen_export_1: (a: number, b: number, c: number, d: number) => number;
-  readonly __wbindgen_export_2: WebAssembly.Table;
-  readonly __wbindgen_export_3: (a: number, b: number) => void;
-  readonly __wbindgen_export_4: (a: number, b: number, c: number) => void;
+  readonly __wbindgen_export_2: (a: number) => void;
+  readonly __wbindgen_export_3: (a: number, b: number, c: number) => void;
+  readonly __wbindgen_export_4: WebAssembly.Table;
   readonly __wbindgen_export_5: (a: number, b: number) => void;
   readonly __wbindgen_export_6: (a: number, b: number, c: number) => void;
-  readonly __wbindgen_export_7: (a: number, b: number, c: number) => void;
-  readonly __wbindgen_export_8: (a: number) => void;
+  readonly __wbindgen_export_7: (a: number, b: number) => void;
+  readonly __wbindgen_export_8: (a: number, b: number, c: number) => void;
   readonly __wbindgen_export_9: (a: number, b: number, c: number, d: number) => void;
 }
 
