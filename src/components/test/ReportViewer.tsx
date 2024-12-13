@@ -131,7 +131,7 @@ const isRequirementAssessment = (
   assessment: AssessmentWrapper
 ): assessment is RequirementWrapper => {
   // Check if it's a requirement wrapper by checking if it has Requirement assessment type properties
-  return 'findings' in assessment.content;
+  return 'positive_findings' in assessment.content;
 };
 
 const ThreadViewButton: React.FC<{ 
@@ -341,11 +341,21 @@ const RequirementCard: React.FC<{
             <h4 className="font-medium mb-1">Assessment Details</h4>
             <p className="text-sm text-gray-700">{req.content.details}</p>
           </div>
-          {req.content.findings?.length > 0 && (
+          {req.content.positive_findings?.length > 0 && (
             <div>
-              <h4 className="font-medium mb-1">Findings</h4>
+              <h4 className="font-medium mb-1">Positive Findings</h4>
               <ul className="list-disc pl-4 space-y-1">
-                {req.content.findings.map((finding, i) => (
+                {req.content.positive_findings.map((finding, i) => (
+                  <li key={i} className="text-sm text-gray-700">{finding}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {req.content.negative_findings?.length > 0 && (
+            <div>
+              <h4 className="font-medium mb-1">Negative Findings</h4>
+              <ul className="list-disc pl-4 space-y-1">
+                {req.content.negative_findings.map((finding, i) => (
                   <li key={i} className="text-sm text-gray-700">{finding}</li>
                 ))}
               </ul>

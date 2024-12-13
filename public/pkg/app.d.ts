@@ -627,9 +627,13 @@ export interface RequirementAssessment {
      */
     summary: ArcStr;
     /**
+     * List of identified positive findings, conformities, or areas of compliance
+     */
+    positive_findings: ArcStr[];
+    /**
      * List of identified non-conformities, gaps, or issues that need to be addressed
      */
-    findings: ArcStr[];
+    negative_findings: ArcStr[];
     /**
      * Set of document identifiers that were analyzed during the assessment
      */
