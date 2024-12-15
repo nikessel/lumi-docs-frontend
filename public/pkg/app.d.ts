@@ -626,8 +626,6 @@ export interface RequirementAssessment {
      * Brief overview of the compliance status and key findings
      */
     summary: ArcStr;
-    research_response?: ResearcherResponse;
-    research_responses?: ResearcherResponse[];
     /**
      * Description of internal thought process in making the assessment, used to improve the assessment process
      */
@@ -641,6 +639,11 @@ export interface RequirementAssessment {
      */
     negative_findings: ArcStr[];
     /**
+     * A number from 0 - 1.0 indicating the confidence that sufficient and correct documentation
+     * has been found
+     */
+    research_confidence_rating: Percentage;
+    /**
      * Set of document identifiers that were analyzed during the assessment
      */
     sources: string[];
@@ -648,7 +651,7 @@ export interface RequirementAssessment {
      * Set of specific citations and references supporting the assessment findings
      */
     references?: Reference[];
-    quotes?: AssessmentQuote[];
+    quotes: AssessmentQuote[];
 }
 
 export interface AssessmentQuote {
