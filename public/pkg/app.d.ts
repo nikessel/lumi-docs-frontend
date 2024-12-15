@@ -626,6 +626,12 @@ export interface RequirementAssessment {
      * Brief overview of the compliance status and key findings
      */
     summary: ArcStr;
+    research_response?: ResearcherResponse;
+    research_responses?: ResearcherResponse[];
+    /**
+     * Description of internal thought process in making the assessment, used to improve the assessment process
+     */
+    internal_thoughts: ArcStr;
     /**
      * List of identified positive findings, conformities, or areas of compliance
      */
