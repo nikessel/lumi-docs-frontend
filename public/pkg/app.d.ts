@@ -1,8 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
 export function hydrate(): void;
-export function set_websocket_event_callback(callback: Function): void;
-export function get_file_data(input: GetFileDataInput): Promise<GetFileDataResponse>;
 export function echo(input: EchoInput): Promise<EchoResponse>;
 export function get_public_auth0_config(): Promise<GetPublicAuth0ConfigResponse>;
 export function exchange_code_for_identity(input: ExchangeCodeForIdentityInput): Promise<ExchangeCodeForIdentityResponse>;
@@ -40,6 +38,8 @@ export function admin_get_threads_by_report(input: AdminGetThreadsByReportInput)
 export function admin_get_threads_by_section(input: AdminGetThreadsBySectionInput): Promise<AdminGetThreadsBySectionResponse>;
 export function admin_get_threads_by_requirement_group(input: AdminGetThreadsByRequirementGroupInput): Promise<AdminGetThreadsByRequirementGroupResponse>;
 export function admin_get_threads_by_requirement(input: AdminGetThreadsByRequirementInput): Promise<AdminGetThreadsByRequirementResponse>;
+export function get_file_data(input: GetFileDataInput): Promise<GetFileDataResponse>;
+export function set_websocket_event_callback(callback: Function): void;
 /**
  * The `ReadableStreamType` enum.
  *
@@ -52,38 +52,6 @@ declare namespace StorageKey {
 }
 
 export type StorageKey = "id_token" | "access_token";
-
-export interface GetFileDataInput {
-    input: IdType;
-}
-
-export interface GetFileDataOutput {
-    output: Uint8Array;
-}
-
-export interface GetFileDataResponse {
-    output: GetFileDataOutput | undefined;
-    error: ClientSideError | undefined;
-}
-
-declare namespace ErrorKind {
-    export type Validation = "Validation";
-    export type NotFound = "NotFound";
-    export type AlreadyExists = "AlreadyExists";
-    export type EmailNotVerified = "EmailNotVerified";
-    export type Unauthorized = "Unauthorized";
-    export type Timeout = "Timeout";
-    export type Deserialization = "Deserialization";
-    export type Serialization = "Serialization";
-    export type Server = "Server";
-}
-
-export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "EmailNotVerified" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
-
-export interface ClientSideError {
-    kind: ErrorKind;
-    message: string;
-}
 
 export interface EchoInput {
     input: string;
@@ -533,6 +501,111 @@ export interface AdminGetThreadsByRequirementResponse {
     error: ClientSideError | undefined;
 }
 
+export interface GetFileDataInput {
+    input: IdType;
+}
+
+export interface GetFileDataOutput {
+    output: Uint8Array;
+}
+
+export interface GetFileDataResponse {
+    output: GetFileDataOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+declare namespace ErrorKind {
+    export type Validation = "Validation";
+    export type NotFound = "NotFound";
+    export type AlreadyExists = "AlreadyExists";
+    export type EmailNotVerified = "EmailNotVerified";
+    export type Unauthorized = "Unauthorized";
+    export type Timeout = "Timeout";
+    export type Deserialization = "Deserialization";
+    export type Serialization = "Serialization";
+    export type Server = "Server";
+}
+
+export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "EmailNotVerified" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
+
+export interface ClientSideError {
+    kind: ErrorKind;
+    message: string;
+}
+
+export interface ReportFilterConfig {
+    sections_to_include: IdType[] | undefined;
+    requirements_to_include: IdType[] | undefined;
+    requirement_groups_to_include: IdType[] | undefined;
+}
+
+export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
+
+/**
+ * Comprehensive evaluation of a requirement\'s implementation status and supporting evidence
+ *
+ * A `RequirementAssessment` captures the detailed analysis of how well a specific requirement
+ * is met, including compliance level, applicability, assessment confidence, and supporting
+ * evidence. It provides structured documentation of findings, gaps, and necessary improvements
+ * based on objective evidence and expert analysis.
+ */
+export interface RequirementAssessment {
+    compliance_rating: ComplianceRating;
+    applicability_rating: ApplicabilityRating;
+    confidence_rating: ConfidenceRating;
+    /**
+     * Detailed analysis and evaluation of requirement compliance
+     *
+     * This field should contain:
+     * - Description of assessment methodology used
+     * - Analysis of available evidence against requirements
+     * - Evaluation of documentation completeness and quality
+     * - Identified gaps or deficiencies
+     * - Justification for compliance rating
+     * - Recommendations for improvement
+     * - Impact analysis on overall compliance
+     * - Assessment conclusions
+     */
+    details: string;
+    /**
+     * Factual summary of all requirement-relevant information found in documentation
+     *
+     * This field should:
+     * - List all discovered information related to the requirement
+     * - Present raw facts, data, and documentation contents
+     * - Include specific metrics, dates, and values found
+     * - Reference exact document sections and versions
+     * - Avoid any analysis or judgement of adequacy
+     * - Present information neutrally without evaluation
+     * - Exclude opinions about documentation quality
+     */
+    objective_research_summary: string;
+    /**
+     * List of identified non-conformities requiring attention
+     *
+     * Each non-conformity should:
+     * - Clearly state the specific requirement not being met
+     * - Reference relevant documentation or its absence
+     * - Describe the gap between current state and requirement
+     * - Be specific and independently addressable
+     * - One specific, since issue per entry
+     * - Avoid repeating the same or very similar issues in multiple entries
+     */
+    non_conformities: string[];
+    /**
+     * Set of document titles analyzed during assessment
+     *
+     * Should track:
+     * - All documents reviewed
+     * - Both relevant and checked-but-irrelevant documents
+     */
+    sources: string[];
+    /**
+     * Exact quotes from source documents supporting the assessment
+     */
+    quotes?: AssessmentQuote[];
+}
+
 export interface ChunkId {
     parent_id: string;
     index: number;
@@ -540,118 +613,175 @@ export interface ChunkId {
 
 export type IdType = string;
 
-export interface UserConfig {
-    user: UserBaseConfig;
-    admin: AdminConfig;
-}
-
-export interface UserBaseConfig {}
-
-export interface AdminConfig {
-    embed_config: EmbedConfig;
-    llm_config: LlmConfig;
-}
+/**
+ * Measures documentation quality and effectiveness.
+ *
+ * The compliance rating evaluates how well documentation meets specified requirements,
+ * providing a standardized way to assess audit readiness and documentation completeness.
+ *
+ * # Compliance Rating Scale (0-100)
+ *
+ * ## 95-100: Highest Confidence
+ * - >95% probability of passing audit with no findings
+ * - Documentation and implementation exceed requirements
+ * - Even strictest auditor would struggle to find improvements
+ *
+ * ## 85-94: Strong Confidence
+ * - ~90% probability of passing audit
+ * - May receive 1-2 minor recommendations
+ * - Documentation meets all requirements effectively
+ *
+ * ## 75-84: Good Confidence
+ * - ~75% probability of passing without non-conformities
+ * - Several recommendations likely
+ * - Documentation meets requirements but could be stronger
+ *
+ * ## 65-74: Moderate Confidence
+ * - ~65% probability of passing with minor non-conformities
+ * - 25% chance of major non-conformity
+ * - Documentation needs enhancement
+ *
+ * ## 50-64: Limited Confidence
+ * - 50% chance of major non-conformities
+ * - Multiple minor non-conformities certain
+ * - Notable gaps in documentation/implementation
+ *
+ * ## 35-49: Low Confidence
+ * - High probability of major non-conformities
+ * - Significant documentation gaps
+ * - Most auditors would identify critical issues
+ *
+ * ## 20-34: Very Low Confidence
+ * - Major non-conformities certain
+ * - Documentation severely lacking
+ * - Would fail with most auditors
+ *
+ * ## 1-19: Minimal Documentation
+ * - Will fail audit with any auditor
+ * - Critical documentation missing
+ * - Requires complete rework
+ *
+ * ## 0: No Documentation
+ * - No documentation exists
+ * - Nothing for auditor to review
+ * - Requires complete development
+ *
+ * # Rating Guidelines
+ * 1. Consider audit outcome probabilities
+ * 2. Account for auditor variability
+ * 3. Evaluate documentation and implementation evidence
+ * 4. Consider regulatory expectations
+ */
+export type ComplianceRating = number;
 
 /**
- * Collection of processed and analyzed text chunks extracted from a document
+ * Rating indicating confidence in the assessment\'s accuracy and completeness (0-100)
+ *
+ * The confidence rating reflects the reliability of the assessment based on
+ * available evidence, documentation quality, and clarity of requirements.
+ *
+ * # Confidence Rating Scale (0-100)
+ *
+ * ## 95-100: Highest Confidence
+ * - Complete documentation available
+ * - All evidence directly verifiable
+ * - Requirements crystal clear
+ * - Implementation fully validated
+ * - No information gaps
+ *
+ * ## 80-94: Strong Confidence
+ * - Nearly complete documentation
+ * - Most evidence directly verifiable
+ * - Requirements well understood
+ * - Minor documentation gaps
+ * - Strong verification possible
+ *
+ * ## 60-79: Good Confidence
+ * - Substantial documentation available
+ * - Key evidence verifiable
+ * - Requirements generally clear
+ * - Some documentation gaps
+ * - Reasonable verification possible
+ *
+ * ## 40-59: Moderate Confidence
+ * - Partial documentation available
+ * - Some evidence verifiable
+ * - Requirements need interpretation
+ * - Notable documentation gaps
+ * - Limited verification possible
+ *
+ * ## 20-39: Limited Confidence
+ * - Minimal documentation available
+ * - Few pieces of evidence verifiable
+ * - Requirements unclear
+ * - Significant documentation gaps
+ * - Difficult to verify
+ *
+ * ## 1-19: Very Low Confidence
+ * - Critical documentation missing
+ * - Evidence largely unavailable
+ * - Requirements ambiguous
+ * - Major documentation gaps
+ * - Verification nearly impossible
+ *
+ * ## 0: No Confidence
+ * - No documentation available
+ * - No evidence to verify
+ * - Requirements undefined
+ * - Complete information void
+ * - Verification impossible
+ *
+ * # Assessment Guidelines
+ *
+ * 1. Documentation Completeness
+ *    - Availability of required documents
+ *    - Quality of available information
+ *    - Consistency across sources
+ *    - Documentation gaps identified
+ *
+ * 2. Evidence Quality
+ *    - Verifiability of evidence
+ *    - Direct vs indirect evidence
+ *    - Evidence reliability
+ *    - Consistency of findings
+ *
+ * 3. Requirement Clarity
+ *    - Clarity of requirements
+ *    - Interpretation needed
+ *    - Regulatory guidance available
+ *    - Industry consensus
+ *
+ * 4. Implementation Verification
+ *    - Ability to verify implementation
+ *    - Testing/validation evidence
+ *    - Implementation consistency
+ *    - Verification coverage
+ *
  */
-export interface DocumentDataExtractionResponse {
-    /**
-     * Vector of processed text chunks with their quality metrics and content analysis
-     */
-    chunks: DocumentTextChunk[];
-}
-
-export interface DocumentTextChunk {
-    /**
-     * The processed and potentially reformatted text content. While the content may be reformatted in terms of punctuation and line breaks, the actual content must be replicated exactly.
-     */
-    content: ArcStr;
-    /**
-     * Information value score indicating the chunk\'s relevance and usefulness. Score from 0.0 to 1.0 indicating the information value of the chunk
-     */
-    information_value: number;
-    /**
-     * Ratio of well-formed, meaningful sentences to total sentences. Score from 0.0 to 1.0 indicating the ratio of meaningful sentences in the chunk
-     */
-    meaningful_sentence_ratio: number;
-    /**
-     * Score indicating the level of content repetition. Score from 0.0 to 1.0 indicating the level of content repetition (lower is better)
-     */
-    repetition_score: number;
-    /**
-     * The type of content in this chunk. Classification of the content type in this chunk
-     */
-    content_type: ContentType;
-}
+export type ConfidenceRating = number;
 
 export interface SectionAssessment {
-    abstract_text: ArcStr;
+    abstract_text: string;
     compliance_rating: ComplianceRating;
     requirement_assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
 }
 
 export interface ReportAbstractAndTitle {
-    abstract_text: ArcStr;
-    title: ArcStr;
+    abstract_text: string;
+    title: string;
 }
 
 export interface RequirementGroupAssessment {
-    /**
-     * The compliance rating indicating the level of conformity with the requirement
-     */
     compliance_rating: ComplianceRating;
     /**
      * Comprehensive explanation of the compliance assessment, including methodology and findings
      */
-    details: ArcStr;
+    details: string;
     /**
      * Brief overview of the compliance status and key findings
      */
-    summary: ArcStr;
+    summary: string;
     assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
-}
-
-export interface RequirementAssessment {
-    /**
-     * The compliance rating indicating the level of conformity with the requirement
-     */
-    compliance_rating: ComplianceRating;
-    applicable: boolean;
-    /**
-     * Comprehensive explanation of the compliance assessment, including methodology and findings
-     */
-    details: ArcStr;
-    /**
-     * Brief overview of the compliance status and key findings
-     */
-    summary: ArcStr;
-    /**
-     * Description of internal thought process in making the assessment, used to improve the assessment process
-     */
-    internal_thoughts: ArcStr;
-    /**
-     * List of identified positive findings, conformities, or areas of compliance
-     */
-    positive_findings: ArcStr[];
-    /**
-     * List of identified non-conformities, gaps, or issues that need to be addressed
-     */
-    negative_findings: ArcStr[];
-    /**
-     * A number from 0 - 1.0 indicating the confidence that sufficient and correct documentation
-     * has been found
-     */
-    research_confidence_rating: Percentage;
-    /**
-     * Set of document identifiers that were analyzed during the assessment
-     */
-    sources: string[];
-    /**
-     * Set of specific citations and references supporting the assessment findings
-     */
-    references?: Reference[];
-    quotes: AssessmentQuote[];
 }
 
 export interface AssessmentQuote {
@@ -673,14 +803,8 @@ export type RequirementOrRequirementGroupAssessment = { requirement: Requirement
 
 export interface Suggestion {
     kind: SuggestionKind;
-    description: ArcStr;
-    content: ArcStr;
-}
-
-export interface ReportFilterConfig {
-    sections_to_include: IdType[] | undefined;
-    requirements_to_include: IdType[] | undefined;
-    requirement_groups_to_include: IdType[] | undefined;
+    description: string;
+    content: string;
 }
 
 export interface LlmConfig {
@@ -688,12 +812,112 @@ export interface LlmConfig {
     temperature: number | undefined;
 }
 
+export interface UserConfig {
+    user: UserBaseConfig;
+    admin: AdminConfig;
+}
+
+export interface UserBaseConfig {}
+
+export interface AdminConfig {
+    embed_config: EmbedConfig;
+    llm_config: LlmConfig;
+}
+
+export interface EmbedConfig {
+    model: EmbedModel;
+    regulation_vector_search_limit: number;
+    user_documentation_vector_search_limit: number;
+    tokens_per_chunk: number;
+    token_overlap: number;
+    vector_store_id: string | undefined;
+}
+
+/**
+ * Rating indicating probability of an auditor determining the requirement\'s applicability (0-100)
+ *
+ * The applicability rating reflects the likelihood that an auditor would determine a requirement
+ * applies to the specific device or documentation being assessed. This provides a standardized
+ * way to evaluate requirement scope and applicability determination.
+ *
+ * # Applicability Rating Scale (0-100)
+ *
+ * ## 95-100: Definitively Applicable
+ * - >95% probability auditor would determine requirement applies
+ * - Device/documentation clearly within requirement scope
+ * - No reasonable auditor would exclude requirement
+ * - Clear regulatory guidance supports applicability
+ *
+ * ## 80-94: Strongly Applicable  
+ * - ~90% probability auditor would include requirement
+ * - May receive questions about specific aspects
+ * - Strong evidence supports applicability
+ * - Conservative interpretation favors inclusion
+ *
+ * ## 60-79: Likely Applicable
+ * - ~75% probability auditor would apply requirement
+ * - Some interpretation differences possible
+ * - Most evidence supports applicability
+ * - Safer to include than exclude
+ *
+ * ## 40-59: Uncertain Applicability
+ * - 50% chance of differing auditor interpretations
+ * - Significant regulatory ambiguity exists
+ * - Equal evidence for/against applicability
+ * - Further guidance/clarification needed
+ *
+ * ## 20-39: Likely Not Applicable
+ * - ~25% probability auditor would apply requirement
+ * - Most evidence suggests non-applicability
+ * - Device characteristics indicate exclusion
+ * - Some interpretation risk remains
+ *
+ * ## 1-19: Almost Certainly Not Applicable
+ * - <10% chance auditor would apply requirement
+ * - Clear evidence of non-applicability
+ * - Strong regulatory basis for exclusion
+ * - Only theoretical applicability scenarios
+ *
+ * ## 0: Definitively Not Applicable
+ * - 0% probability of applicability determination
+ * - Explicit regulatory exclusion exists
+ * - Logically impossible to apply
+ * - No reasonable interpretation supports inclusion
+ *
+ * # Assessment Guidelines
+ *
+ * 1. Regulatory Framework
+ *    - Review applicable regulations and guidance
+ *    - Consider common auditor interpretations
+ *    - Evaluate historical precedents
+ *    - Assess regulatory clarity
+ *
+ * 2. Device Characteristics
+ *    - Compare to requirement scope
+ *    - Evaluate technical alignment
+ *    - Consider intended use match
+ *    - Assess risk classification
+ *
+ * 3. Documentation Context
+ *    - Review lifecycle stage relevance
+ *    - Consider version applicability
+ *    - Evaluate temporal scope
+ *    - Assess documentation completeness
+ *
+ * 4. Interpretation Risk
+ *    - Consider auditor variability
+ *    - Evaluate regulatory ambiguity
+ *    - Assess precedent consistency
+ *    - Review guidance clarity
+ */
+export type ApplicabilityRating = number;
+
 export interface Task {
     id?: IdType;
     status?: TaskStatus;
     title: string;
-    description: ArcStr;
-    task: ArcStr;
+    description: string;
+    task: string;
     suggestion: Suggestion | undefined;
     associated_document: string | undefined;
     misc?: Json | undefined;
@@ -702,21 +926,21 @@ export interface Task {
 export interface Requirement {
     id: IdType;
     name: string;
-    description: ArcStr;
+    description: string;
     reference: string | undefined;
 }
 
 export interface RequirementGroup {
     id: IdType;
     name: string;
-    description: ArcStr;
+    description: string;
     reference: string | undefined;
 }
 
 export interface Section {
     id: IdType;
     name: string;
-    description: ArcStr;
+    description: string;
 }
 
 export interface File {
@@ -770,8 +994,6 @@ export type DeleteEvent = { File: IdType };
 
 export type CreateEvent = { File: IdType } | { Report: IdType };
 
-export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
-
 export interface Claims {
     nickname: string;
     given_name?: string | undefined;
@@ -824,7 +1046,7 @@ declare namespace ReportStatus {
 
 export type ReportStatus = "processing" | "ready" | "partially_failed";
 
-export type FileStatus = "uploading" | "processing" | "ready" | { upload_failed: ArcStr } | { processing_failed: ArcStr };
+export type FileStatus = "uploading" | "processing" | "ready" | { upload_failed: string } | { processing_failed: string };
 
 export interface FileChunk {
     id: ChunkId;
@@ -832,8 +1054,6 @@ export interface FileChunk {
 }
 
 export type Percentage = number;
-
-export type ComplianceRating = number;
 
 declare namespace TaskStatus {
     export type open = "open";
@@ -853,16 +1073,16 @@ declare namespace SuggestionKind {
 export type SuggestionKind = "edit_paragraph" | "add_paragraph" | "remove_paragraph" | "new_document";
 
 export interface Auth0ConfigPublic {
-    domain: ArcStr;
-    client_id: ArcStr;
-    login_redirect_uri: ArcStr;
-    logout_redirect_uri: ArcStr;
+    domain: string;
+    client_id: string;
+    login_redirect_uri: string;
+    logout_redirect_uri: string;
 }
 
 export interface AuthIdentity {
-    id_token: ArcStr;
-    access_token: ArcStr;
-    refresh_token: ArcStr;
+    id_token: string;
+    access_token: string;
+    refresh_token: string;
 }
 
 export type ArcStr = string;
@@ -876,15 +1096,6 @@ export type IdStringMap = Map<IdType, string>;
 export interface FullFile {
     meta: File;
     data: ArcBytes;
-}
-
-export interface EmbedConfig {
-    model: EmbedModel;
-    regulation_vector_search_limit: number;
-    user_documentation_vector_search_limit: number;
-    tokens_per_chunk: number;
-    token_overlap: number;
-    vector_store_id: string | undefined;
 }
 
 export class IntoUnderlyingByteSource {
@@ -915,8 +1126,6 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
   readonly hydrate: () => void;
-  readonly set_websocket_event_callback: (a: number) => void;
-  readonly get_file_data: (a: number) => number;
   readonly echo: (a: number) => number;
   readonly get_public_auth0_config: () => number;
   readonly exchange_code_for_identity: (a: number) => number;
@@ -954,6 +1163,8 @@ export interface InitOutput {
   readonly admin_get_threads_by_section: (a: number) => number;
   readonly admin_get_threads_by_requirement_group: (a: number) => number;
   readonly admin_get_threads_by_requirement: (a: number) => number;
+  readonly get_file_data: (a: number) => number;
+  readonly set_websocket_event_callback: (a: number) => void;
   readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
   readonly intounderlyingsink_write: (a: number, b: number) => number;
   readonly intounderlyingsink_close: (a: number) => number;
@@ -973,8 +1184,8 @@ export interface InitOutput {
   readonly __wbindgen_export_3: (a: number, b: number, c: number) => void;
   readonly __wbindgen_export_4: WebAssembly.Table;
   readonly __wbindgen_export_5: (a: number, b: number) => void;
-  readonly __wbindgen_export_6: (a: number, b: number, c: number) => void;
-  readonly __wbindgen_export_7: (a: number, b: number) => void;
+  readonly __wbindgen_export_6: (a: number, b: number) => void;
+  readonly __wbindgen_export_7: (a: number, b: number, c: number) => void;
   readonly __wbindgen_export_8: (a: number, b: number, c: number) => void;
   readonly __wbindgen_export_9: (a: number, b: number, c: number, d: number) => void;
 }
