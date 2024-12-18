@@ -550,54 +550,127 @@ export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Upda
  * based on objective evidence and expert analysis.
  */
 export interface RequirementAssessment {
+    /**
+     * Numerical rating (0-100) indicating implementation completeness and quality
+     * 
+     * Examples:
+     * - 95: Battery compartment design (`GlucoCheck` Basic) - Exceeds requirements through multi-layered approach:
+     *   mechanical polarity enforcement, clear markings, and electronic reverse polarity protection
+     * - 75: Lead integrity monitoring (`NeuroStim` Pro) - Meets core requirements with basic impedance
+     *   checking and automatic shutdown, but could be enhanced with predictive failure detection
+     * - 45: Biocompatibility testing documentation - Major gaps in chronic toxicity studies
+     *   and inadequate validation of drug-eluting coating stability
+     */
     compliance_rating: ComplianceRating;
+    /**
+     * Rating (0-100) indicating how relevant the requirement is to the device
+     * 
+     * Examples:
+     * - 100: Software validation for `GlucoCheck` Basic - Fully applicable as device contains 
+     *   firmware and mobile app requiring comprehensive validation
+     * - 60: MRI compatibility for `GlucoCheck` Basic - Partially applicable only to 
+     *   electromagnetic interference aspects, as device is not used during MRI
+     * - 0: Sterilization validation for `GlucoCheck` Basic - Not applicable as device is non-sterile
+     *   and does not contact broken skin
+     */
     applicability_rating: ApplicabilityRating;
+    /**
+     * Rating (0-100) indicating assessment reliability based on evidence quality
+     * 
+     * Examples:
+     * - 90: Battery safety assessment - High confidence from clear requirements, comprehensive test
+     *   reports, and consistent results across multiple validation studies
+     * - 70: Software validation - Good confidence but some ambiguity in test coverage metrics
+     *   and validation of edge cases
+     * - 40: Coating stability - Limited confidence due to inconsistent test results and
+     *   incomplete characterization data
+     */
     confidence_rating: ConfidenceRating;
     /**
      * Detailed analysis and evaluation of requirement compliance
      *
-     * This field should contain:
-     * - Description of assessment methodology used
-     * - Analysis of available evidence against requirements
-     * - Evaluation of documentation completeness and quality
-     * - Identified gaps or deficiencies
-     * - Justification for compliance rating
-     * - Recommendations for improvement
-     * - Impact analysis on overall compliance
-     * - Assessment conclusions
+     * Examples:
+     * 
+     * Battery Safety (`GlucoCheck` Basic):
+     * Assessment methodology utilized physical inspection of three device samples, review of design 
+     * documentation (DR-201, DR-202), and analysis of test reports (TR-150, TR-151). Testing 
+     * demonstrated successful implementation of battery safety features including mechanical polarity 
+     * enforcement and electronic reverse voltage protection. Design validation included drop testing 
+     * and attempted incorrect battery insertion by 30 test subjects. Risk analysis demonstrated 
+     * reduction of battery-related risks to acceptable levels through multiple redundant controls.
+     * Implementation exceeds requirements through inclusion of additional safety features beyond
+     * basic polarity protection. Minor opportunity for improvement identified in battery replacement
+     * instructions clarity.
+     *
+     * Drug-Eluting Coating (`NeuroStim` Pro):
+     * Assessment covered design controls, manufacturing process validation, and stability testing
+     * for anti-inflammatory coating. Chemistry documentation shows incomplete characterization
+     * of degradation products. While basic elution profile data exists, accelerated aging studies
+     * lack sufficient timepoints. Process controls exist but validation of coating uniformity
+     * shows significant variability. Multiple gaps identified in stability monitoring program.
+     * Current implementation requires substantial enhancement to meet requirements.
      */
     details: string;
     /**
-     * Factual summary of all requirement-relevant information found in documentation
+     * Objective summary of manufacturer-provided information relevant to the requirement
      *
-     * This field should:
-     * - List all discovered information related to the requirement
-     * - Present raw facts, data, and documentation contents
-     * - Include specific metrics, dates, and values found
-     * - Reference exact document sections and versions
-     * - Avoid any analysis or judgement of adequacy
-     * - Present information neutrally without evaluation
-     * - Exclude opinions about documentation quality
+     * Examples:
+     * 
+     * Battery Safety (`GlucoCheck` Basic):
+     * Device uses 2 AAA batteries housed in rear compartment. Battery holder includes mechanical 
+     * keying features preventing reverse insertion. PCB incorporates P-channel MOSFET for reverse 
+     * polarity protection. Battery compartment labeled with polarity indicators and pictorial 
+     * diagram. Replacement procedure detailed in user manual section 3.4. Battery life rated at 
+     * 2000 measurements under normal use. Low battery warning displays at 20% remaining capacity.
+     * Design validation report DR-201 documents testing with 30 users attempting battery replacement.
+     *
+     * Drug-Eluting Coating (`NeuroStim` Pro):
+     * Coating consists of dexamethasone acetate in polymer matrix at 100 µg/cm². Elution profile
+     * shows 80% release over 6 months. Manufacturing process uses automated spray coating with
+     * real-time thickness monitoring. Coating stability verified through 12-month real-time and 
+     * 6-month accelerated aging. Process validation included 3 consecutive batches of 30 units each.
+     * Surface characterization performed via SEM and FTIR analysis.
      */
     objective_research_summary: string;
     /**
-     * List of identified non-conformities requiring attention
+     * List of identified gaps requiring remediation
      *
-     * Each non-conformity should:
-     * - Clearly state the specific requirement not being met
-     * - Reference relevant documentation or its absence
-     * - Describe the gap between current state and requirement
-     * - Be specific and independently addressable
-     * - One specific, since issue per entry
-     * - Avoid repeating the same or very similar issues in multiple entries
+     * Examples:
+     * 
+     * Battery Safety (`GlucoCheck` Basic):
+     * - Battery replacement instructions in user manual lack clear illustrations of correct orientation
+     * - Warning label on battery door shows slight wear after repeated opening in durability testing
+     *
+     * Drug-Eluting Coating (`NeuroStim` Pro):
+     * - Accelerated aging protocol lacks sufficient timepoints to establish complete degradation profile
+     * - Process validation data shows coating thickness variation exceeding ±15% specification
+     * - Stability program does not include testing of aged samples for biological activity
+     * - Degradation product characterization limited to major components only
+     * - Cleaning validation does not address impact on coating integrity
      */
-    non_conformities: string[];
+    negative_findings: string[];
     /**
-     * Set of document titles analyzed during assessment
+     * Set of all documents reviewed during assessment
      *
-     * Should track:
-     * - All documents reviewed
-     * - Both relevant and checked-but-irrelevant documents
+     * Examples:
+     * 
+     * Battery Safety (`GlucoCheck` Basic):
+     * - Design Requirements Specification (DR-100)
+     * - Battery Subsystem Design Document (DR-201)
+     * - Electronics Design Document (DR-202)
+     * - Battery Safety Test Report (TR-150)
+     * - User Manual (UM-101)
+     * - Risk Analysis Report (RA-300)
+     * - Design Validation Report (DVR-400)
+     *
+     * Drug-Eluting Coating (`NeuroStim` Pro):
+     * - Coating Process Specification (PS-501)
+     * - Design History File Section 4.2
+     * - Process Validation Protocol (PVP-120)
+     * - Stability Study Report (STB-300)
+     * - Coating Characterization Report (CCR-401)
+     * - Manufacturing Process Flow (MPF-200)
+     * - Risk Management File Section 3.5
      */
     sources: string[];
     /**
@@ -614,63 +687,80 @@ export interface ChunkId {
 export type IdType = string;
 
 /**
- * Measures documentation quality and effectiveness.
+ * Measures documentation quality and implementation effectiveness.
  *
- * The compliance rating evaluates how well documentation meets specified requirements,
- * providing a standardized way to assess audit readiness and documentation completeness.
+ * The compliance rating evaluates how well documentation and implementation meet 
+ * specified requirements, providing a standardized way to assess audit readiness 
+ * and documentation completeness.
  *
  * # Compliance Rating Scale (0-100)
  *
- * ## 95-100: Highest Confidence
- * - >95% probability of passing audit with no findings
- * - Documentation and implementation exceed requirements
- * - Even strictest auditor would struggle to find improvements
+ * ## 95-100: Exceptional Implementation
+ * - Documentation and implementation significantly exceed requirements
+ * - Comprehensive evidence demonstrates thorough implementation
+ * - Serves as industry best practice example
  *
- * ## 85-94: Strong Confidence
- * - ~90% probability of passing audit
- * - May receive 1-2 minor recommendations
- * - Documentation meets all requirements effectively
+ * ## 85-94: Advanced Implementation
+ * - Documentation and implementation exceed basic requirements
+ * - Strong evidence supports all implementation aspects
+ * - Minor enhancement opportunities may exist
  *
- * ## 75-84: Good Confidence
- * - ~75% probability of passing without non-conformities
- * - Several recommendations likely
- * - Documentation meets requirements but could be stronger
+ * ## 75-84: Solid Implementation
+ * - Documentation meets all core requirements
+ * - Implementation evidence is present but could be strengthened
+ * - Some enhancement opportunities identified
  *
- * ## 65-74: Moderate Confidence
- * - ~65% probability of passing with minor non-conformities
- * - 25% chance of major non-conformity
- * - Documentation needs enhancement
+ * ## 65-74: Basic Implementation
+ * - Documentation meets minimum requirements
+ * - Implementation evidence needs enhancement
+ * - Several areas identified for improvement
  *
- * ## 50-64: Limited Confidence
- * - 50% chance of major non-conformities
- * - Multiple minor non-conformities certain
+ * ## 50-64: Partial Implementation
  * - Notable gaps in documentation/implementation
+ * - Multiple areas require significant enhancement
+ * - May not satisfy minimum requirements
  *
- * ## 35-49: Low Confidence
- * - High probability of major non-conformities
- * - Significant documentation gaps
- * - Most auditors would identify critical issues
+ * ## 35-49: Limited Implementation
+ * - Significant documentation and implementation gaps
+ * - Critical evidence missing
+ * - Requires substantial improvement
  *
- * ## 20-34: Very Low Confidence
- * - Major non-conformities certain
+ * ## 20-34: Minimal Implementation
  * - Documentation severely lacking
- * - Would fail with most auditors
+ * - Implementation evidence largely absent
+ * - Requires major rework
  *
- * ## 1-19: Minimal Documentation
- * - Will fail audit with any auditor
+ * ## 1-19: Initial Implementation
  * - Critical documentation missing
- * - Requires complete rework
+ * - Minimal implementation evidence
+ * - Requires complete redevelopment
  *
- * ## 0: No Documentation
+ * ## 0: No Implementation
  * - No documentation exists
- * - Nothing for auditor to review
+ * - No implementation evidence
  * - Requires complete development
  *
+ * # Device-Specific Considerations
+ * Requirements may be deemed not applicable based on device characteristics:
+ * - Sterile vs. non-sterile
+ * - Software vs. hardware
+ * - Reusable vs. single-use
+ * - Active vs. non-active
+ * - Implantable vs. non-implantable
+ * - Diagnostic vs. therapeutic
+ * - Electrical vs. mechanical
+ * - Invasive vs. non-invasive
+ * - Portable vs. stationary
+ *
+ * When assessing applicability, document specific device traits that justify
+ * requirement omission. The justification should clearly demonstrate why the
+ * requirement addresses aspects not relevant to the device.
+ *
  * # Rating Guidelines
- * 1. Consider audit outcome probabilities
- * 2. Account for auditor variability
- * 3. Evaluate documentation and implementation evidence
- * 4. Consider regulatory expectations
+ * 1. Evaluate implementation evidence comprehensively
+ * 2. Consider regulatory requirements and expectations
+ * 3. Document device-specific applicability justifications
+ * 4. Maintain consistent assessment criteria
  */
 export type ComplianceRating = number;
 
@@ -680,83 +770,51 @@ export type ComplianceRating = number;
  * The confidence rating reflects the reliability of the assessment based on
  * available evidence, documentation quality, and clarity of requirements.
  *
- * # Confidence Rating Scale (0-100)
+ *# Confidence Rating Scale
  *
- * ## 95-100: Highest Confidence
- * - Complete documentation available
- * - All evidence directly verifiable
- * - Requirements crystal clear
- * - Implementation fully validated
- * - No information gaps
+ *The confidence rating reflects how certain an evaluator is about the provided assessment. It accounts for factors such as the level of agreement between different inspections, the presence of ambiguous or inconsistent information, and the similarity of compliance scores from independent evaluators. Each criterion below is treated as an **OR** operator, meaning meeting any one of the conditions can determine the confidence level. The rating does **not** depend on the level of implementation or the amount of documentation available, which instead impacts the compliance rating.
  *
- * ## 80-94: Strong Confidence
- * - Nearly complete documentation
- * - Most evidence directly verifiable
- * - Requirements well understood
- * - Minor documentation gaps
- * - Strong verification possible
+ *## 0.95-1.00: Highest Confidence
+ *- High agreement across independent evaluations **OR**
+ *- No ambiguity or inconsistencies in the evidence **OR**
+ *- Requirements are unambiguous and directly relevant to the device **OR**
+ *- Clear and consistent evidence supporting the assessment
  *
- * ## 60-79: Good Confidence
- * - Substantial documentation available
- * - Key evidence verifiable
- * - Requirements generally clear
- * - Some documentation gaps
- * - Reasonable verification possible
+ *## 0.80-0.94: Strong Confidence
+ *- Strong agreement across most evaluations **OR**
+ *- Minimal ambiguity or inconsistencies in the evidence **OR**
+ *- Requirements well understood and relevant to the device **OR**
+ *- Minor areas requiring interpretation
  *
- * ## 40-59: Moderate Confidence
- * - Partial documentation available
- * - Some evidence verifiable
- * - Requirements need interpretation
- * - Notable documentation gaps
- * - Limited verification possible
+ *## 0.60-0.79: Good Confidence
+ *- General agreement across evaluations **OR**
+ *- Some ambiguity or inconsistencies in the evidence **OR**
+ *- Requirements generally clear but may need interpretation **OR**
+ *- Reasonable level of consistency in available evidence
  *
- * ## 20-39: Limited Confidence
- * - Minimal documentation available
- * - Few pieces of evidence verifiable
- * - Requirements unclear
- * - Significant documentation gaps
- * - Difficult to verify
+ *## 0.40-0.59: Moderate Confidence
+ *- Partial agreement across evaluations **OR**
+ *- Notable ambiguity or inconsistencies in the evidence **OR**
+ *- Requirements need significant interpretation **OR**
+ *- Mixed or uneven clarity in evidence across assessments
  *
- * ## 1-19: Very Low Confidence
- * - Critical documentation missing
- * - Evidence largely unavailable
- * - Requirements ambiguous
- * - Major documentation gaps
- * - Verification nearly impossible
+ *## 0.20-0.39: Limited Confidence
+ *- Minimal agreement across evaluations **OR**
+ *- High level of ambiguity or inconsistencies in the evidence **OR**
+ *- Requirements unclear or difficult to apply **OR**
+ *- Conflicting information across assessments
  *
- * ## 0: No Confidence
- * - No documentation available
- * - No evidence to verify
- * - Requirements undefined
- * - Complete information void
- * - Verification impossible
+ *## 0.01-0.19: Very Low Confidence
+ *- Little to no agreement across evaluations **OR**
+ *- Evidence largely ambiguous or conflicting **OR**
+ *- Requirements poorly defined or highly subjective **OR**
+ *- Lack of coherence in available evidence
  *
- * # Assessment Guidelines
- *
- * 1. Documentation Completeness
- *    - Availability of required documents
- *    - Quality of available information
- *    - Consistency across sources
- *    - Documentation gaps identified
- *
- * 2. Evidence Quality
- *    - Verifiability of evidence
- *    - Direct vs indirect evidence
- *    - Evidence reliability
- *    - Consistency of findings
- *
- * 3. Requirement Clarity
- *    - Clarity of requirements
- *    - Interpretation needed
- *    - Regulatory guidance available
- *    - Industry consensus
- *
- * 4. Implementation Verification
- *    - Ability to verify implementation
- *    - Testing/validation evidence
- *    - Implementation consistency
- *    - Verification coverage
- *
+ *## 0.00: No Confidence
+ *- No agreement across evaluations **OR**
+ *- Evidence entirely absent or unusable **OR**
+ *- Requirements undefined or irrelevant **OR**
+ *- No actionable information available for assessment
  */
 export type ConfidenceRating = number;
 
@@ -830,7 +888,6 @@ export interface EmbedConfig {
     user_documentation_vector_search_limit: number;
     tokens_per_chunk: number;
     token_overlap: number;
-    vector_store_id: string | undefined;
 }
 
 /**
