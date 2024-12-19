@@ -224,11 +224,6 @@ function debugString(val) {
     // TODO we could test for more things here, like `Set`s and `Map`s.
     return className;
 }
-
-export function hydrate() {
-    wasm.hydrate();
-}
-
 /**
  * @param {EchoInput} input
  * @returns {Promise<EchoResponse>}
@@ -559,6 +554,10 @@ export function admin_get_threads_by_requirement(input) {
 export function get_file_data(input) {
     const ret = wasm.get_file_data(addHeapObject(input));
     return takeObject(ret);
+}
+
+export function hydrate() {
+    wasm.hydrate();
 }
 
 /**

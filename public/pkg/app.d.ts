@@ -1,6 +1,5 @@
 /* tslint:disable */
 /* eslint-disable */
-export function hydrate(): void;
 export function echo(input: EchoInput): Promise<EchoResponse>;
 export function get_public_auth0_config(): Promise<GetPublicAuth0ConfigResponse>;
 export function exchange_code_for_identity(input: ExchangeCodeForIdentityInput): Promise<ExchangeCodeForIdentityResponse>;
@@ -39,6 +38,7 @@ export function admin_get_threads_by_section(input: AdminGetThreadsBySectionInpu
 export function admin_get_threads_by_requirement_group(input: AdminGetThreadsByRequirementGroupInput): Promise<AdminGetThreadsByRequirementGroupResponse>;
 export function admin_get_threads_by_requirement(input: AdminGetThreadsByRequirementInput): Promise<AdminGetThreadsByRequirementResponse>;
 export function get_file_data(input: GetFileDataInput): Promise<GetFileDataResponse>;
+export function hydrate(): void;
 export function set_websocket_event_callback(callback: Function): void;
 /**
  * The `ReadableStreamType` enum.
@@ -46,13 +46,6 @@ export function set_websocket_event_callback(callback: Function): void;
  * *This API requires the following crate features to be activated: `ReadableStreamType`*
  */
 type ReadableStreamType = "bytes";
-declare namespace StorageKey {
-    export type id_token = "id_token";
-    export type access_token = "access_token";
-}
-
-export type StorageKey = "id_token" | "access_token";
-
 export interface EchoInput {
     input: string;
 }
@@ -514,6 +507,13 @@ export interface GetFileDataResponse {
     error: ClientSideError | undefined;
 }
 
+declare namespace StorageKey {
+    export type id_token = "id_token";
+    export type access_token = "access_token";
+}
+
+export type StorageKey = "id_token" | "access_token";
+
 declare namespace ErrorKind {
     export type Validation = "Validation";
     export type NotFound = "NotFound";
@@ -533,13 +533,142 @@ export interface ClientSideError {
     message: string;
 }
 
-export interface ReportFilterConfig {
-    sections_to_include: IdType[] | undefined;
-    requirements_to_include: IdType[] | undefined;
-    requirement_groups_to_include: IdType[] | undefined;
+export interface EmbedConfig {
+    model: EmbedModel;
+    regulation_vector_search_limit: number;
+    user_documentation_vector_search_limit: number;
+    tokens_per_chunk: number;
+    token_overlap: number;
 }
 
-export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
+export interface Task {
+    id?: IdType;
+    status?: TaskStatus;
+    title: string;
+    description: string;
+    task: string;
+    suggestion: Suggestion | undefined;
+    associated_document: string | undefined;
+    misc?: Json | undefined;
+}
+
+export interface Requirement {
+    id: IdType;
+    name: string;
+    description: string;
+    reference: string | undefined;
+    documentation_search_instruction: string;
+}
+
+export interface RequirementGroup {
+    id: IdType;
+    name: string;
+    description: string;
+    reference: string | undefined;
+}
+
+export interface Section {
+    id: IdType;
+    name: string;
+    description: string;
+}
+
+export interface File {
+    id: IdType;
+    multipart_upload_id: string | undefined;
+    multipart_upload_part_ids: string[] | undefined;
+    path: string;
+    title: string;
+    extension: FileExtension;
+    size: number;
+    total_chunks: number;
+    uploaded: boolean;
+    created_date: DateTime<Utc>;
+    status: FileStatus;
+    openai_file_id: string | undefined;
+}
+
+export interface Report {
+    id: IdType;
+    status: ReportStatus;
+    regulatory_framework: RegulatoryFramework;
+    created_date: DateTime<Utc>;
+    title: string;
+    abstract_text: string;
+    compliance_rating: ComplianceRating;
+    section_assessments: Map<Id, SectionAssessment>;
+}
+
+export interface User {
+    id: IdType;
+    first_name: string;
+    last_name: string;
+    email: Email;
+    job_title: string | undefined;
+    company: string | undefined;
+    config?: UserConfig;
+    preferences?: Json | undefined;
+}
+
+export interface Thread {
+    id: IdType;
+    conversation: Messages;
+    logs: string[];
+}
+
+/**
+ * Rating indicating confidence in the assessment\'s accuracy and completeness (0-100)
+ *
+ * The confidence rating reflects the reliability of the assessment based on
+ * available evidence, documentation quality, and clarity of requirements.
+ *
+ *# Confidence Rating Scale
+ *
+ *The confidence rating reflects how certain an evaluator is about the provided assessment. It accounts for factors such as the level of agreement between different inspections, the presence of ambiguous or inconsistent information, and the similarity of compliance scores from independent evaluators. Each criterion below is treated as an **OR** operator, meaning meeting any one of the conditions can determine the confidence level. The rating does **not** depend on the level of implementation or the amount of documentation available, which instead impacts the compliance rating.
+ *
+ *## 0.95-1.00: Highest Confidence
+ *- High agreement across independent evaluations **OR**
+ *- No ambiguity or inconsistencies in the evidence **OR**
+ *- Requirements are unambiguous and directly relevant to the device **OR**
+ *- Clear and consistent evidence supporting the assessment
+ *
+ *## 0.80-0.94: Strong Confidence
+ *- Strong agreement across most evaluations **OR**
+ *- Minimal ambiguity or inconsistencies in the evidence **OR**
+ *- Requirements well understood and relevant to the device **OR**
+ *- Minor areas requiring interpretation
+ *
+ *## 0.60-0.79: Good Confidence
+ *- General agreement across evaluations **OR**
+ *- Some ambiguity or inconsistencies in the evidence **OR**
+ *- Requirements generally clear but may need interpretation **OR**
+ *- Reasonable level of consistency in available evidence
+ *
+ *## 0.40-0.59: Moderate Confidence
+ *- Partial agreement across evaluations **OR**
+ *- Notable ambiguity or inconsistencies in the evidence **OR**
+ *- Requirements need significant interpretation **OR**
+ *- Mixed or uneven clarity in evidence across assessments
+ *
+ *## 0.20-0.39: Limited Confidence
+ *- Minimal agreement across evaluations **OR**
+ *- High level of ambiguity or inconsistencies in the evidence **OR**
+ *- Requirements unclear or difficult to apply **OR**
+ *- Conflicting information across assessments
+ *
+ *## 0.01-0.19: Very Low Confidence
+ *- Little to no agreement across evaluations **OR**
+ *- Evidence largely ambiguous or conflicting **OR**
+ *- Requirements poorly defined or highly subjective **OR**
+ *- Lack of coherence in available evidence
+ *
+ *## 0.00: No Confidence
+ *- No agreement across evaluations **OR**
+ *- Evidence entirely absent or unusable **OR**
+ *- Requirements undefined or irrelevant **OR**
+ *- No actionable information available for assessment
+ */
+export type ConfidenceRating = number;
 
 /**
  * Comprehensive evaluation of a requirement\'s implementation status and supporting evidence
@@ -679,217 +808,6 @@ export interface RequirementAssessment {
     quotes?: AssessmentQuote[];
 }
 
-export interface ChunkId {
-    parent_id: string;
-    index: number;
-}
-
-export type IdType = string;
-
-/**
- * Measures documentation quality and implementation effectiveness.
- *
- * The compliance rating evaluates how well documentation and implementation meet
- * specified requirements, providing a standardized way to assess audit readiness
- * and documentation completeness.
- *
- * # Compliance Rating Scale (0-100)
- *
- * ## 95-100: Exceptional Implementation
- * - Documentation and implementation significantly exceed requirements
- * - Comprehensive evidence demonstrates thorough implementation
- * - Serves as industry best practice example
- *
- * ## 85-94: Advanced Implementation
- * - Documentation and implementation exceed basic requirements
- * - Strong evidence supports all implementation aspects
- * - Minor enhancement opportunities may exist
- *
- * ## 75-84: Solid Implementation
- * - Documentation meets all core requirements
- * - Implementation evidence is present but could be strengthened
- * - Some enhancement opportunities identified
- *
- * ## 65-74: Basic Implementation
- * - Documentation meets minimum requirements
- * - Implementation evidence needs enhancement
- * - Several areas identified for improvement
- *
- * ## 50-64: Partial Implementation
- * - Notable gaps in documentation/implementation
- * - Multiple areas require significant enhancement
- * - May not satisfy minimum requirements
- *
- * ## 35-49: Limited Implementation
- * - Significant documentation and implementation gaps
- * - Critical evidence missing
- * - Requires substantial improvement
- *
- * ## 20-34: Minimal Implementation
- * - Documentation severely lacking
- * - Implementation evidence largely absent
- * - Requires major rework
- *
- * ## 1-19: Initial Implementation
- * - Critical documentation missing
- * - Minimal implementation evidence
- * - Requires complete redevelopment
- *
- * ## 0: No Implementation
- * - No documentation exists
- * - No implementation evidence
- * - Requires complete development
- *
- * # Device-Specific Considerations
- * Requirements may be deemed not applicable based on device characteristics:
- * - Sterile vs. non-sterile
- * - Software vs. hardware
- * - Reusable vs. single-use
- * - Active vs. non-active
- * - Implantable vs. non-implantable
- * - Diagnostic vs. therapeutic
- * - Electrical vs. mechanical
- * - Invasive vs. non-invasive
- * - Portable vs. stationary
- *
- * When assessing applicability, document specific device traits that justify
- * requirement omission. The justification should clearly demonstrate why the
- * requirement addresses aspects not relevant to the device.
- *
- * # Rating Guidelines
- * 1. Evaluate implementation evidence comprehensively
- * 2. Consider regulatory requirements and expectations
- * 3. Document device-specific applicability justifications
- * 4. Maintain consistent assessment criteria
- */
-export type ComplianceRating = number;
-
-/**
- * Rating indicating confidence in the assessment\'s accuracy and completeness (0-100)
- *
- * The confidence rating reflects the reliability of the assessment based on
- * available evidence, documentation quality, and clarity of requirements.
- *
- *# Confidence Rating Scale
- *
- *The confidence rating reflects how certain an evaluator is about the provided assessment. It accounts for factors such as the level of agreement between different inspections, the presence of ambiguous or inconsistent information, and the similarity of compliance scores from independent evaluators. Each criterion below is treated as an **OR** operator, meaning meeting any one of the conditions can determine the confidence level. The rating does **not** depend on the level of implementation or the amount of documentation available, which instead impacts the compliance rating.
- *
- *## 0.95-1.00: Highest Confidence
- *- High agreement across independent evaluations **OR**
- *- No ambiguity or inconsistencies in the evidence **OR**
- *- Requirements are unambiguous and directly relevant to the device **OR**
- *- Clear and consistent evidence supporting the assessment
- *
- *## 0.80-0.94: Strong Confidence
- *- Strong agreement across most evaluations **OR**
- *- Minimal ambiguity or inconsistencies in the evidence **OR**
- *- Requirements well understood and relevant to the device **OR**
- *- Minor areas requiring interpretation
- *
- *## 0.60-0.79: Good Confidence
- *- General agreement across evaluations **OR**
- *- Some ambiguity or inconsistencies in the evidence **OR**
- *- Requirements generally clear but may need interpretation **OR**
- *- Reasonable level of consistency in available evidence
- *
- *## 0.40-0.59: Moderate Confidence
- *- Partial agreement across evaluations **OR**
- *- Notable ambiguity or inconsistencies in the evidence **OR**
- *- Requirements need significant interpretation **OR**
- *- Mixed or uneven clarity in evidence across assessments
- *
- *## 0.20-0.39: Limited Confidence
- *- Minimal agreement across evaluations **OR**
- *- High level of ambiguity or inconsistencies in the evidence **OR**
- *- Requirements unclear or difficult to apply **OR**
- *- Conflicting information across assessments
- *
- *## 0.01-0.19: Very Low Confidence
- *- Little to no agreement across evaluations **OR**
- *- Evidence largely ambiguous or conflicting **OR**
- *- Requirements poorly defined or highly subjective **OR**
- *- Lack of coherence in available evidence
- *
- *## 0.00: No Confidence
- *- No agreement across evaluations **OR**
- *- Evidence entirely absent or unusable **OR**
- *- Requirements undefined or irrelevant **OR**
- *- No actionable information available for assessment
- */
-export type ConfidenceRating = number;
-
-export interface SectionAssessment {
-    abstract_text: string;
-    compliance_rating: ComplianceRating;
-    requirement_assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
-}
-
-export interface ReportAbstractAndTitle {
-    abstract_text: string;
-    title: string;
-}
-
-export interface RequirementGroupAssessment {
-    compliance_rating: ComplianceRating;
-    /**
-     * Comprehensive explanation of the compliance assessment, including methodology and findings
-     */
-    details: string;
-    /**
-     * Brief overview of the compliance status and key findings
-     */
-    summary: string;
-    assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
-}
-
-export interface AssessmentQuote {
-    raw: RawQuote;
-    relevancy_score: Percentage;
-    pretty: string;
-}
-
-export interface RawQuote {
-    document_title: string;
-    start_line: number;
-    end_line: number;
-    total_lines_on_page: number;
-    page: number;
-    content: string;
-}
-
-export type RequirementOrRequirementGroupAssessment = { requirement: RequirementAssessment } | { requirement_group: RequirementGroupAssessment };
-
-export interface Suggestion {
-    kind: SuggestionKind;
-    description: string;
-    content: string;
-}
-
-export interface LlmConfig {
-    model: LlmModel;
-    temperature: number | undefined;
-}
-
-export interface UserConfig {
-    user: UserBaseConfig;
-    admin: AdminConfig;
-}
-
-export interface UserBaseConfig {}
-
-export interface AdminConfig {
-    embed_config: EmbedConfig;
-    llm_config: LlmConfig;
-}
-
-export interface EmbedConfig {
-    model: EmbedModel;
-    regulation_vector_search_limit: number;
-    user_documentation_vector_search_limit: number;
-    tokens_per_chunk: number;
-    token_overlap: number;
-}
-
 /**
  * Rating indicating probability of an auditor determining the requirement\'s applicability (0-100)
  *
@@ -969,88 +887,65 @@ export interface EmbedConfig {
  */
 export type ApplicabilityRating = number;
 
-export interface Task {
-    id?: IdType;
-    status?: TaskStatus;
-    title: string;
-    description: string;
-    task: string;
-    suggestion: Suggestion | undefined;
-    associated_document: string | undefined;
-    misc?: Json | undefined;
-}
-
-export interface Requirement {
-    id: IdType;
-    name: string;
-    description: string;
-    reference: string | undefined;
-    documentation_search_instruction: string;
-}
-
-export interface RequirementGroup {
-    id: IdType;
-    name: string;
-    description: string;
-    reference: string | undefined;
-}
-
-export interface Section {
-    id: IdType;
-    name: string;
-    description: string;
-}
-
-export interface File {
-    id: IdType;
-    multipart_upload_id: string | undefined;
-    multipart_upload_part_ids: string[] | undefined;
-    path: string;
-    title: string;
-    extension: FileExtension;
-    size: number;
-    total_chunks: number;
-    uploaded: boolean;
-    created_date: DateTime<Utc>;
-    status: FileStatus;
-    openai_file_id: string | undefined;
-}
-
-export interface Report {
-    id: IdType;
-    status: ReportStatus;
-    regulatory_framework: RegulatoryFramework;
-    created_date: DateTime<Utc>;
-    title: string;
+export interface SectionAssessment {
     abstract_text: string;
     compliance_rating: ComplianceRating;
-    section_assessments: Map<Id, SectionAssessment>;
+    requirement_assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
 }
 
-export interface User {
-    id: IdType;
-    first_name: string;
-    last_name: string;
-    email: Email;
-    job_title: string | undefined;
-    company: string | undefined;
-    config?: UserConfig;
-    preferences?: Json | undefined;
+export interface ReportAbstractAndTitle {
+    abstract_text: string;
+    title: string;
 }
 
-export interface Thread {
-    id: IdType;
-    conversation: Messages;
-    logs: string[];
+export interface RequirementGroupAssessment {
+    compliance_rating: ComplianceRating;
+    /**
+     * Comprehensive explanation of the compliance assessment, including methodology and findings
+     */
+    details: string;
+    /**
+     * Brief overview of the compliance status and key findings
+     */
+    summary: string;
+    assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
 }
 
-export type ProgressEvent = { Report: [IdType, number] };
+export interface AssessmentQuote {
+    raw: RawQuote;
+    relevancy_score: Percentage;
+    pretty: string;
+}
 
-export type UpdateEvent = { File: IdType } | { User: IdType } | { Requirement: IdType };
+export interface RawQuote {
+    document_title: string;
+    start_line: number;
+    end_line: number;
+    total_lines_on_page: number;
+    page: number;
+    content: string;
+}
 
-export type DeleteEvent = { File: IdType };
+export type RequirementOrRequirementGroupAssessment = { requirement: RequirementAssessment } | { requirement_group: RequirementGroupAssessment };
 
-export type CreateEvent = { File: IdType } | { Report: IdType };
+export interface Suggestion {
+    kind: SuggestionKind;
+    description: string;
+    content: string;
+}
+
+export interface ReportFilterConfig {
+    sections_to_include: IdType[] | undefined;
+    requirements_to_include: IdType[] | undefined;
+    requirement_groups_to_include: IdType[] | undefined;
+}
+
+export interface ChunkId {
+    parent_id: string;
+    index: number;
+}
+
+export type IdType = string;
 
 export interface Claims {
     nickname: string;
@@ -1156,6 +1051,111 @@ export interface FullFile {
     data: ArcBytes;
 }
 
+export interface UserConfig {
+    user: UserBaseConfig;
+    admin: AdminConfig;
+}
+
+export interface UserBaseConfig {}
+
+export interface AdminConfig {
+    embed_config: EmbedConfig;
+    llm_config: LlmConfig;
+}
+
+/**
+ * Measures documentation quality and implementation effectiveness.
+ *
+ * The compliance rating evaluates how well documentation and implementation meet
+ * specified requirements, providing a standardized way to assess audit readiness
+ * and documentation completeness.
+ *
+ * # Compliance Rating Scale (0-100)
+ *
+ * ## 95-100: Exceptional Implementation
+ * - Documentation and implementation significantly exceed requirements
+ * - Comprehensive evidence demonstrates thorough implementation
+ * - Serves as industry best practice example
+ *
+ * ## 85-94: Advanced Implementation
+ * - Documentation and implementation exceed basic requirements
+ * - Strong evidence supports all implementation aspects
+ * - Minor enhancement opportunities may exist
+ *
+ * ## 75-84: Solid Implementation
+ * - Documentation meets all core requirements
+ * - Implementation evidence is present but could be strengthened
+ * - Some enhancement opportunities identified
+ *
+ * ## 65-74: Basic Implementation
+ * - Documentation meets minimum requirements
+ * - Implementation evidence needs enhancement
+ * - Several areas identified for improvement
+ *
+ * ## 50-64: Partial Implementation
+ * - Notable gaps in documentation/implementation
+ * - Multiple areas require significant enhancement
+ * - May not satisfy minimum requirements
+ *
+ * ## 35-49: Limited Implementation
+ * - Significant documentation and implementation gaps
+ * - Critical evidence missing
+ * - Requires substantial improvement
+ *
+ * ## 20-34: Minimal Implementation
+ * - Documentation severely lacking
+ * - Implementation evidence largely absent
+ * - Requires major rework
+ *
+ * ## 1-19: Initial Implementation
+ * - Critical documentation missing
+ * - Minimal implementation evidence
+ * - Requires complete redevelopment
+ *
+ * ## 0: No Implementation
+ * - No documentation exists
+ * - No implementation evidence
+ * - Requires complete development
+ *
+ * # Device-Specific Considerations
+ * Requirements may be deemed not applicable based on device characteristics:
+ * - Sterile vs. non-sterile
+ * - Software vs. hardware
+ * - Reusable vs. single-use
+ * - Active vs. non-active
+ * - Implantable vs. non-implantable
+ * - Diagnostic vs. therapeutic
+ * - Electrical vs. mechanical
+ * - Invasive vs. non-invasive
+ * - Portable vs. stationary
+ *
+ * When assessing applicability, document specific device traits that justify
+ * requirement omission. The justification should clearly demonstrate why the
+ * requirement addresses aspects not relevant to the device.
+ *
+ * # Rating Guidelines
+ * 1. Evaluate implementation evidence comprehensively
+ * 2. Consider regulatory requirements and expectations
+ * 3. Document device-specific applicability justifications
+ * 4. Maintain consistent assessment criteria
+ */
+export type ComplianceRating = number;
+
+export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
+
+export interface LlmConfig {
+    model: LlmModel;
+    temperature: number | undefined;
+}
+
+export type ProgressEvent = { Report: [IdType, number] };
+
+export type UpdateEvent = { File: IdType } | { User: IdType } | { Requirement: IdType };
+
+export type DeleteEvent = { File: IdType };
+
+export type CreateEvent = { File: IdType } | { Report: IdType };
+
 export class IntoUnderlyingByteSource {
   private constructor();
   free(): void;
@@ -1183,7 +1183,6 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly hydrate: () => void;
   readonly echo: (a: number) => number;
   readonly get_public_auth0_config: () => number;
   readonly exchange_code_for_identity: (a: number) => number;
@@ -1222,6 +1221,7 @@ export interface InitOutput {
   readonly admin_get_threads_by_requirement_group: (a: number) => number;
   readonly admin_get_threads_by_requirement: (a: number) => number;
   readonly get_file_data: (a: number) => number;
+  readonly hydrate: () => void;
   readonly set_websocket_event_callback: (a: number) => void;
   readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
   readonly intounderlyingsink_write: (a: number, b: number) => number;
