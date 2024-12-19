@@ -552,7 +552,7 @@ export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Upda
 export interface RequirementAssessment {
     /**
      * Numerical rating (0-100) indicating implementation completeness and quality
-     * 
+     *
      * Examples:
      * - 95: Battery compartment design (`GlucoCheck` Basic) - Exceeds requirements through multi-layered approach:
      *   mechanical polarity enforcement, clear markings, and electronic reverse polarity protection
@@ -564,11 +564,11 @@ export interface RequirementAssessment {
     compliance_rating: ComplianceRating;
     /**
      * Rating (0-100) indicating how relevant the requirement is to the device
-     * 
+     *
      * Examples:
-     * - 100: Software validation for `GlucoCheck` Basic - Fully applicable as device contains 
+     * - 100: Software validation for `GlucoCheck` Basic - Fully applicable as device contains
      *   firmware and mobile app requiring comprehensive validation
-     * - 60: MRI compatibility for `GlucoCheck` Basic - Partially applicable only to 
+     * - 60: MRI compatibility for `GlucoCheck` Basic - Partially applicable only to
      *   electromagnetic interference aspects, as device is not used during MRI
      * - 0: Sterilization validation for `GlucoCheck` Basic - Not applicable as device is non-sterile
      *   and does not contact broken skin
@@ -576,7 +576,7 @@ export interface RequirementAssessment {
     applicability_rating: ApplicabilityRating;
     /**
      * Rating (0-100) indicating assessment reliability based on evidence quality
-     * 
+     *
      * Examples:
      * - 90: Battery safety assessment - High confidence from clear requirements, comprehensive test
      *   reports, and consistent results across multiple validation studies
@@ -590,13 +590,13 @@ export interface RequirementAssessment {
      * Detailed analysis and evaluation of requirement compliance
      *
      * Examples:
-     * 
+     *
      * Battery Safety (`GlucoCheck` Basic):
-     * Assessment methodology utilized physical inspection of three device samples, review of design 
-     * documentation (DR-201, DR-202), and analysis of test reports (TR-150, TR-151). Testing 
-     * demonstrated successful implementation of battery safety features including mechanical polarity 
-     * enforcement and electronic reverse voltage protection. Design validation included drop testing 
-     * and attempted incorrect battery insertion by 30 test subjects. Risk analysis demonstrated 
+     * Assessment methodology utilized physical inspection of three device samples, review of design
+     * documentation (DR-201, DR-202), and analysis of test reports (TR-150, TR-151). Testing
+     * demonstrated successful implementation of battery safety features including mechanical polarity
+     * enforcement and electronic reverse voltage protection. Design validation included drop testing
+     * and attempted incorrect battery insertion by 30 test subjects. Risk analysis demonstrated
      * reduction of battery-related risks to acceptable levels through multiple redundant controls.
      * Implementation exceeds requirements through inclusion of additional safety features beyond
      * basic polarity protection. Minor opportunity for improvement identified in battery replacement
@@ -615,19 +615,19 @@ export interface RequirementAssessment {
      * Objective summary of manufacturer-provided information relevant to the requirement
      *
      * Examples:
-     * 
+     *
      * Battery Safety (`GlucoCheck` Basic):
-     * Device uses 2 AAA batteries housed in rear compartment. Battery holder includes mechanical 
-     * keying features preventing reverse insertion. PCB incorporates P-channel MOSFET for reverse 
-     * polarity protection. Battery compartment labeled with polarity indicators and pictorial 
-     * diagram. Replacement procedure detailed in user manual section 3.4. Battery life rated at 
+     * Device uses 2 AAA batteries housed in rear compartment. Battery holder includes mechanical
+     * keying features preventing reverse insertion. PCB incorporates P-channel MOSFET for reverse
+     * polarity protection. Battery compartment labeled with polarity indicators and pictorial
+     * diagram. Replacement procedure detailed in user manual section 3.4. Battery life rated at
      * 2000 measurements under normal use. Low battery warning displays at 20% remaining capacity.
      * Design validation report DR-201 documents testing with 30 users attempting battery replacement.
      *
      * Drug-Eluting Coating (`NeuroStim` Pro):
      * Coating consists of dexamethasone acetate in polymer matrix at 100 µg/cm². Elution profile
      * shows 80% release over 6 months. Manufacturing process uses automated spray coating with
-     * real-time thickness monitoring. Coating stability verified through 12-month real-time and 
+     * real-time thickness monitoring. Coating stability verified through 12-month real-time and
      * 6-month accelerated aging. Process validation included 3 consecutive batches of 30 units each.
      * Surface characterization performed via SEM and FTIR analysis.
      */
@@ -636,7 +636,7 @@ export interface RequirementAssessment {
      * List of identified gaps requiring remediation
      *
      * Examples:
-     * 
+     *
      * Battery Safety (`GlucoCheck` Basic):
      * - Battery replacement instructions in user manual lack clear illustrations of correct orientation
      * - Warning label on battery door shows slight wear after repeated opening in durability testing
@@ -653,7 +653,7 @@ export interface RequirementAssessment {
      * Set of all documents reviewed during assessment
      *
      * Examples:
-     * 
+     *
      * Battery Safety (`GlucoCheck` Basic):
      * - Design Requirements Specification (DR-100)
      * - Battery Subsystem Design Document (DR-201)
@@ -689,8 +689,8 @@ export type IdType = string;
 /**
  * Measures documentation quality and implementation effectiveness.
  *
- * The compliance rating evaluates how well documentation and implementation meet 
- * specified requirements, providing a standardized way to assess audit readiness 
+ * The compliance rating evaluates how well documentation and implementation meet
+ * specified requirements, providing a standardized way to assess audit readiness
  * and documentation completeness.
  *
  * # Compliance Rating Scale (0-100)
@@ -985,6 +985,7 @@ export interface Requirement {
     name: string;
     description: string;
     reference: string | undefined;
+    documentation_search_instruction: string;
 }
 
 export interface RequirementGroup {

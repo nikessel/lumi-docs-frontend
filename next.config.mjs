@@ -18,7 +18,7 @@ const nextConfig = {
     // Configure module rules
     config.module.rules.push({
       test: /\.wasm$/,
-      type: "asset/resource",
+      type: "webassembly/async",  // Changed from "asset/resource"
       generator: {
         filename: "static/wasm/[hash][ext][query]",
       },
