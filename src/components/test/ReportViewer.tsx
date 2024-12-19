@@ -334,23 +334,13 @@ const RequirementCard: React.FC<{
       <AccordionContent className="px-4 py-2">
         <div className="space-y-4">
           <div>
-            <h4 className="font-medium mb-1">Assessment Summary</h4>
-            <p className="text-sm text-gray-700">{req.content.summary}</p>
+            <h4 className="font-medium mb-1">Objective Research Summary</h4>
+            <p className="text-sm text-gray-700">{req.content.objective_research_summary}</p>
           </div>
           <div>
             <h4 className="font-medium mb-1">Assessment Details</h4>
             <p className="text-sm text-gray-700">{req.content.details}</p>
           </div>
-          {req.content.positive_findings?.length > 0 && (
-            <div>
-              <h4 className="font-medium mb-1">Positive Findings</h4>
-              <ul className="list-disc pl-4 space-y-1">
-                {req.content.positive_findings.map((finding, i) => (
-                  <li key={i} className="text-sm text-gray-700">{finding}</li>
-                ))}
-              </ul>
-            </div>
-          )}
           {req.content.negative_findings?.length > 0 && (
             <div>
               <h4 className="font-medium mb-1">Negative Findings</h4>
