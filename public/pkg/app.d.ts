@@ -22,6 +22,7 @@ export function get_child_requirement_groups(input: GetChildRequirementGroupsInp
 export function get_requirements_by_group(input: GetRequirementsByGroupInput): Promise<GetRequirementsByGroupResponse>;
 export function get_all_sections(): Promise<GetAllSectionsResponse>;
 export function get_all_files(): Promise<GetAllFilesResponse>;
+export function get_all_files_by_numbers(input: GetAllFilesByNumbersInput): Promise<GetAllFilesByNumbersResponse>;
 export function get_all_requirements(): Promise<GetAllRequirementsResponse>;
 export function get_all_requirement_groups(): Promise<GetAllRequirementGroupsResponse>;
 export function create_user(input: CreateUserInput): Promise<CreateUserResponse>;
@@ -37,9 +38,9 @@ export function admin_get_threads_by_report(input: AdminGetThreadsByReportInput)
 export function admin_get_threads_by_section(input: AdminGetThreadsBySectionInput): Promise<AdminGetThreadsBySectionResponse>;
 export function admin_get_threads_by_requirement_group(input: AdminGetThreadsByRequirementGroupInput): Promise<AdminGetThreadsByRequirementGroupResponse>;
 export function admin_get_threads_by_requirement(input: AdminGetThreadsByRequirementInput): Promise<AdminGetThreadsByRequirementResponse>;
-export function get_file_data(input: GetFileDataInput): Promise<GetFileDataResponse>;
-export function hydrate(): void;
 export function set_websocket_event_callback(callback: Function): void;
+export function hydrate(): void;
+export function get_file_data(input: GetFileDataInput): Promise<GetFileDataResponse>;
 /**
  * The `ReadableStreamType` enum.
  *
@@ -311,6 +312,19 @@ export interface GetAllFilesResponse {
     error: ClientSideError | undefined;
 }
 
+export interface GetAllFilesByNumbersInput {
+    input: number[];
+}
+
+export interface GetAllFilesByNumbersOutput {
+    output: File[];
+}
+
+export interface GetAllFilesByNumbersResponse {
+    output: GetAllFilesByNumbersOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
 export interface GetAllRequirementsOutput {
     output: Requirement[];
 }
@@ -494,19 +508,6 @@ export interface AdminGetThreadsByRequirementResponse {
     error: ClientSideError | undefined;
 }
 
-export interface GetFileDataInput {
-    input: IdType;
-}
-
-export interface GetFileDataOutput {
-    output: Uint8Array;
-}
-
-export interface GetFileDataResponse {
-    output: GetFileDataOutput | undefined;
-    error: ClientSideError | undefined;
-}
-
 declare namespace StorageKey {
     export type id_token = "id_token";
     export type access_token = "access_token";
@@ -533,87 +534,23 @@ export interface ClientSideError {
     message: string;
 }
 
-export interface EmbedConfig {
-    model: EmbedModel;
-    regulation_vector_search_limit: number;
-    user_documentation_vector_search_limit: number;
-    tokens_per_chunk: number;
-    token_overlap: number;
+export interface GetFileDataInput {
+    input: IdType;
 }
 
-export interface Task {
-    id?: IdType;
-    status?: TaskStatus;
-    title: string;
-    description: string;
-    task: string;
-    suggestion: Suggestion | undefined;
-    associated_document: string | undefined;
-    misc?: Json | undefined;
+export interface GetFileDataOutput {
+    output: Uint8Array;
 }
 
-export interface Requirement {
-    id: IdType;
-    name: string;
-    description: string;
-    reference: string | undefined;
-    documentation_search_instruction: string;
+export interface GetFileDataResponse {
+    output: GetFileDataOutput | undefined;
+    error: ClientSideError | undefined;
 }
 
-export interface RequirementGroup {
-    id: IdType;
-    name: string;
-    description: string;
-    reference: string | undefined;
-}
-
-export interface Section {
-    id: IdType;
-    name: string;
-    description: string;
-}
-
-export interface File {
-    id: IdType;
-    multipart_upload_id: string | undefined;
-    multipart_upload_part_ids: string[] | undefined;
-    path: string;
-    title: string;
-    extension: FileExtension;
-    size: number;
-    total_chunks: number;
-    uploaded: boolean;
-    created_date: DateTime<Utc>;
-    status: FileStatus;
-    openai_file_id: string | undefined;
-}
-
-export interface Report {
-    id: IdType;
-    status: ReportStatus;
-    regulatory_framework: RegulatoryFramework;
-    created_date: DateTime<Utc>;
-    title: string;
-    abstract_text: string;
-    compliance_rating: ComplianceRating;
-    section_assessments: Map<Id, SectionAssessment>;
-}
-
-export interface User {
-    id: IdType;
-    first_name: string;
-    last_name: string;
-    email: Email;
-    job_title: string | undefined;
-    company: string | undefined;
-    config?: UserConfig;
-    preferences?: Json | undefined;
-}
-
-export interface Thread {
-    id: IdType;
-    conversation: Messages;
-    logs: string[];
+export interface ReportFilterConfig {
+    sections_to_include: IdType[] | undefined;
+    requirements_to_include: IdType[] | undefined;
+    requirement_groups_to_include: IdType[] | undefined;
 }
 
 /**
@@ -669,6 +606,172 @@ export interface Thread {
  *- No actionable information available for assessment
  */
 export type ConfidenceRating = number;
+
+export interface SectionAssessment {
+    abstract_text: string;
+    compliance_rating: ComplianceRating;
+    requirement_assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
+}
+
+export interface ReportAbstractAndTitle {
+    abstract_text: string;
+    title: string;
+}
+
+export interface RequirementGroupAssessment {
+    compliance_rating: ComplianceRating;
+    /**
+     * Comprehensive explanation of the compliance assessment, including methodology and findings
+     */
+    details: string;
+    /**
+     * Brief overview of the compliance status and key findings
+     */
+    summary: string;
+    assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
+}
+
+export interface AssessmentQuote {
+    raw: RawQuote;
+    relevancy_score: Percentage;
+    pretty: string;
+}
+
+export interface RawQuote {
+    document_title: string;
+    start_line: number;
+    end_line: number;
+    total_lines_on_page: number;
+    page: number;
+    content: string;
+}
+
+export type RequirementOrRequirementGroupAssessment = { requirement: RequirementAssessment } | { requirement_group: RequirementGroupAssessment };
+
+export interface Suggestion {
+    kind: SuggestionKind;
+    description: string;
+    content: string;
+}
+
+export interface ChunkId {
+    parent_id: string;
+    index: number;
+}
+
+export type IdType = string;
+
+export type ProgressEvent = { Report: [IdType, number] };
+
+export type UpdateEvent = { File: IdType } | { User: IdType } | { Requirement: IdType };
+
+export type DeleteEvent = { File: IdType };
+
+export type CreateEvent = { File: IdType } | { Report: IdType };
+
+export interface UserConfig {
+    user: UserBaseConfig;
+    admin: AdminConfig;
+}
+
+export interface UserBaseConfig {}
+
+export interface AdminConfig {
+    embed_config: EmbedConfig;
+    llm_config: LlmConfig;
+}
+
+/**
+ * Rating indicating probability of an auditor determining the requirement\'s applicability (0-100)
+ *
+ * The applicability rating reflects the likelihood that an auditor would determine a requirement
+ * applies to the specific device or documentation being assessed. This provides a standardized
+ * way to evaluate requirement scope and applicability determination.
+ *
+ * # Applicability Rating Scale (0-100)
+ *
+ * ## 95-100: Definitively Applicable
+ * - >95% probability auditor would determine requirement applies
+ * - Device/documentation clearly within requirement scope
+ * - No reasonable auditor would exclude requirement
+ * - Clear regulatory guidance supports applicability
+ *
+ * ## 80-94: Strongly Applicable  
+ * - ~90% probability auditor would include requirement
+ * - May receive questions about specific aspects
+ * - Strong evidence supports applicability
+ * - Conservative interpretation favors inclusion
+ *
+ * ## 60-79: Likely Applicable
+ * - ~75% probability auditor would apply requirement
+ * - Some interpretation differences possible
+ * - Most evidence supports applicability
+ * - Safer to include than exclude
+ *
+ * ## 40-59: Uncertain Applicability
+ * - 50% chance of differing auditor interpretations
+ * - Significant regulatory ambiguity exists
+ * - Equal evidence for/against applicability
+ * - Further guidance/clarification needed
+ *
+ * ## 20-39: Likely Not Applicable
+ * - ~25% probability auditor would apply requirement
+ * - Most evidence suggests non-applicability
+ * - Device characteristics indicate exclusion
+ * - Some interpretation risk remains
+ *
+ * ## 1-19: Almost Certainly Not Applicable
+ * - <10% chance auditor would apply requirement
+ * - Clear evidence of non-applicability
+ * - Strong regulatory basis for exclusion
+ * - Only theoretical applicability scenarios
+ *
+ * ## 0: Definitively Not Applicable
+ * - 0% probability of applicability determination
+ * - Explicit regulatory exclusion exists
+ * - Logically impossible to apply
+ * - No reasonable interpretation supports inclusion
+ *
+ * # Assessment Guidelines
+ *
+ * 1. Regulatory Framework
+ *    - Review applicable regulations and guidance
+ *    - Consider common auditor interpretations
+ *    - Evaluate historical precedents
+ *    - Assess regulatory clarity
+ *
+ * 2. Device Characteristics
+ *    - Compare to requirement scope
+ *    - Evaluate technical alignment
+ *    - Consider intended use match
+ *    - Assess risk classification
+ *
+ * 3. Documentation Context
+ *    - Review lifecycle stage relevance
+ *    - Consider version applicability
+ *    - Evaluate temporal scope
+ *    - Assess documentation completeness
+ *
+ * 4. Interpretation Risk
+ *    - Consider auditor variability
+ *    - Evaluate regulatory ambiguity
+ *    - Assess precedent consistency
+ *    - Review guidance clarity
+ */
+export type ApplicabilityRating = number;
+
+export interface LlmConfig {
+    model: LlmModel;
+    temperature: number | undefined;
+}
+
+export interface EmbedConfig {
+    model: EmbedModel;
+    regulation_vector_search_limit: number;
+    user_documentation_vector_search_limit: number;
+    tokens_per_chunk: number;
+    token_overlap: number;
+}
 
 /**
  * Comprehensive evaluation of a requirement\'s implementation status and supporting evidence
@@ -779,173 +882,34 @@ export interface RequirementAssessment {
      */
     negative_findings: string[];
     /**
-     * Set of all documents reviewed during assessment
+     * Set of all document numbers reviewed during assessment
      *
      * Examples:
      *
-     * Battery Safety (`GlucoCheck` Basic):
-     * - Design Requirements Specification (DR-100)
-     * - Battery Subsystem Design Document (DR-201)
-     * - Electronics Design Document (DR-202)
-     * - Battery Safety Test Report (TR-150)
-     * - User Manual (UM-101)
-     * - Risk Analysis Report (RA-300)
-     * - Design Validation Report (DVR-400)
+     * Battery Safety (Product A):
+     * - Design Requirements Specification (#101)
+     * - Battery Subsystem Design Document (#102)
+     * - Electronics Design Document (#103)
+     * - Battery Safety Test Report (#104)
+     * - User Manual (#105)
+     * - Risk Analysis Report (#106)
+     * - Design Validation Report (#107)
      *
-     * Drug-Eluting Coating (`NeuroStim` Pro):
-     * - Coating Process Specification (PS-501)
-     * - Design History File Section 4.2
-     * - Process Validation Protocol (PVP-120)
-     * - Stability Study Report (STB-300)
-     * - Coating Characterization Report (CCR-401)
-     * - Manufacturing Process Flow (MPF-200)
-     * - Risk Management File Section 3.5
+     * Drug-Eluting Coating (Product B):
+     * - Coating Process Specification (#201)
+     * - Design History File (#202)
+     * - Process Validation Protocol (#203)
+     * - Stability Study Report (#204)
+     * - Coating Characterization Report (#205)
+     * - Manufacturing Process Flow (#206)
+     * - Risk Management File (#207)
      */
-    sources: string[];
+    sources: number[];
     /**
      * Exact quotes from source documents supporting the assessment
      */
     quotes?: AssessmentQuote[];
 }
-
-/**
- * Rating indicating probability of an auditor determining the requirement\'s applicability (0-100)
- *
- * The applicability rating reflects the likelihood that an auditor would determine a requirement
- * applies to the specific device or documentation being assessed. This provides a standardized
- * way to evaluate requirement scope and applicability determination.
- *
- * # Applicability Rating Scale (0-100)
- *
- * ## 95-100: Definitively Applicable
- * - >95% probability auditor would determine requirement applies
- * - Device/documentation clearly within requirement scope
- * - No reasonable auditor would exclude requirement
- * - Clear regulatory guidance supports applicability
- *
- * ## 80-94: Strongly Applicable  
- * - ~90% probability auditor would include requirement
- * - May receive questions about specific aspects
- * - Strong evidence supports applicability
- * - Conservative interpretation favors inclusion
- *
- * ## 60-79: Likely Applicable
- * - ~75% probability auditor would apply requirement
- * - Some interpretation differences possible
- * - Most evidence supports applicability
- * - Safer to include than exclude
- *
- * ## 40-59: Uncertain Applicability
- * - 50% chance of differing auditor interpretations
- * - Significant regulatory ambiguity exists
- * - Equal evidence for/against applicability
- * - Further guidance/clarification needed
- *
- * ## 20-39: Likely Not Applicable
- * - ~25% probability auditor would apply requirement
- * - Most evidence suggests non-applicability
- * - Device characteristics indicate exclusion
- * - Some interpretation risk remains
- *
- * ## 1-19: Almost Certainly Not Applicable
- * - <10% chance auditor would apply requirement
- * - Clear evidence of non-applicability
- * - Strong regulatory basis for exclusion
- * - Only theoretical applicability scenarios
- *
- * ## 0: Definitively Not Applicable
- * - 0% probability of applicability determination
- * - Explicit regulatory exclusion exists
- * - Logically impossible to apply
- * - No reasonable interpretation supports inclusion
- *
- * # Assessment Guidelines
- *
- * 1. Regulatory Framework
- *    - Review applicable regulations and guidance
- *    - Consider common auditor interpretations
- *    - Evaluate historical precedents
- *    - Assess regulatory clarity
- *
- * 2. Device Characteristics
- *    - Compare to requirement scope
- *    - Evaluate technical alignment
- *    - Consider intended use match
- *    - Assess risk classification
- *
- * 3. Documentation Context
- *    - Review lifecycle stage relevance
- *    - Consider version applicability
- *    - Evaluate temporal scope
- *    - Assess documentation completeness
- *
- * 4. Interpretation Risk
- *    - Consider auditor variability
- *    - Evaluate regulatory ambiguity
- *    - Assess precedent consistency
- *    - Review guidance clarity
- */
-export type ApplicabilityRating = number;
-
-export interface SectionAssessment {
-    abstract_text: string;
-    compliance_rating: ComplianceRating;
-    requirement_assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
-}
-
-export interface ReportAbstractAndTitle {
-    abstract_text: string;
-    title: string;
-}
-
-export interface RequirementGroupAssessment {
-    compliance_rating: ComplianceRating;
-    /**
-     * Comprehensive explanation of the compliance assessment, including methodology and findings
-     */
-    details: string;
-    /**
-     * Brief overview of the compliance status and key findings
-     */
-    summary: string;
-    assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
-}
-
-export interface AssessmentQuote {
-    raw: RawQuote;
-    relevancy_score: Percentage;
-    pretty: string;
-}
-
-export interface RawQuote {
-    document_title: string;
-    start_line: number;
-    end_line: number;
-    total_lines_on_page: number;
-    page: number;
-    content: string;
-}
-
-export type RequirementOrRequirementGroupAssessment = { requirement: RequirementAssessment } | { requirement_group: RequirementGroupAssessment };
-
-export interface Suggestion {
-    kind: SuggestionKind;
-    description: string;
-    content: string;
-}
-
-export interface ReportFilterConfig {
-    sections_to_include: IdType[] | undefined;
-    requirements_to_include: IdType[] | undefined;
-    requirement_groups_to_include: IdType[] | undefined;
-}
-
-export interface ChunkId {
-    parent_id: string;
-    index: number;
-}
-
-export type IdType = string;
 
 export interface Claims {
     nickname: string;
@@ -1051,17 +1015,7 @@ export interface FullFile {
     data: ArcBytes;
 }
 
-export interface UserConfig {
-    user: UserBaseConfig;
-    admin: AdminConfig;
-}
-
-export interface UserBaseConfig {}
-
-export interface AdminConfig {
-    embed_config: EmbedConfig;
-    llm_config: LlmConfig;
-}
+export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
 
 /**
  * Measures documentation quality and implementation effectiveness.
@@ -1141,20 +1095,80 @@ export interface AdminConfig {
  */
 export type ComplianceRating = number;
 
-export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
-
-export interface LlmConfig {
-    model: LlmModel;
-    temperature: number | undefined;
+export interface Task {
+    id?: IdType;
+    status?: TaskStatus;
+    title: string;
+    description: string;
+    task: string;
+    suggestion: Suggestion | undefined;
+    associated_document: string | undefined;
+    misc?: Json | undefined;
 }
 
-export type ProgressEvent = { Report: [IdType, number] };
+export interface Requirement {
+    id: IdType;
+    name: string;
+    description: string;
+    reference: string | undefined;
+    documentation_search_instruction: string;
+}
 
-export type UpdateEvent = { File: IdType } | { User: IdType } | { Requirement: IdType };
+export interface RequirementGroup {
+    id: IdType;
+    name: string;
+    description: string;
+    reference: string | undefined;
+}
 
-export type DeleteEvent = { File: IdType };
+export interface Section {
+    id: IdType;
+    name: string;
+    description: string;
+}
 
-export type CreateEvent = { File: IdType } | { Report: IdType };
+export interface File {
+    id: IdType;
+    multipart_upload_id: string | undefined;
+    multipart_upload_part_ids: string[] | undefined;
+    path: string;
+    title: string;
+    extension: FileExtension;
+    size: number;
+    total_chunks: number;
+    uploaded: boolean;
+    created_date: DateTime<Utc>;
+    status: FileStatus;
+    number: number;
+}
+
+export interface Report {
+    id: IdType;
+    status: ReportStatus;
+    regulatory_framework: RegulatoryFramework;
+    created_date: DateTime<Utc>;
+    title: string;
+    abstract_text: string;
+    compliance_rating: ComplianceRating;
+    section_assessments: Map<Id, SectionAssessment>;
+}
+
+export interface User {
+    id: IdType;
+    first_name: string;
+    last_name: string;
+    email: Email;
+    job_title: string | undefined;
+    company: string | undefined;
+    config?: UserConfig;
+    preferences?: Json | undefined;
+}
+
+export interface Thread {
+    id: IdType;
+    conversation: Messages;
+    logs: string[];
+}
 
 export class IntoUnderlyingByteSource {
   private constructor();
@@ -1205,6 +1219,7 @@ export interface InitOutput {
   readonly get_requirements_by_group: (a: number) => number;
   readonly get_all_sections: () => number;
   readonly get_all_files: () => number;
+  readonly get_all_files_by_numbers: (a: number) => number;
   readonly get_all_requirements: () => number;
   readonly get_all_requirement_groups: () => number;
   readonly create_user: (a: number) => number;
@@ -1220,9 +1235,9 @@ export interface InitOutput {
   readonly admin_get_threads_by_section: (a: number) => number;
   readonly admin_get_threads_by_requirement_group: (a: number) => number;
   readonly admin_get_threads_by_requirement: (a: number) => number;
-  readonly get_file_data: (a: number) => number;
-  readonly hydrate: () => void;
   readonly set_websocket_event_callback: (a: number) => void;
+  readonly hydrate: () => void;
+  readonly get_file_data: (a: number) => number;
   readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
   readonly intounderlyingsink_write: (a: number, b: number) => number;
   readonly intounderlyingsink_close: (a: number) => number;
