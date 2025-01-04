@@ -1,5 +1,6 @@
 /* tslint:disable */
 /* eslint-disable */
+export function set_websocket_event_callback(callback: Function): void;
 export function echo(input: EchoInput): Promise<EchoResponse>;
 export function get_public_auth0_config(): Promise<GetPublicAuth0ConfigResponse>;
 export function exchange_code_for_identity(input: ExchangeCodeForIdentityInput): Promise<ExchangeCodeForIdentityResponse>;
@@ -35,10 +36,7 @@ export function is_admin(): Promise<IsAdminResponse>;
 export function admin_upload_report(input: AdminUploadReportInput): Promise<AdminUploadReportResponse>;
 export function new_file(input: NewFileInput): NewFileResponse;
 export function admin_get_threads_by_report(input: AdminGetThreadsByReportInput): Promise<AdminGetThreadsByReportResponse>;
-export function admin_get_threads_by_section(input: AdminGetThreadsBySectionInput): Promise<AdminGetThreadsBySectionResponse>;
-export function admin_get_threads_by_requirement_group(input: AdminGetThreadsByRequirementGroupInput): Promise<AdminGetThreadsByRequirementGroupResponse>;
-export function admin_get_threads_by_requirement(input: AdminGetThreadsByRequirementInput): Promise<AdminGetThreadsByRequirementResponse>;
-export function set_websocket_event_callback(callback: Function): void;
+export function admin_get_threads_by_parent_thread(input: AdminGetThreadsByParentThreadInput): Promise<AdminGetThreadsByParentThreadResponse>;
 export function hydrate(): void;
 export function get_file_data(input: GetFileDataInput): Promise<GetFileDataResponse>;
 /**
@@ -47,6 +45,13 @@ export function get_file_data(input: GetFileDataInput): Promise<GetFileDataRespo
  * *This API requires the following crate features to be activated: `ReadableStreamType`*
  */
 type ReadableStreamType = "bytes";
+declare namespace StorageKey {
+    export type id_token = "id_token";
+    export type access_token = "access_token";
+}
+
+export type StorageKey = "id_token" | "access_token";
+
 export interface EchoInput {
     input: string;
 }
@@ -458,7 +463,7 @@ export interface AdminGetThreadsByReportInput {
 }
 
 export interface AdminGetThreadsByReportOutput {
-    output: Thread;
+    output: Thread[];
 }
 
 export interface AdminGetThreadsByReportResponse {
@@ -466,54 +471,18 @@ export interface AdminGetThreadsByReportResponse {
     error: ClientSideError | undefined;
 }
 
-export interface AdminGetThreadsBySectionInput {
-    report_id: IdType;
-    section_id: IdType;
+export interface AdminGetThreadsByParentThreadInput {
+    input: IdType;
 }
 
-export interface AdminGetThreadsBySectionOutput {
-    output: Thread;
+export interface AdminGetThreadsByParentThreadOutput {
+    output: Thread[];
 }
 
-export interface AdminGetThreadsBySectionResponse {
-    output: AdminGetThreadsBySectionOutput | undefined;
+export interface AdminGetThreadsByParentThreadResponse {
+    output: AdminGetThreadsByParentThreadOutput | undefined;
     error: ClientSideError | undefined;
 }
-
-export interface AdminGetThreadsByRequirementGroupInput {
-    report_id: IdType;
-    group_id: IdType;
-}
-
-export interface AdminGetThreadsByRequirementGroupOutput {
-    output: Thread;
-}
-
-export interface AdminGetThreadsByRequirementGroupResponse {
-    output: AdminGetThreadsByRequirementGroupOutput | undefined;
-    error: ClientSideError | undefined;
-}
-
-export interface AdminGetThreadsByRequirementInput {
-    report_id: IdType;
-    requirement_id: IdType;
-}
-
-export interface AdminGetThreadsByRequirementOutput {
-    output: Thread;
-}
-
-export interface AdminGetThreadsByRequirementResponse {
-    output: AdminGetThreadsByRequirementOutput | undefined;
-    error: ClientSideError | undefined;
-}
-
-declare namespace StorageKey {
-    export type id_token = "id_token";
-    export type access_token = "access_token";
-}
-
-export type StorageKey = "id_token" | "access_token";
 
 declare namespace ErrorKind {
     export type Validation = "Validation";
@@ -545,12 +514,6 @@ export interface GetFileDataOutput {
 export interface GetFileDataResponse {
     output: GetFileDataOutput | undefined;
     error: ClientSideError | undefined;
-}
-
-export interface ReportFilterConfig {
-    sections_to_include: IdType[] | undefined;
-    requirements_to_include: IdType[] | undefined;
-    requirement_groups_to_include: IdType[] | undefined;
 }
 
 /**
@@ -607,78 +570,9 @@ export interface ReportFilterConfig {
  */
 export type ConfidenceRating = number;
 
-export interface SectionAssessment {
-    abstract_text: string;
-    compliance_rating: ComplianceRating;
-    requirement_assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
-}
-
-export interface ReportAbstractAndTitle {
-    abstract_text: string;
-    title: string;
-}
-
-export interface RequirementGroupAssessment {
-    compliance_rating: ComplianceRating;
-    /**
-     * Comprehensive explanation of the compliance assessment, including methodology and findings
-     */
-    details: string;
-    /**
-     * Brief overview of the compliance status and key findings
-     */
-    summary: string;
-    assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
-}
-
-export interface AssessmentQuote {
-    raw: RawQuote;
-    relevancy_score: Percentage;
-    pretty: string;
-}
-
-export interface RawQuote {
-    document_title: string;
-    start_line: number;
-    end_line: number;
-    total_lines_on_page: number;
-    page: number;
-    content: string;
-}
-
-export type RequirementOrRequirementGroupAssessment = { requirement: RequirementAssessment } | { requirement_group: RequirementGroupAssessment };
-
-export interface Suggestion {
-    kind: SuggestionKind;
-    description: string;
-    content: string;
-}
-
-export interface ChunkId {
-    parent_id: string;
-    index: number;
-}
-
-export type IdType = string;
-
-export type ProgressEvent = { Report: [IdType, number] };
-
-export type UpdateEvent = { File: IdType } | { User: IdType } | { Requirement: IdType };
-
-export type DeleteEvent = { File: IdType };
-
-export type CreateEvent = { File: IdType } | { Report: IdType };
-
-export interface UserConfig {
-    user: UserBaseConfig;
-    admin: AdminConfig;
-}
-
-export interface UserBaseConfig {}
-
-export interface AdminConfig {
-    embed_config: EmbedConfig;
-    llm_config: LlmConfig;
+export interface LlmConfig {
+    model: LlmModel;
+    temperature: number | undefined;
 }
 
 /**
@@ -760,156 +654,71 @@ export interface AdminConfig {
  */
 export type ApplicabilityRating = number;
 
-export interface LlmConfig {
-    model: LlmModel;
-    temperature: number | undefined;
+export interface SectionAssessment {
+    abstract_text: string;
+    compliance_rating: ComplianceRating;
+    requirement_assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
 }
 
-export interface EmbedConfig {
-    model: EmbedModel;
-    regulation_vector_search_limit: number;
-    user_documentation_vector_search_limit: number;
-    tokens_per_chunk: number;
-    token_overlap: number;
+export interface ReportAbstractAndTitle {
+    abstract_text: string;
+    title: string;
 }
 
-/**
- * Comprehensive evaluation of a requirement\'s implementation status and supporting evidence
- *
- * A `RequirementAssessment` captures the detailed analysis of how well a specific requirement
- * is met, including compliance level, applicability, assessment confidence, and supporting
- * evidence. It provides structured documentation of findings, gaps, and necessary improvements
- * based on objective evidence and expert analysis.
- */
-export interface RequirementAssessment {
-    /**
-     * Numerical rating (0-100) indicating implementation completeness and quality
-     *
-     * Examples:
-     * - 95: Battery compartment design (`GlucoCheck` Basic) - Exceeds requirements through multi-layered approach:
-     *   mechanical polarity enforcement, clear markings, and electronic reverse polarity protection
-     * - 75: Lead integrity monitoring (`NeuroStim` Pro) - Meets core requirements with basic impedance
-     *   checking and automatic shutdown, but could be enhanced with predictive failure detection
-     * - 45: Biocompatibility testing documentation - Major gaps in chronic toxicity studies
-     *   and inadequate validation of drug-eluting coating stability
-     */
+export interface RequirementGroupAssessment {
     compliance_rating: ComplianceRating;
     /**
-     * Rating (0-100) indicating how relevant the requirement is to the device
-     *
-     * Examples:
-     * - 100: Software validation for `GlucoCheck` Basic - Fully applicable as device contains
-     *   firmware and mobile app requiring comprehensive validation
-     * - 60: MRI compatibility for `GlucoCheck` Basic - Partially applicable only to
-     *   electromagnetic interference aspects, as device is not used during MRI
-     * - 0: Sterilization validation for `GlucoCheck` Basic - Not applicable as device is non-sterile
-     *   and does not contact broken skin
-     */
-    applicability_rating: ApplicabilityRating;
-    /**
-     * Rating (0-100) indicating assessment reliability based on evidence quality
-     *
-     * Examples:
-     * - 90: Battery safety assessment - High confidence from clear requirements, comprehensive test
-     *   reports, and consistent results across multiple validation studies
-     * - 70: Software validation - Good confidence but some ambiguity in test coverage metrics
-     *   and validation of edge cases
-     * - 40: Coating stability - Limited confidence due to inconsistent test results and
-     *   incomplete characterization data
-     */
-    confidence_rating: ConfidenceRating;
-    /**
-     * Detailed analysis and evaluation of requirement compliance
-     *
-     * Examples:
-     *
-     * Battery Safety (`GlucoCheck` Basic):
-     * Assessment methodology utilized physical inspection of three device samples, review of design
-     * documentation (DR-201, DR-202), and analysis of test reports (TR-150, TR-151). Testing
-     * demonstrated successful implementation of battery safety features including mechanical polarity
-     * enforcement and electronic reverse voltage protection. Design validation included drop testing
-     * and attempted incorrect battery insertion by 30 test subjects. Risk analysis demonstrated
-     * reduction of battery-related risks to acceptable levels through multiple redundant controls.
-     * Implementation exceeds requirements through inclusion of additional safety features beyond
-     * basic polarity protection. Minor opportunity for improvement identified in battery replacement
-     * instructions clarity.
-     *
-     * Drug-Eluting Coating (`NeuroStim` Pro):
-     * Assessment covered design controls, manufacturing process validation, and stability testing
-     * for anti-inflammatory coating. Chemistry documentation shows incomplete characterization
-     * of degradation products. While basic elution profile data exists, accelerated aging studies
-     * lack sufficient timepoints. Process controls exist but validation of coating uniformity
-     * shows significant variability. Multiple gaps identified in stability monitoring program.
-     * Current implementation requires substantial enhancement to meet requirements.
+     * Comprehensive explanation of the compliance assessment, including methodology and findings
      */
     details: string;
     /**
-     * Objective summary of manufacturer-provided information relevant to the requirement
-     *
-     * Examples:
-     *
-     * Battery Safety (`GlucoCheck` Basic):
-     * Device uses 2 AAA batteries housed in rear compartment. Battery holder includes mechanical
-     * keying features preventing reverse insertion. PCB incorporates P-channel MOSFET for reverse
-     * polarity protection. Battery compartment labeled with polarity indicators and pictorial
-     * diagram. Replacement procedure detailed in user manual section 3.4. Battery life rated at
-     * 2000 measurements under normal use. Low battery warning displays at 20% remaining capacity.
-     * Design validation report DR-201 documents testing with 30 users attempting battery replacement.
-     *
-     * Drug-Eluting Coating (`NeuroStim` Pro):
-     * Coating consists of dexamethasone acetate in polymer matrix at 100 µg/cm². Elution profile
-     * shows 80% release over 6 months. Manufacturing process uses automated spray coating with
-     * real-time thickness monitoring. Coating stability verified through 12-month real-time and
-     * 6-month accelerated aging. Process validation included 3 consecutive batches of 30 units each.
-     * Surface characterization performed via SEM and FTIR analysis.
+     * Brief overview of the compliance status and key findings
      */
-    objective_research_summary: string;
-    /**
-     * List of identified gaps requiring remediation
-     *
-     * Examples:
-     *
-     * Battery Safety (`GlucoCheck` Basic):
-     * - Battery replacement instructions in user manual lack clear illustrations of correct orientation
-     * - Warning label on battery door shows slight wear after repeated opening in durability testing
-     *
-     * Drug-Eluting Coating (`NeuroStim` Pro):
-     * - Accelerated aging protocol lacks sufficient timepoints to establish complete degradation profile
-     * - Process validation data shows coating thickness variation exceeding ±15% specification
-     * - Stability program does not include testing of aged samples for biological activity
-     * - Degradation product characterization limited to major components only
-     * - Cleaning validation does not address impact on coating integrity
-     */
-    negative_findings: string[];
-    /**
-     * Set of all document numbers reviewed during assessment
-     *
-     * Examples:
-     *
-     * Battery Safety (Product A):
-     * - Design Requirements Specification (#101)
-     * - Battery Subsystem Design Document (#102)
-     * - Electronics Design Document (#103)
-     * - Battery Safety Test Report (#104)
-     * - User Manual (#105)
-     * - Risk Analysis Report (#106)
-     * - Design Validation Report (#107)
-     *
-     * Drug-Eluting Coating (Product B):
-     * - Coating Process Specification (#201)
-     * - Design History File (#202)
-     * - Process Validation Protocol (#203)
-     * - Stability Study Report (#204)
-     * - Coating Characterization Report (#205)
-     * - Manufacturing Process Flow (#206)
-     * - Risk Management File (#207)
-     */
-    sources: number[];
-    /**
-     * Exact quotes from source documents supporting the assessment
-     */
-    quotes?: AssessmentQuote[];
+    summary: string;
+    assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
 }
+
+export interface AssessmentQuote {
+    raw: RawQuote;
+    relevancy_rating: RelevancyRating;
+    pretty: string;
+}
+
+export interface RawQuote {
+    document_title: string;
+    start_line: number;
+    end_line: number;
+    total_lines_on_page: number;
+    page: number;
+    content: string;
+}
+
+export type RequirementOrRequirementGroupAssessment = { requirement: RequirementAssessment } | { requirement_group: RequirementGroupAssessment };
+
+export interface Suggestion {
+    kind: SuggestionKind;
+    description: string;
+    content: string;
+}
+
+export interface UserConfig {
+    user: UserBaseConfig;
+    admin: AdminConfig;
+}
+
+export interface UserBaseConfig {}
+
+export interface AdminConfig {
+    embed_config: EmbedConfig;
+    llm_config: LlmConfig;
+}
+
+export interface ChunkId {
+    parent_id: string;
+    index: number;
+}
+
+export type IdType = string;
 
 export interface Claims {
     nickname: string;
@@ -970,6 +779,10 @@ export interface FileChunk {
     data: ArcBytes;
 }
 
+export type ChatMessage = { type: "system"; content: string } | { type: "user"; content: string } | { type: "assistant"; content: string } | { type: "tool_call_input"; content: string } | { type: "tool_call_output"; content: string };
+
+export type Messages = ChatMessage[];
+
 export type Percentage = number;
 
 declare namespace TaskStatus {
@@ -1014,8 +827,6 @@ export interface FullFile {
     meta: File;
     data: ArcBytes;
 }
-
-export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
 
 /**
  * Measures documentation quality and implementation effectiveness.
@@ -1166,8 +977,228 @@ export interface User {
 
 export interface Thread {
     id: IdType;
+    key: string;
     conversation: Messages;
     logs: string[];
+}
+
+export type ProgressEvent = { Report: [IdType, number] };
+
+export type UpdateEvent = { File: IdType } | { User: IdType } | { Requirement: IdType };
+
+export type DeleteEvent = { File: IdType };
+
+export type CreateEvent = { File: IdType } | { Report: IdType };
+
+export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
+
+/**
+ * Comprehensive evaluation of a requirement\'s implementation status and supporting evidence
+ *
+ * A `RequirementAssessment` captures the detailed analysis of how well a specific requirement
+ * is met, including compliance level, applicability, assessment confidence, and supporting
+ * evidence. It provides structured documentation of findings, gaps, and necessary improvements
+ * based on objective evidence and expert analysis.
+ */
+export interface RequirementAssessment {
+    /**
+     * Numerical rating (0-100) indicating implementation completeness and quality
+     *
+     * Examples:
+     * - 95: Battery compartment design (`GlucoCheck` Basic) - Exceeds requirements through multi-layered approach:
+     *   mechanical polarity enforcement, clear markings, and electronic reverse polarity protection
+     * - 75: Lead integrity monitoring (`NeuroStim` Pro) - Meets core requirements with basic impedance
+     *   checking and automatic shutdown, but could be enhanced with predictive failure detection
+     * - 45: Biocompatibility testing documentation - Major gaps in chronic toxicity studies
+     *   and inadequate validation of drug-eluting coating stability
+     */
+    compliance_rating: ComplianceRating;
+    /**
+     * Rating (0-100) indicating how relevant the requirement is to the device
+     *
+     * Examples:
+     * - 100: Software validation for `GlucoCheck` Basic - Fully applicable as device contains
+     *   firmware and mobile app requiring comprehensive validation
+     * - 60: MRI compatibility for `GlucoCheck` Basic - Partially applicable only to
+     *   electromagnetic interference aspects, as device is not used during MRI
+     * - 0: Sterilization validation for `GlucoCheck` Basic - Not applicable as device is non-sterile
+     *   and does not contact broken skin
+     */
+    applicability_rating: ApplicabilityRating;
+    /**
+     * Rating (0-100) indicating assessment reliability based on evidence quality
+     *
+     * Examples:
+     * - 90: Battery safety assessment - High confidence from clear requirements, comprehensive test
+     *   reports, and consistent results across multiple validation studies
+     * - 70: Software validation - Good confidence but some ambiguity in test coverage metrics
+     *   and validation of edge cases
+     * - 40: Coating stability - Limited confidence due to inconsistent test results and
+     *   incomplete characterization data
+     */
+    confidence_rating: ConfidenceRating;
+    /**
+     * Detailed analysis and evaluation of requirement compliance
+     *
+     * Examples:
+     *
+     * Battery Safety (`GlucoCheck` Basic):
+     * Assessment methodology utilized physical inspection of three device samples, review of design
+     * documentation (DR-201, DR-202), and analysis of test reports (TR-150, TR-151). Testing
+     * demonstrated successful implementation of battery safety features including mechanical polarity
+     * enforcement and electronic reverse voltage protection. Design validation included drop testing
+     * and attempted incorrect battery insertion by 30 test subjects. Risk analysis demonstrated
+     * reduction of battery-related risks to acceptable levels through multiple redundant controls.
+     * Implementation exceeds requirements through inclusion of additional safety features beyond
+     * basic polarity protection. Minor opportunity for improvement identified in battery replacement
+     * instructions clarity.
+     *
+     * Drug-Eluting Coating (`NeuroStim` Pro):
+     * Assessment covered design controls, manufacturing process validation, and stability testing
+     * for anti-inflammatory coating. Chemistry documentation shows incomplete characterization
+     * of degradation products. While basic elution profile data exists, accelerated aging studies
+     * lack sufficient timepoints. Process controls exist but validation of coating uniformity
+     * shows significant variability. Multiple gaps identified in stability monitoring program.
+     * Current implementation requires substantial enhancement to meet requirements.
+     */
+    details: string;
+    /**
+     * Objective summary of manufacturer-provided information relevant to the requirement
+     *
+     * Examples:
+     *
+     * Battery Safety (`GlucoCheck` Basic):
+     * Device uses 2 AAA batteries housed in rear compartment. Battery holder includes mechanical
+     * keying features preventing reverse insertion. PCB incorporates P-channel MOSFET for reverse
+     * polarity protection. Battery compartment labeled with polarity indicators and pictorial
+     * diagram. Replacement procedure detailed in user manual section 3.4. Battery life rated at
+     * 2000 measurements under normal use. Low battery warning displays at 20% remaining capacity.
+     * Design validation report DR-201 documents testing with 30 users attempting battery replacement.
+     *
+     * Drug-Eluting Coating (`NeuroStim` Pro):
+     * Coating consists of dexamethasone acetate in polymer matrix at 100 µg/cm². Elution profile
+     * shows 80% release over 6 months. Manufacturing process uses automated spray coating with
+     * real-time thickness monitoring. Coating stability verified through 12-month real-time and
+     * 6-month accelerated aging. Process validation included 3 consecutive batches of 30 units each.
+     * Surface characterization performed via SEM and FTIR analysis.
+     */
+    objective_research_summary: string;
+    /**
+     * List of identified gaps requiring remediation
+     *
+     * Examples:
+     *
+     * Battery Safety (`GlucoCheck` Basic):
+     * - Battery replacement instructions in user manual lack clear illustrations of correct orientation
+     * - Warning label on battery door shows slight wear after repeated opening in durability testing
+     *
+     * Drug-Eluting Coating (`NeuroStim` Pro):
+     * - Accelerated aging protocol lacks sufficient timepoints to establish complete degradation profile
+     * - Process validation data shows coating thickness variation exceeding ±15% specification
+     * - Stability program does not include testing of aged samples for biological activity
+     * - Degradation product characterization limited to major components only
+     * - Cleaning validation does not address impact on coating integrity
+     */
+    negative_findings: string[];
+    /**
+     * Set of all document numbers reviewed during assessment
+     *
+     * Examples:
+     *
+     * Battery Safety (Product A):
+     * - Design Requirements Specification (#101)
+     * - Battery Subsystem Design Document (#102)
+     * - Electronics Design Document (#103)
+     * - Battery Safety Test Report (#104)
+     * - User Manual (#105)
+     * - Risk Analysis Report (#106)
+     * - Design Validation Report (#107)
+     *
+     * Drug-Eluting Coating (Product B):
+     * - Coating Process Specification (#201)
+     * - Design History File (#202)
+     * - Process Validation Protocol (#203)
+     * - Stability Study Report (#204)
+     * - Coating Characterization Report (#205)
+     * - Manufacturing Process Flow (#206)
+     * - Risk Management File (#207)
+     */
+    sources: number[];
+    /**
+     * Exact quotes from source documents supporting the assessment
+     */
+    quotes?: AssessmentQuote[];
+}
+
+export interface ReportFilterConfig {
+    sections_to_include: IdType[] | undefined;
+    requirements_to_include: IdType[] | undefined;
+    requirement_groups_to_include: IdType[] | undefined;
+}
+
+/**
+ * Rating indicating how relevant or applicable a requirement, quote or other piece of content is (0-100)
+ *
+ * The relevancy rating measures how directly applicable a piece of content is to
+ * the context being evaluated. This could include regulatory requirements, document excerpts,
+ * technical specifications, or other materials being assessed.
+ *
+ * # Relevancy Rating Scale
+ *
+ * The relevancy rating indicates how applicable and important a requirement or control
+ * is to the specific context. Each criterion below is treated as an **OR** operator,
+ * meaning meeting any one of the conditions can determine the relevancy level.
+ *
+ * ## 0.95-1.00: Critical Relevance
+ * - Requirement directly addresses core functionality **OR**
+ * - Control is essential for security/safety **OR**
+ * - Directly impacts primary use cases **OR**
+ * - Mandatory by regulation/standard
+ *
+ * ## 0.80-0.94: High Relevance
+ * - Requirement closely aligned with system purpose **OR**
+ * - Control significantly impacts security/safety **OR**
+ * - Important for most use cases **OR**
+ * - Strongly recommended by regulation/standard
+ *
+ * ## 0.60-0.79: Moderate Relevance
+ * - Requirement generally applicable **OR**
+ * - Control provides important safeguards **OR**
+ * - Relevant to common use cases **OR**
+ * - Recommended by regulation/standard
+ *
+ * ## 0.40-0.59: Partial Relevance
+ * - Requirement partially applicable **OR**
+ * - Control provides supplementary protection **OR**
+ * - Relevant to some use cases **OR**
+ * - Optional in regulation/standard
+ *
+ * ## 0.20-0.39: Limited Relevance
+ * - Requirement tangentially related **OR**
+ * - Control provides minimal benefit **OR**
+ * - Relevant to edge cases only **OR**
+ * - Mentioned but not emphasized in standard
+ *
+ * ## 0.01-0.19: Minimal Relevance
+ * - Requirement barely applicable **OR**
+ * - Control redundant or unnecessary **OR**
+ * - Rarely relevant to use cases **OR**
+ * - Not specifically addressed in standard
+ *
+ * ## 0.00: No Relevance
+ * - Requirement completely inapplicable **OR**
+ * - Control provides no benefit **OR**
+ * - Never relevant to use cases **OR**
+ * - Outside scope of standard
+ */
+export type RelevancyRating = number;
+
+export interface EmbedConfig {
+    model: EmbedModel;
+    regulation_vector_search_limit: number;
+    user_documentation_vector_search_limit: number;
+    tokens_per_chunk: number;
+    token_overlap: number;
 }
 
 export class IntoUnderlyingByteSource {
@@ -1197,6 +1228,7 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
+  readonly set_websocket_event_callback: (a: number) => void;
   readonly echo: (a: number) => number;
   readonly get_public_auth0_config: () => number;
   readonly exchange_code_for_identity: (a: number) => number;
@@ -1232,10 +1264,7 @@ export interface InitOutput {
   readonly admin_upload_report: (a: number) => number;
   readonly new_file: (a: number) => number;
   readonly admin_get_threads_by_report: (a: number) => number;
-  readonly admin_get_threads_by_section: (a: number) => number;
-  readonly admin_get_threads_by_requirement_group: (a: number) => number;
-  readonly admin_get_threads_by_requirement: (a: number) => number;
-  readonly set_websocket_event_callback: (a: number) => void;
+  readonly admin_get_threads_by_parent_thread: (a: number) => number;
   readonly hydrate: () => void;
   readonly get_file_data: (a: number) => number;
   readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
@@ -1257,8 +1286,8 @@ export interface InitOutput {
   readonly __wbindgen_export_3: (a: number, b: number, c: number) => void;
   readonly __wbindgen_export_4: WebAssembly.Table;
   readonly __wbindgen_export_5: (a: number, b: number) => void;
-  readonly __wbindgen_export_6: (a: number, b: number) => void;
-  readonly __wbindgen_export_7: (a: number, b: number, c: number) => void;
+  readonly __wbindgen_export_6: (a: number, b: number, c: number) => void;
+  readonly __wbindgen_export_7: (a: number, b: number) => void;
   readonly __wbindgen_export_8: (a: number, b: number, c: number) => void;
   readonly __wbindgen_export_9: (a: number, b: number, c: number, d: number) => void;
 }

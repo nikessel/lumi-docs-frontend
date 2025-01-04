@@ -1,5 +1,7 @@
 "use client";
+
 import ThreadViewer from '@/components/test/ThreadViewer';
-export default function ThreadPage() {
+
+export default function ParentThreadPage() {
   return <ThreadViewer />;
 }

@@ -136,10 +136,7 @@ const isRequirementAssessment = (
 
 const ThreadViewButton: React.FC<{ 
   reportId: string;
-  sectionId?: string;
-  groupId?: string;
-  requirementId?: string;
-}> = ({ reportId, sectionId, groupId, requirementId }) => {
+}> = ({ reportId }) => {
   const router = useRouter();
   const { wasmModule } = useWasm();
   const [isAdmin, setIsAdmin] = React.useState(false);
@@ -164,15 +161,7 @@ const ThreadViewButton: React.FC<{
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    let path = `/test/reports/${reportId}/threads`;
-    if (requirementId) {
-      path += `/requirement/${requirementId}`;
-    } else if (groupId) {
-      path += `/group/${groupId}`;
-    } else if (sectionId) {
-      path += `/section/${sectionId}`;
-    }
-    router.push(path);
+    router.push(`/test/reports/${reportId}/threads`);
   };
 
   return (
@@ -183,7 +172,7 @@ const ThreadViewButton: React.FC<{
       className="flex items-center gap-1"
     >
       <MessageSquare className="h-4 w-4" />
-      View Thread
+      View Threads
     </Button>
   );
 };
@@ -321,10 +310,6 @@ const RequirementCard: React.FC<{
             />
           </div>
           <div className="flex items-center gap-4">
-            <ThreadViewButton 
-              reportId={reportId} 
-              requirementId={req.id}
-            />
             <div className="flex items-center gap-1">
               <ComplianceIndicator rating={req.content.compliance_rating} />
             </div>
@@ -425,10 +410,6 @@ const RequirementGroupCard: React.FC<{
             />
           </div>
           <div className="flex items-center gap-4">
-            <ThreadViewButton 
-              reportId={reportId} 
-              groupId={group.id}
-            />
             <div className="flex items-center gap-1">
               <ComplianceIndicator rating={group.content.compliance_rating} />
             </div>
@@ -529,10 +510,6 @@ const SectionHeader: React.FC<{
         />
       </div>
       <div className="flex items-center gap-4">
-        <ThreadViewButton 
-          reportId={reportId} 
-          sectionId={sectionId} 
-        />
         <div className="flex items-center gap-1">
           <ComplianceIndicator rating={complianceRating} />
         </div>
