@@ -9,7 +9,7 @@ import SiderLogo from "./sider-logo";
 import Link from 'next/link';
 
 const { Sider } = Layout;
-
+const { SubMenu } = Menu;
 
 const AppSiderComponent: React.FC = ({ }) => {
     const [collapsed, setCollapsed] = useState(false);
@@ -48,7 +48,7 @@ const AppSiderComponent: React.FC = ({ }) => {
                 <div>
                     {showToggleButton && <SidebarToggleButton collapsed={collapsed} onToggle={toggleCollapse} />}
                     <SiderLogo collapsed={collapsed} />
-                    <Divider ></Divider>
+                    <Divider></Divider>
                     <Menu
                         mode="inline"
                         defaultSelectedKeys={["1"]}
@@ -61,7 +61,21 @@ const AppSiderComponent: React.FC = ({ }) => {
                             {
                                 key: "2",
                                 icon: <FileDoneOutlined />,
-                                label: <Link href="/reports">Reports</Link>,
+                                label: "Reports",
+                                children: [
+                                    {
+                                        key: "2-1",
+                                        label: <Link href="/reports/overview">Overview</Link>,
+                                    },
+                                    {
+                                        key: "2-2",
+                                        label: <Link href="/reports/findings">Findings</Link>,
+                                    },
+                                    {
+                                        key: "2-3",
+                                        label: <Link href="/reports/implementation">Implementation</Link>,
+                                    },
+                                ],
                             },
                             {
                                 key: "3",
@@ -71,8 +85,8 @@ const AppSiderComponent: React.FC = ({ }) => {
                             {
                                 key: "4",
                                 icon: <FileSearchOutlined />,
-                                label: <Link href="/files">Standards</Link>,
-                            }
+                                label: <Link href="/standards">Standards</Link>,
+                            },
                         ]}
                     />
                     <Divider orientation="left"><div className="text-xs">Account</div></Divider>
@@ -94,12 +108,10 @@ const AppSiderComponent: React.FC = ({ }) => {
                                 key: "7",
                                 icon: <LogoutOutlined />,
                                 label: <Link href="/">Sign out</Link>,
-                            }
+                            },
                         ]}
                     />
-
                 </div>
-
             </div>
         </Sider>
     );

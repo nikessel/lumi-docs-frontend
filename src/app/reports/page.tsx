@@ -8,6 +8,9 @@ import ReportMetaView from "@/components/report-meta-view";
 import { useWasm } from "@/components/WasmProvider";
 import { fetchReports } from "@/utils/report-utils";
 import type { Report } from "@wasm";
+import { useSearchParams } from 'next/navigation';
+import { useRouter } from "next/navigation";
+
 
 const Page = () => {
     const { wasmModule } = useWasm();
@@ -16,6 +19,27 @@ const Page = () => {
     const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const searchParams = useSearchParams();
+    const [selectedReports, setSelectedReports] = useState<string[]>([]); // local state for selected reports
+    const [selectedCount, setSelectedCount] = useState(selectedReports.length);
+    const router = useRouter();  // Initialize the router
+
+    useEffect(() => {
+        const urlSelectedReports = searchParams.get('selectedReports');
+        if (urlSelectedReports) {
+            // Split only if there are valid reports
+            const decodedReports = urlSelectedReports
+                .split(",")
+                .map(report => decodeURIComponent(report))
+                .filter(Boolean); // Remove empty strings from the array
+            console.log("Decoded selected reports:", decodedReports);
+            setSelectedReports(decodedReports);
+            setSelectedCount(decodedReports.length);
+        } else {
+            setSelectedReports([]);
+            setSelectedCount(0);
+        }
+    }, [searchParams]);
 
     // Fetch reports on mount
     useEffect(() => {
@@ -29,6 +53,7 @@ const Page = () => {
                 setLoading(true);
                 const { reports, error } = await fetchReports(wasmModule);
                 console.log("!!!!!!ASDASDASD", reports)
+
                 if (error) {
                     console.error("Error fetching reports:", error);
                     setError(error);
@@ -117,7 +142,21 @@ const Page = () => {
                 <Typography textSize="h4">Reports</Typography>
                 <div className="flex items-center space-x-2">
                     {/* Search Field */}
+
+                    {/* New Button */}
+                    <Button size="small" type="primary" icon={<PlusOutlined />}>
+                        New
+                    </Button>
+                </div>
+            </div>
+            <Divider className="border-thin mt-2 mb-2" />
+            <div className="flex justify-between items-center">
+                <Typography color="secondary">
+                    Open a single report or check more for merged view
+                </Typography>
+                <div className="flex gap-3">
                     <Input
+                        size="small"
                         placeholder="Search reports"
                         onChange={(e) => setSearchQuery(e.target.value)}
                         allowClear
@@ -131,16 +170,22 @@ const Page = () => {
                             onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
                         />
                     </Tooltip>
-                    {/* New Button */}
-                    <Button size="small" type="primary" icon={<PlusOutlined />}>
-                        New
+                    <Button
+                        size="small"
+                        type="primary"
+                        disabled={selectedCount === 0}
+                        onClick={(e) => {
+                            e.stopPropagation(); // Prevent event from propagating to the parent div
+                            if (selectedReports.length > 0) {
+                                router.push(`/reports/view?selectedReports=${encodeURIComponent(selectedReports.join(','))}`);
+                            }
+                        }}
+                    >
+                        {selectedCount === 0 ? "Select reports" : selectedCount === 1 ? `Open ${selectedCount} report` : `Open ${selectedCount} reports`}
                     </Button>
                 </div>
+
             </div>
-            <Divider className="border-thin mt-2 mb-2" />
-            <Typography color="secondary">
-                Select one of the reports below to view
-            </Typography>
 
             {/* Display Reports */}
             <div
@@ -161,7 +206,7 @@ const Page = () => {
                     />
                 ))}
             </div>
-        </div>
+        </div >
     );
 };
 

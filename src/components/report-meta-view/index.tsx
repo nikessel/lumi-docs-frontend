@@ -1,5 +1,5 @@
 'use client'
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Button, Progress, Tooltip, Dropdown, Menu, Table, Skeleton } from "antd";
 import {
     MoreOutlined,
@@ -10,6 +10,11 @@ import {
 import Typography from "../typography";
 import "@/styles/globals.css";
 import { useRouter } from "next/navigation";
+import Checked from "@/assets/checked.svg";
+import Unchecked from "@/assets/unchecked.svg";
+import Logo from "@/assets/logo.svg";
+import Image from "next/image";
+import { useSearchParams } from 'next/navigation';
 
 interface ReportMetaViewProps {
     id?: string,
@@ -39,6 +44,25 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
     loading
 }) => {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const selectedReports = searchParams.get('selectedReports')?.split(",") || [];
+    const [isSelected, setIsSelected] = useState(selectedReports.includes(id || ""));
+
+    useEffect(() => {
+        setIsSelected(selectedReports.includes(id || ""));
+    }, [selectedReports, id]);
+
+    const toggleSelection = () => {
+        const updatedReports = isSelected
+            ? selectedReports.filter((reportId) => reportId !== id)
+            : [...selectedReports, id];
+        // Use the new query string to update the URL
+        const newSearchParams = new URLSearchParams(searchParams.toString());
+        newSearchParams.set('selectedReports', updatedReports.join(","));
+        // Updating the URL using useSearchParams
+        window.history.replaceState(null, '', `${window.location.pathname}?${newSearchParams.toString()}`);
+    };
+
 
     // Menu for the dropdown
     const menu = (
@@ -95,20 +119,39 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
     // Card View Layout
     if (viewType === "card") {
         return (
-            <div className="relative w-64 border rounded-lg shadow-sm">
+            <div className="relative w-64 border rounded-lg shadow-sm" onClick={toggleSelection}>
                 {/* Header Section */}
-                <div>
+                <div >
+
                     <div className="flex justify-between items-center pr-1">
 
-                        <div className="pl-4 pt-4 truncate">
-                            <Typography textSize="h4">{title}</Typography>
-                            <Typography color="secondary" textSize="small">
-                                {regulatoryFramework} - {createdOn}
-                            </Typography>
+                        <div className="truncate">
+                            <div className="pl-2 flex gap-2">
+                                <Image
+                                    src={isSelected ? Checked : Unchecked}
+                                    alt="chekbox"
+                                    width={20}
+                                />
+                                <div className="pt-2">
+                                    <Typography textSize="h4">{title}</Typography>
+                                    <Typography color="secondary" textSize="small">
+                                        {regulatoryFramework} - {createdOn}
+                                    </Typography>
+                                </div>
+                            </div>
+
+
                         </div>
 
                         <div className="flex items-center">
-                            <Button type="link" size="small" onClick={() => router.push(`/reports/${id}`)}>
+                            <Button
+                                type="link"
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation(); // Prevent event from propagating to the parent div
+                                    router.push(`/reports/view?selectedReports=${id}`);
+                                }}
+                            >
                                 Open
                             </Button>
                             <Dropdown overlay={menu} trigger={["click"]} placement="bottomRight">
@@ -137,10 +180,15 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
 
     // Row View Layout
     return (
-        <div className="flex items-center justify-between border-b py-1">
-            <div className="flex items-end">
+        <div className="flex items-center justify-between border-b py-1" onClick={toggleSelection}>
+            <div className="flex items-center gap-3">
+                <Image
+                    src={isSelected ? Checked : Unchecked}
+                    alt="chekbox"
+                    width={20}
+                />
                 <Typography >{title}</Typography>
-                <Typography className="pl-3" color="secondary" textSize="small">
+                <Typography className="" color="secondary" textSize="small">
                     {regulatoryFramework}
                 </Typography>
             </div>
@@ -154,7 +202,14 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
                 <Tooltip title={`Compliance score: ${compliance}%`}>
                     <Progress size={20} type="circle" percent={compliance} showInfo={false} />
                 </Tooltip>
-                <Button type="link" size="small" onClick={() => router.push(`/reports/${id}`)}>
+                <Button
+                    type="link"
+                    size="small"
+                    onClick={(e) => {
+                        e.stopPropagation(); // Prevent event from propagating to the parent div
+                        router.push(`/reports/view?selectedReports=${id}`);
+                    }}
+                >
                     Open
                 </Button>
                 <Dropdown overlay={menu} trigger={["click"]} placement="bottomRight">
