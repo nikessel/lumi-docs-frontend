@@ -97,7 +97,7 @@ dist
 # https://nextjs.org/blog/next-9-1#public-directory-support
 # public
 
-# public/pkg
+public/pkg
 
 # vuepress build output
 .vuepress/dist
