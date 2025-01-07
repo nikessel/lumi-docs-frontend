@@ -65,13 +65,12 @@ export async function fetchSectionsByIds(
     console.log("Fetching missing sections data from WASM");
 
     try {
-        const response = await wasmModule.get_all_sections();
-        // const response = await wasmModule.get_sections({ input: missingIds });
+        // const response = await wasmModule.get_all_sections();
+        const response = await wasmModule.get_sections({ input: missingIds });
         // await wasmModule.get_all_sections()
 
         if (response.output) {
             let fetchedSections = response.output.output;
-            console.log("***********************", fetchedSections, missingIds)
 
             // Combine cached and fetched sections
             const combinedSections = [...foundSections, ...fetchedSections];

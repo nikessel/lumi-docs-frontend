@@ -14,6 +14,10 @@ import { fetchSectionsByIds } from '@/utils/sections-utils';
 import { ArrowRightOutlined, SaveOutlined } from "@ant-design/icons"
 import FilterBar from './filter-bar';
 import RequirementGroups from './show-requirement-group';
+import RadarChart from './sections-radar-chart';
+import Typography from '@/components/typography';
+import TreeMap from './tree-view-report';
+import TreeCanvas from "./tree-view"
 
 const ReportPage = () => {
     const { wasmModule, isLoading: wasmLoading } = useWasm(); // Check if WASM is loading
@@ -26,7 +30,7 @@ const ReportPage = () => {
     const [error, setError] = useState<string | null>(null);
     const [sections, setSections] = useState<Section[]>([]);
 
-    const [sectionListData, setSectionListData] = useState<{ compliance_rating: number, title: string }[]>([])
+    const [sectionListData, setSectionListData] = useState<{ compliance_rating: number, title: string, section_id: string }[]>([])
 
     useEffect(() => {
         const fetchReportsAndSections = async () => {
@@ -98,7 +102,8 @@ const ReportPage = () => {
 
             return {
                 title: section.name,
-                compliance_rating: Math.round(averageComplianceRating) // Rounded to the nearest integer
+                compliance_rating: Math.round(averageComplianceRating),
+                section_id: section.id
             };
         });
 
@@ -118,6 +123,7 @@ const ReportPage = () => {
         return <p>No reports found for selected IDs: {selectedReportsIds.join(", ")}</p>;
     }
 
+    console.log("sectionssss", sectionListData)
     return (
         <div>
             <div className="flex justify-between items-center">
@@ -142,10 +148,16 @@ const ReportPage = () => {
                     </div>
                 </div>
             </div>
-            <div>
-                <SectionMetaList data={sectionListData} />
+            <div className="w-1/2 mt-2 mb-4">
+                <Typography> Section assessments </Typography>
+                <RadarChart sectionListData={sectionListData} />
             </div>
-            <RequirementGroups />
+            {/* <div>
+                <SectionMetaList data={sectionListData} />
+            </div> */}
+            {/* <RequirementGroups /> */}
+            {/* <TreeMap reports={reports} sectionListData={sectionListData} /> */}
+            <TreeCanvas />
         </div>
     );
 };

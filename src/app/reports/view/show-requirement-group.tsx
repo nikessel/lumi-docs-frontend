@@ -36,7 +36,6 @@ function getBackgroundColorFromNumber(number: number) {
         "#FF8D33", // Orange
         "#57FF33"  // Lime Green
     ];
-    // Use modulo operator to loop through the colors
     return uniqueTextColors[number % uniqueTextColors.length];
 }
 

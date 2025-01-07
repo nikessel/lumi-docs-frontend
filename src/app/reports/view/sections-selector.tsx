@@ -3,6 +3,8 @@ import React from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Progress } from "antd";
 import { formatSectionTitle } from "@/utils/helpers";
+import { Flex } from 'antd';
+
 
 interface SectionCardProps {
     title: string;
@@ -36,19 +38,34 @@ const SectionCard: React.FC<SectionCardProps> = ({ title, compliance_rating }) =
     return (
         <div
             onClick={toggleHighlight}
-            className={`h-full w-52 p-2 text-center rounded-lg cursor-pointer transition-all border
-        ${isHighlighted ? "border-primary bg-bg_secondary" : "border-border bg-muted"}`}
-        >
-            <div className="flex flex-col justify-between items-center h-full">
-                <div className={` mb-2 font-semibold text-small_custom ${isHighlighted ? "text-primary" : "text-text_primary"}`}>
+            className={`h-full p-2 font-semibold w-auto rounded-lg cursor-pointer transition-all border ${isHighlighted ? "border-primary bg-bg_secondary" : "border-border bg-muted"}`}>
+            <div className=" justify-between items-center h-full">
+
+                <div className={`text-small_custom ${isHighlighted ? "text-primary" : "text-text_primary"}`}>
                     {formatSectionTitle(title)}
                 </div>
-                <div className="mt-auto">
-                    <Progress type="circle" strokeColor={`${isHighlighted ? "var(--primary)" : "gray"}`} percent={compliance_rating} size={50} />
+                <div className="flex items-center justify-center w-full" >
+                    <Progress strokeColor={`${isHighlighted ? "var(--primary)" : "gray"}`} percent={compliance_rating} size="small" />
                 </div>
+
             </div>
-        </div>
+        </div >
     );
 };
 
 export default SectionCard;
+
+{/* <div
+onClick={toggleHighlight}
+className={`h-full w-52 p-2 text-center rounded-lg cursor-pointer transition-all border
+${isHighlighted ? "border-primary bg-bg_secondary" : "border-border bg-muted"}`}
+>
+<div className=" flex flex-col justify-between items-center h-full">
+    <div className={` mb-2 font-semibold text-small_custom ${isHighlighted ? "text-primary" : "text-text_primary"}`}>
+        {formatSectionTitle(title)}
+    </div>
+    <div className="w-full">
+        <Progress type="dashboard" strokeColor={`${isHighlighted ? "var(--primary)" : "gray"}`} percent={compliance_rating} size={50} />
+    </div>
+</div>
+</div > */}
