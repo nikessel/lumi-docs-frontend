@@ -2,6 +2,8 @@
 /* eslint-disable */
 export const memory: WebAssembly.Memory;
 export const set_websocket_event_callback: (a: number) => void;
+export const get_file_data: (a: number) => number;
+export const hydrate: () => void;
 export const echo: (a: number) => number;
 export const get_public_auth0_config: () => number;
 export const exchange_code_for_identity: (a: number) => number;
@@ -38,8 +40,6 @@ export const admin_upload_report: (a: number) => number;
 export const new_file: (a: number) => number;
 export const admin_get_threads_by_report: (a: number) => number;
 export const admin_get_threads_by_parent_thread: (a: number) => number;
-export const hydrate: () => void;
-export const get_file_data: (a: number) => number;
 export const __wbg_intounderlyingsink_free: (a: number, b: number) => void;
 export const intounderlyingsink_write: (a: number, b: number) => number;
 export const intounderlyingsink_close: (a: number) => number;

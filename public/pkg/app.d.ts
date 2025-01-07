@@ -1,6 +1,8 @@
 /* tslint:disable */
 /* eslint-disable */
 export function set_websocket_event_callback(callback: Function): void;
+export function get_file_data(input: GetFileDataInput): Promise<GetFileDataResponse>;
+export function hydrate(): void;
 export function echo(input: EchoInput): Promise<EchoResponse>;
 export function get_public_auth0_config(): Promise<GetPublicAuth0ConfigResponse>;
 export function exchange_code_for_identity(input: ExchangeCodeForIdentityInput): Promise<ExchangeCodeForIdentityResponse>;
@@ -37,20 +39,43 @@ export function admin_upload_report(input: AdminUploadReportInput): Promise<Admi
 export function new_file(input: NewFileInput): NewFileResponse;
 export function admin_get_threads_by_report(input: AdminGetThreadsByReportInput): Promise<AdminGetThreadsByReportResponse>;
 export function admin_get_threads_by_parent_thread(input: AdminGetThreadsByParentThreadInput): Promise<AdminGetThreadsByParentThreadResponse>;
-export function hydrate(): void;
-export function get_file_data(input: GetFileDataInput): Promise<GetFileDataResponse>;
 /**
  * The `ReadableStreamType` enum.
  *
  * *This API requires the following crate features to be activated: `ReadableStreamType`*
  */
 type ReadableStreamType = "bytes";
-declare namespace StorageKey {
-    export type id_token = "id_token";
-    export type access_token = "access_token";
+export interface GetFileDataInput {
+    input: IdType;
 }
 
-export type StorageKey = "id_token" | "access_token";
+export interface GetFileDataOutput {
+    output: Uint8Array;
+}
+
+export interface GetFileDataResponse {
+    output: GetFileDataOutput | undefined;
+    error: ClientSideError | undefined;
+}
+
+declare namespace ErrorKind {
+    export type Validation = "Validation";
+    export type NotFound = "NotFound";
+    export type AlreadyExists = "AlreadyExists";
+    export type EmailNotVerified = "EmailNotVerified";
+    export type Unauthorized = "Unauthorized";
+    export type Timeout = "Timeout";
+    export type Deserialization = "Deserialization";
+    export type Serialization = "Serialization";
+    export type Server = "Server";
+}
+
+export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "EmailNotVerified" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
+
+export interface ClientSideError {
+    kind: ErrorKind;
+    message: string;
+}
 
 export interface EchoInput {
     input: string;
@@ -484,96 +509,127 @@ export interface AdminGetThreadsByParentThreadResponse {
     error: ClientSideError | undefined;
 }
 
-declare namespace ErrorKind {
-    export type Validation = "Validation";
-    export type NotFound = "NotFound";
-    export type AlreadyExists = "AlreadyExists";
-    export type EmailNotVerified = "EmailNotVerified";
-    export type Unauthorized = "Unauthorized";
-    export type Timeout = "Timeout";
-    export type Deserialization = "Deserialization";
-    export type Serialization = "Serialization";
-    export type Server = "Server";
+declare namespace StorageKey {
+    export type id_token = "id_token";
+    export type access_token = "access_token";
 }
 
-export type ErrorKind = "Validation" | "NotFound" | "AlreadyExists" | "EmailNotVerified" | "Unauthorized" | "Timeout" | "Deserialization" | "Serialization" | "Server";
+export type StorageKey = "id_token" | "access_token";
 
-export interface ClientSideError {
-    kind: ErrorKind;
-    message: string;
+export interface Task {
+    id?: IdType;
+    status?: TaskStatus;
+    title: string;
+    description: string;
+    task: string;
+    suggestion: Suggestion | undefined;
+    associated_document: string | undefined;
+    misc?: Json | undefined;
 }
 
-export interface GetFileDataInput {
-    input: IdType;
+export interface Requirement {
+    id: IdType;
+    name: string;
+    description: string;
+    reference: string | undefined;
+    documentation_search_instruction: string;
 }
 
-export interface GetFileDataOutput {
-    output: Uint8Array;
+export interface RequirementGroup {
+    id: IdType;
+    name: string;
+    description: string;
+    reference: string | undefined;
 }
 
-export interface GetFileDataResponse {
-    output: GetFileDataOutput | undefined;
-    error: ClientSideError | undefined;
+export interface Section {
+    id: IdType;
+    name: string;
+    description: string;
 }
 
-/**
- * Rating indicating confidence in the assessment\'s accuracy and completeness (0-100)
- *
- * The confidence rating reflects the reliability of the assessment based on
- * available evidence, documentation quality, and clarity of requirements.
- *
- *# Confidence Rating Scale
- *
- *The confidence rating reflects how certain an evaluator is about the provided assessment. It accounts for factors such as the level of agreement between different inspections, the presence of ambiguous or inconsistent information, and the similarity of compliance scores from independent evaluators. Each criterion below is treated as an **OR** operator, meaning meeting any one of the conditions can determine the confidence level. The rating does **not** depend on the level of implementation or the amount of documentation available, which instead impacts the compliance rating.
- *
- *## 0.95-1.00: Highest Confidence
- *- High agreement across independent evaluations **OR**
- *- No ambiguity or inconsistencies in the evidence **OR**
- *- Requirements are unambiguous and directly relevant to the device **OR**
- *- Clear and consistent evidence supporting the assessment
- *
- *## 0.80-0.94: Strong Confidence
- *- Strong agreement across most evaluations **OR**
- *- Minimal ambiguity or inconsistencies in the evidence **OR**
- *- Requirements well understood and relevant to the device **OR**
- *- Minor areas requiring interpretation
- *
- *## 0.60-0.79: Good Confidence
- *- General agreement across evaluations **OR**
- *- Some ambiguity or inconsistencies in the evidence **OR**
- *- Requirements generally clear but may need interpretation **OR**
- *- Reasonable level of consistency in available evidence
- *
- *## 0.40-0.59: Moderate Confidence
- *- Partial agreement across evaluations **OR**
- *- Notable ambiguity or inconsistencies in the evidence **OR**
- *- Requirements need significant interpretation **OR**
- *- Mixed or uneven clarity in evidence across assessments
- *
- *## 0.20-0.39: Limited Confidence
- *- Minimal agreement across evaluations **OR**
- *- High level of ambiguity or inconsistencies in the evidence **OR**
- *- Requirements unclear or difficult to apply **OR**
- *- Conflicting information across assessments
- *
- *## 0.01-0.19: Very Low Confidence
- *- Little to no agreement across evaluations **OR**
- *- Evidence largely ambiguous or conflicting **OR**
- *- Requirements poorly defined or highly subjective **OR**
- *- Lack of coherence in available evidence
- *
- *## 0.00: No Confidence
- *- No agreement across evaluations **OR**
- *- Evidence entirely absent or unusable **OR**
- *- Requirements undefined or irrelevant **OR**
- *- No actionable information available for assessment
- */
-export type ConfidenceRating = number;
+export interface File {
+    id: IdType;
+    multipart_upload_id: string | undefined;
+    multipart_upload_part_ids: string[] | undefined;
+    path: string;
+    title: string;
+    extension: FileExtension;
+    size: number;
+    total_chunks: number;
+    uploaded: boolean;
+    created_date: DateTime<Utc>;
+    status: FileStatus;
+    number: number;
+}
+
+export interface Report {
+    id: IdType;
+    status: ReportStatus;
+    regulatory_framework: RegulatoryFramework;
+    created_date: DateTime<Utc>;
+    title: string;
+    abstract_text: string;
+    compliance_rating: ComplianceRating;
+    section_assessments: Map<Id, SectionAssessment>;
+}
+
+export interface User {
+    id: IdType;
+    first_name: string;
+    last_name: string;
+    email: Email;
+    job_title: string | undefined;
+    company: string | undefined;
+    config?: UserConfig;
+    preferences?: Json | undefined;
+}
+
+export interface Thread {
+    id: IdType;
+    key: string;
+    conversation: Messages;
+    logs: string[];
+}
+
+export interface UserConfig {
+    user: UserBaseConfig;
+    admin: AdminConfig;
+}
+
+export interface UserBaseConfig {}
+
+export interface AdminConfig {
+    embed_config: EmbedConfig;
+    llm_config: LlmConfig;
+}
+
+export interface EmbedConfig {
+    model: EmbedModel;
+    regulation_vector_search_limit: number;
+    user_documentation_vector_search_limit: number;
+    tokens_per_chunk: number;
+    token_overlap: number;
+}
 
 export interface LlmConfig {
     model: LlmModel;
     temperature: number | undefined;
 }
+
+export interface ReportFilterConfig {
+    sections_to_include: IdType[] | undefined;
+    requirements_to_include: IdType[] | undefined;
+    requirement_groups_to_include: IdType[] | undefined;
+}
+
+export type ProgressEvent = { Report: [IdType, number] };
+
+export type UpdateEvent = { File: IdType } | { User: IdType } | { Requirement: IdType };
+
+export type DeleteEvent = { File: IdType };
+
+export type CreateEvent = { File: IdType } | { Report: IdType };
 
 /**
  * Rating indicating probability of an auditor determining the requirement\'s applicability (0-100)
@@ -654,64 +710,62 @@ export interface LlmConfig {
  */
 export type ApplicabilityRating = number;
 
-export interface SectionAssessment {
-    abstract_text: string;
-    compliance_rating: ComplianceRating;
-    requirement_assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
-}
-
-export interface ReportAbstractAndTitle {
-    abstract_text: string;
-    title: string;
-}
-
-export interface RequirementGroupAssessment {
-    compliance_rating: ComplianceRating;
-    /**
-     * Comprehensive explanation of the compliance assessment, including methodology and findings
-     */
-    details: string;
-    /**
-     * Brief overview of the compliance status and key findings
-     */
-    summary: string;
-    assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
-}
-
-export interface AssessmentQuote {
-    raw: RawQuote;
-    relevancy_rating: RelevancyRating;
-    pretty: string;
-}
-
-export interface RawQuote {
-    document_title: string;
-    start_line: number;
-    end_line: number;
-    total_lines_on_page: number;
-    page: number;
-    content: string;
-}
-
-export type RequirementOrRequirementGroupAssessment = { requirement: RequirementAssessment } | { requirement_group: RequirementGroupAssessment };
-
-export interface Suggestion {
-    kind: SuggestionKind;
-    description: string;
-    content: string;
-}
-
-export interface UserConfig {
-    user: UserBaseConfig;
-    admin: AdminConfig;
-}
-
-export interface UserBaseConfig {}
-
-export interface AdminConfig {
-    embed_config: EmbedConfig;
-    llm_config: LlmConfig;
-}
+/**
+ * Rating indicating how relevant or applicable a requirement, quote or other piece of content is (0-100)
+ *
+ * The relevancy rating measures how directly applicable a piece of content is to
+ * the context being evaluated. This could include regulatory requirements, document excerpts,
+ * technical specifications, or other materials being assessed.
+ *
+ * # Relevancy Rating Scale
+ *
+ * The relevancy rating indicates how applicable and important a requirement or control
+ * is to the specific context. Each criterion below is treated as an **OR** operator,
+ * meaning meeting any one of the conditions can determine the relevancy level.
+ *
+ * ## 0.95-1.00: Critical Relevance
+ * - Requirement directly addresses core functionality **OR**
+ * - Control is essential for security/safety **OR**
+ * - Directly impacts primary use cases **OR**
+ * - Mandatory by regulation/standard
+ *
+ * ## 0.80-0.94: High Relevance
+ * - Requirement closely aligned with system purpose **OR**
+ * - Control significantly impacts security/safety **OR**
+ * - Important for most use cases **OR**
+ * - Strongly recommended by regulation/standard
+ *
+ * ## 0.60-0.79: Moderate Relevance
+ * - Requirement generally applicable **OR**
+ * - Control provides important safeguards **OR**
+ * - Relevant to common use cases **OR**
+ * - Recommended by regulation/standard
+ *
+ * ## 0.40-0.59: Partial Relevance
+ * - Requirement partially applicable **OR**
+ * - Control provides supplementary protection **OR**
+ * - Relevant to some use cases **OR**
+ * - Optional in regulation/standard
+ *
+ * ## 0.20-0.39: Limited Relevance
+ * - Requirement tangentially related **OR**
+ * - Control provides minimal benefit **OR**
+ * - Relevant to edge cases only **OR**
+ * - Mentioned but not emphasized in standard
+ *
+ * ## 0.01-0.19: Minimal Relevance
+ * - Requirement barely applicable **OR**
+ * - Control redundant or unnecessary **OR**
+ * - Rarely relevant to use cases **OR**
+ * - Not specifically addressed in standard
+ *
+ * ## 0.00: No Relevance
+ * - Requirement completely inapplicable **OR**
+ * - Control provides no benefit **OR**
+ * - Never relevant to use cases **OR**
+ * - Outside scope of standard
+ */
+export type RelevancyRating = number;
 
 export interface ChunkId {
     parent_id: string;
@@ -719,114 +773,6 @@ export interface ChunkId {
 }
 
 export type IdType = string;
-
-export interface Claims {
-    nickname: string;
-    given_name?: string | undefined;
-    family_name?: string | undefined;
-    name: string;
-    picture: string;
-    updated_at: string;
-    email: string;
-    email_verified: boolean;
-    id: IdType;
-    iss: string;
-    aud: string;
-    iat: number;
-    exp: number;
-    sub: string;
-    sid: string;
-}
-
-export interface UserSignupForm {
-    first_name: string;
-    last_name: string;
-    job_title: string | undefined;
-    company: string | undefined;
-    config: UserBaseConfig;
-}
-
-export type Email = string;
-
-declare namespace FileExtension {
-    export type pdf = "pdf";
-    export type txt = "txt";
-    export type md = "md";
-    export type zip = "zip";
-}
-
-export type FileExtension = "pdf" | "txt" | "md" | "zip";
-
-declare namespace RegulatoryFramework {
-    export type mdr = "mdr";
-    export type iso13485 = "iso13485";
-}
-
-export type RegulatoryFramework = "mdr" | "iso13485";
-
-declare namespace ReportStatus {
-    export type processing = "processing";
-    export type ready = "ready";
-    export type partially_failed = "partially_failed";
-}
-
-export type ReportStatus = "processing" | "ready" | "partially_failed";
-
-export type FileStatus = "uploading" | "processing" | "ready" | { upload_failed: string } | { processing_failed: string };
-
-export interface FileChunk {
-    id: ChunkId;
-    data: ArcBytes;
-}
-
-export type ChatMessage = { type: "system"; content: string } | { type: "user"; content: string } | { type: "assistant"; content: string } | { type: "tool_call_input"; content: string } | { type: "tool_call_output"; content: string };
-
-export type Messages = ChatMessage[];
-
-export type Percentage = number;
-
-declare namespace TaskStatus {
-    export type open = "open";
-    export type completed = "completed";
-    export type ignored = "ignored";
-}
-
-export type TaskStatus = "open" | "completed" | "ignored";
-
-declare namespace SuggestionKind {
-    export type edit_paragraph = "edit_paragraph";
-    export type add_paragraph = "add_paragraph";
-    export type remove_paragraph = "remove_paragraph";
-    export type new_document = "new_document";
-}
-
-export type SuggestionKind = "edit_paragraph" | "add_paragraph" | "remove_paragraph" | "new_document";
-
-export interface Auth0ConfigPublic {
-    domain: string;
-    client_id: string;
-    login_redirect_uri: string;
-    logout_redirect_uri: string;
-}
-
-export interface AuthIdentity {
-    id_token: string;
-    access_token: string;
-    refresh_token: string;
-}
-
-export type ArcStr = string;
-
-export type ArcBytes = Uint8Array;
-
-export type Json = string;
-
-export type IdStringMap = Map<IdType, string>;
-
-export interface FullFile {
-    meta: File;
-    data: ArcBytes;
-}
 
 /**
  * Measures documentation quality and implementation effectiveness.
@@ -906,91 +852,54 @@ export interface FullFile {
  */
 export type ComplianceRating = number;
 
-export interface Task {
-    id?: IdType;
-    status?: TaskStatus;
-    title: string;
-    description: string;
-    task: string;
-    suggestion: Suggestion | undefined;
-    associated_document: string | undefined;
-    misc?: Json | undefined;
-}
+export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
 
-export interface Requirement {
-    id: IdType;
-    name: string;
-    description: string;
-    reference: string | undefined;
-    documentation_search_instruction: string;
-}
-
-export interface RequirementGroup {
-    id: IdType;
-    name: string;
-    description: string;
-    reference: string | undefined;
-}
-
-export interface Section {
-    id: IdType;
-    name: string;
-    description: string;
-}
-
-export interface File {
-    id: IdType;
-    multipart_upload_id: string | undefined;
-    multipart_upload_part_ids: string[] | undefined;
-    path: string;
-    title: string;
-    extension: FileExtension;
-    size: number;
-    total_chunks: number;
-    uploaded: boolean;
-    created_date: DateTime<Utc>;
-    status: FileStatus;
-    number: number;
-}
-
-export interface Report {
-    id: IdType;
-    status: ReportStatus;
-    regulatory_framework: RegulatoryFramework;
-    created_date: DateTime<Utc>;
-    title: string;
+export interface SectionAssessment {
     abstract_text: string;
     compliance_rating: ComplianceRating;
-    section_assessments: Map<Id, SectionAssessment>;
+    requirement_assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
 }
 
-export interface User {
-    id: IdType;
-    first_name: string;
-    last_name: string;
-    email: Email;
-    job_title: string | undefined;
-    company: string | undefined;
-    config?: UserConfig;
-    preferences?: Json | undefined;
+export interface ReportAbstractAndTitle {
+    abstract_text: string;
+    title: string;
 }
 
-export interface Thread {
-    id: IdType;
-    key: string;
-    conversation: Messages;
-    logs: string[];
+export interface RequirementGroupAssessment {
+    compliance_rating: ComplianceRating;
+    /**
+     * Comprehensive explanation of the compliance assessment, including methodology and findings
+     */
+    details: string;
+    /**
+     * Brief overview of the compliance status and key findings
+     */
+    summary: string;
+    assessments?: Map<IdType, RequirementOrRequirementGroupAssessment>;
 }
 
-export type ProgressEvent = { Report: [IdType, number] };
+export interface AssessmentQuote {
+    raw: RawQuote;
+    relevancy_rating: RelevancyRating;
+    pretty: string;
+}
 
-export type UpdateEvent = { File: IdType } | { User: IdType } | { Requirement: IdType };
+export interface RawQuote {
+    document_title: string;
+    start_line: number;
+    end_line: number;
+    total_lines_on_page: number;
+    page: number;
+    content: string;
+}
 
-export type DeleteEvent = { File: IdType };
+export type RequirementOrRequirementGroupAssessment = { requirement: RequirementAssessment } | { requirement_group: RequirementGroupAssessment };
 
-export type CreateEvent = { File: IdType } | { Report: IdType };
-
-export type Event = { Created: CreateEvent } | { Deleted: DeleteEvent } | { Updated: UpdateEvent } | { Progress: ProgressEvent } | { Error: string } | "ConnectionAuthorized";
+export interface Suggestion {
+    kind: SuggestionKind;
+    description: string;
+    content: string;
+}
 
 /**
  * Comprehensive evaluation of a requirement\'s implementation status and supporting evidence
@@ -1130,76 +1039,167 @@ export interface RequirementAssessment {
     quotes?: AssessmentQuote[];
 }
 
-export interface ReportFilterConfig {
-    sections_to_include: IdType[] | undefined;
-    requirements_to_include: IdType[] | undefined;
-    requirement_groups_to_include: IdType[] | undefined;
+export interface Claims {
+    nickname: string;
+    given_name?: string | undefined;
+    family_name?: string | undefined;
+    name: string;
+    picture: string;
+    updated_at: string;
+    email: string;
+    email_verified: boolean;
+    id: IdType;
+    iss: string;
+    aud: string;
+    iat: number;
+    exp: number;
+    sub: string;
+    sid: string;
+}
+
+export interface UserSignupForm {
+    first_name: string;
+    last_name: string;
+    job_title: string | undefined;
+    company: string | undefined;
+    config: UserBaseConfig;
+}
+
+export type Email = string;
+
+declare namespace FileExtension {
+    export type pdf = "pdf";
+    export type txt = "txt";
+    export type md = "md";
+    export type zip = "zip";
+}
+
+export type FileExtension = "pdf" | "txt" | "md" | "zip";
+
+declare namespace RegulatoryFramework {
+    export type mdr = "mdr";
+    export type iso13485 = "iso13485";
+}
+
+export type RegulatoryFramework = "mdr" | "iso13485";
+
+declare namespace ReportStatus {
+    export type processing = "processing";
+    export type ready = "ready";
+    export type partially_failed = "partially_failed";
+}
+
+export type ReportStatus = "processing" | "ready" | "partially_failed";
+
+export type FileStatus = "uploading" | "processing" | "ready" | { upload_failed: string } | { processing_failed: string };
+
+export interface FileChunk {
+    id: ChunkId;
+    data: ArcBytes;
+}
+
+export type ChatMessage = { type: "system"; content: string } | { type: "user"; content: string } | { type: "assistant"; content: string } | { type: "tool_call_input"; content: string } | { type: "tool_call_output"; content: string };
+
+export type Messages = ChatMessage[];
+
+export type Percentage = number;
+
+declare namespace TaskStatus {
+    export type open = "open";
+    export type completed = "completed";
+    export type ignored = "ignored";
+}
+
+export type TaskStatus = "open" | "completed" | "ignored";
+
+declare namespace SuggestionKind {
+    export type edit_paragraph = "edit_paragraph";
+    export type add_paragraph = "add_paragraph";
+    export type remove_paragraph = "remove_paragraph";
+    export type new_document = "new_document";
+}
+
+export type SuggestionKind = "edit_paragraph" | "add_paragraph" | "remove_paragraph" | "new_document";
+
+export interface Auth0ConfigPublic {
+    domain: string;
+    client_id: string;
+    login_redirect_uri: string;
+    logout_redirect_uri: string;
+}
+
+export interface AuthIdentity {
+    id_token: string;
+    access_token: string;
+    refresh_token: string;
+}
+
+export type ArcStr = string;
+
+export type ArcBytes = Uint8Array;
+
+export type Json = string;
+
+export type IdStringMap = Map<IdType, string>;
+
+export interface FullFile {
+    meta: File;
+    data: ArcBytes;
 }
 
 /**
- * Rating indicating how relevant or applicable a requirement, quote or other piece of content is (0-100)
+ * Rating indicating confidence in the assessment\'s accuracy and completeness (0-100)
  *
- * The relevancy rating measures how directly applicable a piece of content is to
- * the context being evaluated. This could include regulatory requirements, document excerpts,
- * technical specifications, or other materials being assessed.
+ * The confidence rating reflects the reliability of the assessment based on
+ * available evidence, documentation quality, and clarity of requirements.
  *
- * # Relevancy Rating Scale
+ *# Confidence Rating Scale
  *
- * The relevancy rating indicates how applicable and important a requirement or control
- * is to the specific context. Each criterion below is treated as an **OR** operator,
- * meaning meeting any one of the conditions can determine the relevancy level.
+ *The confidence rating reflects how certain an evaluator is about the provided assessment. It accounts for factors such as the level of agreement between different inspections, the presence of ambiguous or inconsistent information, and the similarity of compliance scores from independent evaluators. Each criterion below is treated as an **OR** operator, meaning meeting any one of the conditions can determine the confidence level. The rating does **not** depend on the level of implementation or the amount of documentation available, which instead impacts the compliance rating.
  *
- * ## 0.95-1.00: Critical Relevance
- * - Requirement directly addresses core functionality **OR**
- * - Control is essential for security/safety **OR**
- * - Directly impacts primary use cases **OR**
- * - Mandatory by regulation/standard
+ *## 0.95-1.00: Highest Confidence
+ *- High agreement across independent evaluations **OR**
+ *- No ambiguity or inconsistencies in the evidence **OR**
+ *- Requirements are unambiguous and directly relevant to the device **OR**
+ *- Clear and consistent evidence supporting the assessment
  *
- * ## 0.80-0.94: High Relevance
- * - Requirement closely aligned with system purpose **OR**
- * - Control significantly impacts security/safety **OR**
- * - Important for most use cases **OR**
- * - Strongly recommended by regulation/standard
+ *## 0.80-0.94: Strong Confidence
+ *- Strong agreement across most evaluations **OR**
+ *- Minimal ambiguity or inconsistencies in the evidence **OR**
+ *- Requirements well understood and relevant to the device **OR**
+ *- Minor areas requiring interpretation
  *
- * ## 0.60-0.79: Moderate Relevance
- * - Requirement generally applicable **OR**
- * - Control provides important safeguards **OR**
- * - Relevant to common use cases **OR**
- * - Recommended by regulation/standard
+ *## 0.60-0.79: Good Confidence
+ *- General agreement across evaluations **OR**
+ *- Some ambiguity or inconsistencies in the evidence **OR**
+ *- Requirements generally clear but may need interpretation **OR**
+ *- Reasonable level of consistency in available evidence
  *
- * ## 0.40-0.59: Partial Relevance
- * - Requirement partially applicable **OR**
- * - Control provides supplementary protection **OR**
- * - Relevant to some use cases **OR**
- * - Optional in regulation/standard
+ *## 0.40-0.59: Moderate Confidence
+ *- Partial agreement across evaluations **OR**
+ *- Notable ambiguity or inconsistencies in the evidence **OR**
+ *- Requirements need significant interpretation **OR**
+ *- Mixed or uneven clarity in evidence across assessments
  *
- * ## 0.20-0.39: Limited Relevance
- * - Requirement tangentially related **OR**
- * - Control provides minimal benefit **OR**
- * - Relevant to edge cases only **OR**
- * - Mentioned but not emphasized in standard
+ *## 0.20-0.39: Limited Confidence
+ *- Minimal agreement across evaluations **OR**
+ *- High level of ambiguity or inconsistencies in the evidence **OR**
+ *- Requirements unclear or difficult to apply **OR**
+ *- Conflicting information across assessments
  *
- * ## 0.01-0.19: Minimal Relevance
- * - Requirement barely applicable **OR**
- * - Control redundant or unnecessary **OR**
- * - Rarely relevant to use cases **OR**
- * - Not specifically addressed in standard
+ *## 0.01-0.19: Very Low Confidence
+ *- Little to no agreement across evaluations **OR**
+ *- Evidence largely ambiguous or conflicting **OR**
+ *- Requirements poorly defined or highly subjective **OR**
+ *- Lack of coherence in available evidence
  *
- * ## 0.00: No Relevance
- * - Requirement completely inapplicable **OR**
- * - Control provides no benefit **OR**
- * - Never relevant to use cases **OR**
- * - Outside scope of standard
+ *## 0.00: No Confidence
+ *- No agreement across evaluations **OR**
+ *- Evidence entirely absent or unusable **OR**
+ *- Requirements undefined or irrelevant **OR**
+ *- No actionable information available for assessment
  */
-export type RelevancyRating = number;
-
-export interface EmbedConfig {
-    model: EmbedModel;
-    regulation_vector_search_limit: number;
-    user_documentation_vector_search_limit: number;
-    tokens_per_chunk: number;
-    token_overlap: number;
-}
+export type ConfidenceRating = number;
 
 export class IntoUnderlyingByteSource {
   private constructor();
@@ -1229,6 +1229,8 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
   readonly set_websocket_event_callback: (a: number) => void;
+  readonly get_file_data: (a: number) => number;
+  readonly hydrate: () => void;
   readonly echo: (a: number) => number;
   readonly get_public_auth0_config: () => number;
   readonly exchange_code_for_identity: (a: number) => number;
@@ -1265,8 +1267,6 @@ export interface InitOutput {
   readonly new_file: (a: number) => number;
   readonly admin_get_threads_by_report: (a: number) => number;
   readonly admin_get_threads_by_parent_thread: (a: number) => number;
-  readonly hydrate: () => void;
-  readonly get_file_data: (a: number) => number;
   readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
   readonly intounderlyingsink_write: (a: number, b: number) => number;
   readonly intounderlyingsink_close: (a: number) => number;
