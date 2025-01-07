@@ -13,11 +13,19 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import type { Section, Requirement, RequirementGroup, IdType } from "@wasm";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { Section, Requirement, RequirementGroup, IdType, RegulatoryFramework } from "@wasm";
 
-type Step = "initial" | "sections" | "requirements";
+type Step = "framework" | "initial" | "sections" | "requirements";
 
 interface SelectionSummary {
+  framework: RegulatoryFramework;
   sections: Section[];
   requirementGroups: RequirementGroup[];
   requirements: Requirement[];
@@ -28,10 +36,18 @@ interface SelectionSummary {
   };
 }
 
+const FRAMEWORKS: { value: RegulatoryFramework; label: string }[] = [
+  { value: "mdr", label: "Medical Device Regulation (MDR)" },
+  { value: "iso13485", label: "ISO 13485" },
+  { value: "iso14155", label: "ISO 14155" },
+  { value: "iso14971", label: "ISO 14971" }
+];
+
 export function ReportCreator() {
   const { wasmModule } = useWasm();
   const { isAuthenticated } = useAuth();
-  const [currentStep, setCurrentStep] = useState<Step>("initial");
+  const [currentStep, setCurrentStep] = useState<Step>("framework");
+  const [selectedFramework, setSelectedFramework] = useState<RegulatoryFramework | null>(null);
   
   // Data states
   const [sections, setSections] = useState<Section[]>([]);
@@ -57,238 +73,310 @@ export function ReportCreator() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [selectionSummary, setSelectionSummary] = useState<SelectionSummary | null>(null);
 
-  // Load total counts when the component mounts
-  const loadTotalCounts = useCallback(async () => {
-    if (!wasmModule) return;
-    try {
-      const [sectionsResponse, groupsResponse, requirementsResponse] = await Promise.all([
-        wasmModule.get_all_sections(),
-        wasmModule.get_all_requirement_groups(),
-        wasmModule.get_all_requirements()
-      ]);
-
-      setTotalCounts({
-        sections: sectionsResponse.output?.output.length || 0,
-        requirementGroups: groupsResponse.output?.output.length || 0,
-        requirements: requirementsResponse.output?.output.length || 0,
-      });
-    } catch (err) {
-      console.error("Error fetching total counts:", err);
-    }
-  }, [wasmModule]);
-
-  useEffect(() => {
-    loadTotalCounts();
-  }, [loadTotalCounts]);
-
-  // First, let's fix the loading functions with useCallback
+  // Load sections based on selected framework and update available counts
   const loadInitialData = useCallback(async () => {
-    if (!wasmModule) return;
+    if (!wasmModule || !selectedFramework) return;
+    console.log('🔄 Loading sections for framework:', selectedFramework);
     try {
-      const sectionsResponse = await wasmModule.get_all_sections();
+      const sectionsResponse = await wasmModule.get_sections_by_regulatory_framework({
+        input: selectedFramework
+      });
       if (sectionsResponse.output) {
-        setSections(sectionsResponse.output.output);
+        const frameworkSections = sectionsResponse.output.output;
+        console.log('📊 Loaded sections:', {
+          count: frameworkSections.length,
+          sections: frameworkSections.map(s => ({ id: s.id, name: s.name }))
+        });
+        setSections(frameworkSections);
+
+        // Load all requirement groups for all sections
+        const groupsPromises = frameworkSections.map(section =>
+          wasmModule.get_requirement_groups_by_section({ input: section.id })
+        );
+        
+        const groupResponses = await Promise.all(groupsPromises);
+        const allGroups = groupResponses.flatMap(response => 
+          response.output ? response.output.output : []
+        );
+        
+        // Remove duplicate groups
+        const uniqueGroups = Array.from(
+          new Map(allGroups.map(group => [group.id, group])).values()
+        );
+
+        console.log('📊 Loaded all requirement groups:', {
+          total: allGroups.length,
+          unique: uniqueGroups.length,
+          groups: uniqueGroups.map(g => ({ id: g.id, name: g.name }))
+        });
+
+        // Load all requirements for all groups
+        const requirementPromises = uniqueGroups.map(group =>
+          wasmModule.get_requirements_by_group({ input: group.id })
+        );
+
+        const requirementResponses = await Promise.all(requirementPromises);
+        const allRequirements = requirementResponses.flatMap(response =>
+          response.output ? response.output.output : []
+        );
+
+        // Remove duplicate requirements
+        const uniqueRequirements = Array.from(
+          new Map(allRequirements.map(req => [req.id, req])).values()
+        );
+
+        console.log('📊 Loaded all requirements:', {
+          total: allRequirements.length,
+          unique: uniqueRequirements.length,
+          requirements: uniqueRequirements.map(r => ({ id: r.id, name: r.name }))
+        });
+
+        setRequirementGroups(uniqueGroups);
+        setRequirements(uniqueRequirements);
+        
+        // Set initial counts with all available items
+        const newCounts = {
+          sections: frameworkSections.length,
+          requirementGroups: uniqueGroups.length,
+          requirements: uniqueRequirements.length
+        };
+        console.log('🔢 Updating counts:', newCounts);
+        setTotalCounts(newCounts);
+
+        // Reset selections
+        setSelectedSections([]);
+        setSelectedGroups([]);
+        setSelectedRequirements([]);
       }
     } catch (err) {
-      console.error("Error fetching initial data:", err);
+      console.error("❌ Error fetching sections:", err);
       setError("Failed to fetch sections");
     }
-  }, [wasmModule]);
+  }, [wasmModule, selectedFramework]);
 
-
-const loadRequirementGroups = useCallback(async () => {
-  if (!wasmModule || selectedSections.length === 0) return;
-  
-  try {
-    // First get all requirement groups for selected sections
-    const groupsPromises = selectedSections.map(sectionId =>
-      wasmModule.get_requirement_groups_by_section({ input: sectionId })
-    );
-    
-    const groupResponses = await Promise.all(groupsPromises);
-    const allGroups = groupResponses.flatMap(response => 
-      response.output ? response.output.output : []
-    );
-    
-    // Remove duplicate groups
-    const uniqueGroups = Array.from(
-      new Map(allGroups.map(group => [group.id, group])).values()
-    );
-
-    // Then get requirements for each group
-    const requirementPromises = uniqueGroups.map(group =>
-      wasmModule.get_requirements_by_group({ input: group.id })
-    );
-
-    const requirementResponses = await Promise.all(requirementPromises);
-    const allRequirements = requirementResponses.flatMap(response =>
-      response.output ? response.output.output : []
-    );
-
-    // Remove duplicate requirements
-    const uniqueRequirements = Array.from(
-      new Map(allRequirements.map(req => [req.id, req])).values()
-    );
-    
-    setRequirementGroups(uniqueGroups);
-    setRequirements(uniqueRequirements);
-    setSelectedGroups([]);
-    setSelectedRequirements([]);
-  } catch (err) {
-    console.error("Error fetching requirement groups:", err);
-    setError("Failed to fetch requirement groups");
-  }
-}, [wasmModule, selectedSections]);
-
-// When a group is selected, we need to fetch its requirements
-const loadChildGroups = useCallback(async () => {
-  if (!wasmModule || selectedGroups.length === 0) return;
-  
-  try {
-    // Get requirements for selected groups
-    const requirementPromises = selectedGroups.map(groupId =>
-      wasmModule.get_requirements_by_group({ input: groupId })
-    );
-    
-    const requirementResponses = await Promise.all(requirementPromises);
-    const newRequirements = requirementResponses.flatMap(response =>
-      response.output ? response.output.output : []
-    );
-    
-    // Remove duplicates
-    const uniqueRequirements = Array.from(
-      new Map(newRequirements.map(req => [req.id, req])).values()
-    );
-    
-    setRequirements(uniqueRequirements);
-    // Clear requirement selections when groups change
-    setSelectedRequirements([]);
-  } catch (err) {
-    console.error("Error fetching requirements:", err);
-    setError("Failed to fetch requirements");
-  }
-}, [wasmModule, selectedGroups]);
-
-useEffect(() => {
-  if (selectedGroups.length > 0 && wasmModule) {
-    loadChildGroups();
-  }
-}, [selectedGroups, loadChildGroups, wasmModule]);
-
-const buildSelectionSummary = (): SelectionSummary => {
-  const selectedSectionsList = sections.filter(s => selectedSections.includes(s.id));
-  const selectedGroupsList = requirementGroups.filter(g => selectedGroups.includes(g.id));
-  const selectedRequirementsList = requirements.filter(r => selectedRequirements.includes(r.id));
-
-  // Default to full report counts
-  let effectiveCounts = {
-    sections: totalCounts.sections,
-    requirementGroups: totalCounts.requirementGroups,
-    requirements: totalCounts.requirements
-  };
-
-  if (currentStep !== "initial") {
-    if (selectedSectionsList.length > 0) {
-      effectiveCounts.sections = selectedSectionsList.length;
-      
-      if (currentStep === "sections") {
-        // When only sections are selected, show all groups and requirements for those sections
-        effectiveCounts.requirementGroups = requirementGroups.length;
-        effectiveCounts.requirements = requirements.length;
-      } else if (currentStep === "requirements") {
-        // When specific groups are selected, only show their requirements
-        if (selectedGroups.length > 0) {
-          effectiveCounts.requirementGroups = selectedGroups.length;
-          effectiveCounts.requirements = requirements.length; // Now this will be up to date with the selected groups' requirements
-        } else {
-          // No groups selected yet, show all groups and requirements for the sections
-          effectiveCounts.requirementGroups = requirementGroups.length;
-          effectiveCounts.requirements = requirements.length;
-        }
-      }
+  useEffect(() => {
+    if (selectedFramework) {
+      loadInitialData();
     }
-  }
+  }, [loadInitialData, selectedFramework]);
 
-  return {
-    sections: selectedSectionsList,
-    requirementGroups: selectedGroupsList,
-    requirements: selectedRequirementsList,
-    totalCounts: effectiveCounts
-  };
-};
+  const loadRequirementGroups = useCallback(async () => {
+    if (!wasmModule || selectedSections.length === 0) return;
+    
+    console.log('🔄 Loading requirement groups for sections:', selectedSections);
+    try {
+      // First get all requirement groups for selected sections
+      const groupsPromises = selectedSections.map(sectionId =>
+        wasmModule.get_requirement_groups_by_section({ input: sectionId })
+      );
+      
+      const groupResponses = await Promise.all(groupsPromises);
+      const allGroups = groupResponses.flatMap(response => 
+        response.output ? response.output.output : []
+      );
+      
+      // Remove duplicate groups
+      const uniqueGroups = Array.from(
+        new Map(allGroups.map(group => [group.id, group])).values()
+      );
 
+      console.log('📊 Loaded requirement groups:', {
+        total: allGroups.length,
+        unique: uniqueGroups.length,
+        groups: uniqueGroups.map(g => ({ id: g.id, name: g.name }))
+      });
+
+      // Then get requirements for each group
+      const requirementPromises = uniqueGroups.map(group =>
+        wasmModule.get_requirements_by_group({ input: group.id })
+      );
+
+      const requirementResponses = await Promise.all(requirementPromises);
+      const allRequirements = requirementResponses.flatMap(response =>
+        response.output ? response.output.output : []
+      );
+
+      // Remove duplicate requirements
+      const uniqueRequirements = Array.from(
+        new Map(allRequirements.map(req => [req.id, req])).values()
+      );
+      
+      console.log('📊 Loaded requirements:', {
+        total: allRequirements.length,
+        unique: uniqueRequirements.length,
+        requirements: uniqueRequirements.map(r => ({ id: r.id, name: r.name }))
+      });
+
+      setRequirementGroups(uniqueGroups);
+      setRequirements(uniqueRequirements);
+      setSelectedGroups([]);
+      setSelectedRequirements([]);
+      
+      // Update total counts
+      const newCounts = {
+        sections: selectedSections.length,
+        requirementGroups: uniqueGroups.length,
+        requirements: uniqueRequirements.length
+      };
+      console.log('🔢 Updating counts:', newCounts);
+      setTotalCounts(newCounts);
+    } catch (err) {
+      console.error("❌ Error fetching requirement groups:", err);
+      setError("Failed to fetch requirement groups");
+    }
+  }, [wasmModule, selectedSections]);
+
+  // When a group is selected, we need to fetch its requirements
+  const loadChildGroups = useCallback(async () => {
+    if (!wasmModule || selectedGroups.length === 0) return;
+    
+    console.log('🔄 Loading requirements for groups:', selectedGroups);
+    try {
+      // Get requirements for selected groups
+      const requirementPromises = selectedGroups.map(groupId =>
+        wasmModule.get_requirements_by_group({ input: groupId })
+      );
+      
+      const requirementResponses = await Promise.all(requirementPromises);
+      const allRequirements = requirementResponses.flatMap(response =>
+        response.output ? response.output.output : []
+      );
+      
+      // Remove duplicates
+      const uniqueRequirements = Array.from(
+        new Map(allRequirements.map(req => [req.id, req])).values()
+      );
+      
+      console.log('📊 Loaded requirements:', {
+        total: allRequirements.length,
+        unique: uniqueRequirements.length,
+        requirements: uniqueRequirements.map(r => ({ id: r.id, name: r.name }))
+      });
+      
+      setRequirements(uniqueRequirements);
+      // Clear requirement selections when groups change
+      setSelectedRequirements([]);
+      
+      // Update requirements count
+      const newCounts = {
+        ...totalCounts,
+        requirements: uniqueRequirements.length
+      };
+      console.log('🔢 Updating counts:', newCounts);
+      setTotalCounts(newCounts);
+    } catch (err) {
+      console.error("❌ Error fetching requirements:", err);
+      setError("Failed to fetch requirements");
+    }
+  }, [wasmModule, selectedGroups, totalCounts]);
 
   useEffect(() => {
-    loadInitialData();
-  }, [loadInitialData]);
+    if (selectedSections.length > 0 && wasmModule) {
+      console.log('👀 Selected sections changed:', selectedSections);
+      loadRequirementGroups();
+    }
+  }, [selectedSections, loadRequirementGroups, wasmModule]);
 
   useEffect(() => {
-    loadRequirementGroups();
-  }, [loadRequirementGroups, selectedSections]);
+    if (selectedGroups.length > 0 && wasmModule) {
+      console.log('👀 Selected groups changed:', selectedGroups);
+      loadChildGroups();
+    }
+  }, [selectedGroups, loadChildGroups, wasmModule]);
 
   const handleStepChange = (step: Step) => {
     setCurrentStep(step);
     setError("");
   };
 
-
-
-// Then update the dialog content to only show section names:
-{selectionSummary && (
-  <div className="space-y-4 py-4">
-    <div className="space-y-2">
-      <div className="flex justify-between items-center">
-        <span className="text-sm font-medium">Sections</span>
-        <span className="text-sm text-muted-foreground">
-          {selectionSummary.totalCounts.sections}
-        </span>
-      </div>
-      <div className="flex justify-between items-center">
-        <span className="text-sm font-medium">Requirement Groups</span>
-        <span className="text-sm text-muted-foreground">
-          {selectionSummary.totalCounts.requirementGroups}
-        </span>
-      </div>
-      <div className="flex justify-between items-center">
-        <span className="text-sm font-medium">Requirements</span>
-        <span className="text-sm text-muted-foreground">
-          {selectionSummary.totalCounts.requirements}
-        </span>
-      </div>
-    </div>
-
-    {/* Only show section names if specific selections were made */}
-    {selectionSummary.sections.length > 0 && (
-      <div className="pt-4 border-t">
-        <div className="text-sm font-medium mb-2">Selected Sections:</div>
-        <ul className="list-disc pl-5 space-y-1">
-          {selectionSummary.sections.map(s => (
-            <li key={s.id} className="text-sm text-muted-foreground">{s.name}</li>
-          ))}
-        </ul>
-      </div>
-    )}
-  </div>
-)}
-
   const handleConfirmCreation = () => {
+    if (!selectedFramework) {
+      setError("Please select a regulatory framework");
+      return;
+    }
+
     const summary = buildSelectionSummary();
     setSelectionSummary(summary);
     setShowConfirmDialog(true);
   };
 
+  const handleFrameworkSelection = (framework: RegulatoryFramework) => {
+    setSelectedFramework(framework);
+    setCurrentStep("initial");
+    // Reset all selections and counts when framework changes
+    setSelectedSections([]);
+    setSelectedGroups([]);
+    setSelectedRequirements([]);
+    setRequirementGroups([]);
+    setRequirements([]);
+    // Reset counts (sections count will be updated by loadInitialData)
+    setTotalCounts({
+      sections: 0,
+      requirementGroups: 0,
+      requirements: 0
+    });
+  };
+
+  const buildSelectionSummary = (): SelectionSummary => {
+    console.log('🏗️ Building selection summary:', {
+      currentStep,
+      totalCounts,
+      selectedCounts: {
+        sections: selectedSections.length,
+        groups: selectedGroups.length,
+        requirements: selectedRequirements.length
+      },
+      availableCounts: {
+        sections: sections.length,
+        groups: requirementGroups.length,
+        requirements: requirements.length
+      }
+    });
+
+    const selectedSectionsList = sections.filter(s => selectedSections.includes(s.id));
+    const selectedGroupsList = requirementGroups.filter(g => selectedGroups.includes(g.id));
+    const selectedRequirementsList = requirements.filter(r => selectedRequirements.includes(r.id));
+
+    // Always show actual counts of what's currently available/selected
+    const effectiveCounts = {
+      sections: currentStep === "initial" ? sections.length : selectedSectionsList.length,
+      requirementGroups: selectedGroups.length > 0 ? selectedGroups.length : requirementGroups.length,
+      requirements: selectedRequirements.length > 0 ? selectedRequirements.length : requirements.length
+    };
+
+    console.log('📊 Selection summary results:', {
+      effectiveCounts,
+      selectedItems: {
+        sections: selectedSectionsList.map(s => s.name),
+        groups: selectedGroupsList.map(g => g.name),
+        requirements: selectedRequirementsList.map(r => r.name)
+      }
+    });
+
+    return {
+      framework: selectedFramework!,
+      sections: selectedSectionsList,
+      requirementGroups: selectedGroupsList,
+      requirements: selectedRequirementsList,
+      totalCounts: effectiveCounts
+    };
+  };
+
   const handleCreateReport = async () => {
+    if (!selectedFramework) return;
+    
     setError("");
     setSuccessMessage("");
     setIsSubmitting(true);
 
     try {
       const input = {
-        input: {
+        regulatory_framework: selectedFramework,
+        filter: {
           sections_to_include: selectedSections.length > 0 ? selectedSections : undefined,
           requirements_to_include: selectedRequirements.length > 0 ? selectedRequirements : undefined,
           requirement_groups_to_include: selectedGroups.length > 0 ? selectedGroups : undefined,
-        },
+        }
       };
 
       const response = await wasmModule!.create_report(input);
@@ -299,7 +387,8 @@ const buildSelectionSummary = (): SelectionSummary => {
         setSelectedSections([]);
         setSelectedGroups([]);
         setSelectedRequirements([]);
-        setCurrentStep("initial");
+        setCurrentStep("framework");
+        setSelectedFramework(null);
       } else if (response.error) {
         setError(`${response.error.kind}: ${response.error.message}`);
       }
@@ -320,185 +409,234 @@ const buildSelectionSummary = (): SelectionSummary => {
     );
   }
 
-return (
-  <Card className="w-full max-w-2xl mx-auto">
-    <CardHeader>
-      <CardTitle>Create a New Report</CardTitle>
-    </CardHeader>
-    <CardContent>
-      {error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+  return (
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader>
+        <CardTitle>Create a New Report</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-      {successMessage && (
-        <Alert className="bg-green-50 text-green-800 border-green-200 mb-4">
-          <AlertDescription>{successMessage}</AlertDescription>
-        </Alert>
-      )}
+        {successMessage && (
+          <Alert className="bg-green-50 text-green-800 border-green-200 mb-4">
+            <AlertDescription>{successMessage}</AlertDescription>
+          </Alert>
+        )}
 
-      {currentStep === "initial" && (
-        <div className="space-y-2">
-          <Button 
-            onClick={() => handleConfirmCreation()} 
-            className="w-full"
-          >
-            Create Full Report
-          </Button>
-          <Button
-            onClick={() => handleStepChange("sections")}
-            variant="outline"
-            className="w-full"
-          >
-            Select Specific Sections
-          </Button>
-        </div>
-      )}
-
-      {currentStep === "sections" && (
-        <div className="space-y-4">
-          <div className="max-h-64 overflow-y-auto border p-4 rounded">
-            {sections.map((section) => (
-              <div key={section.id} className="flex items-start space-x-2 mb-2">
-                <Checkbox
-                  id={`section-${section.id}`}
-                  checked={selectedSections.includes(section.id)}
-                  onCheckedChange={(checked) => {
-                    setSelectedSections(prev =>
-                      checked
-                        ? [...prev, section.id]
-                        : prev.filter(id => id !== section.id)
-                    );
-                  }}
-                  className="mt-1"
-                />
-                <label htmlFor={`section-${section.id}`} className="text-sm flex-1">
-                  <span className="font-medium">{section.name}</span>
-                  <p className="text-xs text-gray-500">{section.description}</p>
-                </label>
-              </div>
-            ))}
+        {currentStep === "framework" && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select Regulatory Framework</label>
+              <Select 
+                onValueChange={(value) => handleFrameworkSelection(value as RegulatoryFramework)}
+                value={selectedFramework || undefined}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a framework..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {FRAMEWORKS.map((framework) => (
+                    <SelectItem key={framework.value} value={framework.value}>
+                      {framework.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+        )}
+
+        {currentStep === "initial" && (
           <div className="space-y-2">
-            <Button
-              onClick={() => handleConfirmCreation()}
-              disabled={selectedSections.length === 0}
+            <div className="mb-4 flex items-center space-x-2">
+              <span className="text-sm font-medium">Framework:</span>
+              <span className="text-sm text-muted-foreground">
+                {FRAMEWORKS.find(f => f.value === selectedFramework)?.label}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setCurrentStep("framework");
+                  setSelectedFramework(null);
+                }}
+              >
+                Change
+              </Button>
+            </div>
+            <Button 
+              onClick={() => handleConfirmCreation()} 
               className="w-full"
             >
-              Create Report with Selected Sections
+              Create Full Report
             </Button>
             <Button
-              onClick={() => handleStepChange("requirements")}
+              onClick={() => handleStepChange("sections")}
               variant="outline"
-              disabled={selectedSections.length === 0}
               className="w-full"
             >
-              Select Requirements
+              Select Specific Sections
             </Button>
           </div>
-        </div>
-      )}
+        )}
 
-{currentStep === "requirements" && (
-  <div className="space-y-4">
-    <Button
-      variant="ghost"
-      onClick={() => {
-        handleStepChange("sections");
-        setSelectedGroups([]);
-        setSelectedRequirements([]);
-      }}
-      className="text-sm -ml-4"
-    >
-      ← Back to Sections
-    </Button>
-
-    {requirementGroups.length > 0 && (
-      <div>
-        <h3 className="text-lg font-semibold mb-2">Requirement Groups</h3>
-        <div className="max-h-64 overflow-y-auto border p-4 rounded mb-4">
-          {requirementGroups.map((group) => (
-            <div key={group.id} className="flex items-start space-x-2 mb-2">
-              <Checkbox
-                id={`group-${group.id}`}
-                checked={selectedGroups.includes(group.id)}
-                onCheckedChange={(checked) => {
-                  setSelectedGroups(prev =>
-                    checked
-                      ? [...prev, group.id]
-                      : prev.filter(id => id !== group.id)
-                  );
-                }}
-                className="mt-1"
-              />
-              <label htmlFor={`group-${group.id}`} className="text-sm flex-1">
-                <span className="font-medium">{group.name}</span>
-                <p className="text-xs text-gray-500">{group.description}</p>
-              </label>
+        {currentStep === "sections" && (
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2 mb-4">
+              <span className="text-sm font-medium">Framework:</span>
+              <span className="text-sm text-muted-foreground">
+                {FRAMEWORKS.find(f => f.value === selectedFramework)?.label}
+              </span>
             </div>
-          ))}
-        </div>
-
-        {/* Add action buttons after groups selection */}
-        <div className="space-y-2">
-          <Button
-            onClick={() => handleConfirmCreation()}
-            disabled={selectedGroups.length === 0}
-            className="w-full"
-          >
-            Create Report with Selected Groups
-          </Button>
-          <Button
-            onClick={loadChildGroups}
-            variant="outline"
-            disabled={selectedGroups.length === 0}
-            className="w-full"
-          >
-            Select Requirements Within Groups
-          </Button>
-        </div>
-      </div>
-    )}
-
-    {/* Only show requirements section after user clicks to see them */}
-    {requirements.length > 0 && selectedRequirements.length > 0 && (
-      <div>
-        <h3 className="text-lg font-semibold mb-2">Requirements</h3>
-        <div className="max-h-64 overflow-y-auto border p-4 rounded mb-4">
-          {requirements.map((requirement) => (
-            <div key={requirement.id} className="flex items-start space-x-2 mb-2">
-              <Checkbox
-                id={`requirement-${requirement.id}`}
-                checked={selectedRequirements.includes(requirement.id)}
-                onCheckedChange={(checked) => {
-                  setSelectedRequirements(prev =>
-                    checked
-                      ? [...prev, requirement.id]
-                      : prev.filter(id => id !== requirement.id)
-                  );
-                }}
-                className="mt-1"
-              />
-              <label htmlFor={`requirement-${requirement.id}`} className="text-sm flex-1">
-                <span className="font-medium">{requirement.name}</span>
-                <p className="text-xs text-gray-500">{requirement.description}</p>
-              </label>
+            <div className="max-h-64 overflow-y-auto border p-4 rounded">
+              {sections.map((section) => (
+                <div key={section.id} className="flex items-start space-x-2 mb-2">
+                  <Checkbox
+                    id={`section-${section.id}`}
+                    checked={selectedSections.includes(section.id)}
+                    onCheckedChange={(checked) => {
+                      setSelectedSections(prev =>
+                        checked
+                          ? [...prev, section.id]
+                          : prev.filter(id => id !== section.id)
+                      );
+                    }}
+                    className="mt-1"
+                  />
+                  <label htmlFor={`section-${section.id}`} className="text-sm flex-1">
+                    <span className="font-medium">{section.name}</span>
+                    <p className="text-xs text-gray-500">{section.description}</p>
+                  </label>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+            <div className="space-y-2">
+              <Button
+                onClick={() => handleConfirmCreation()}
+                disabled={selectedSections.length === 0}
+                className="w-full"
+              >
+                Create Report with Selected Sections
+              </Button>
+              <Button
+                onClick={() => handleStepChange("requirements")}
+                variant="outline"
+                disabled={selectedSections.length === 0}
+                className="w-full"
+              >
+                Select Requirements
+              </Button>
+            </div>
+          </div>
+        )}
 
-        <Button
-          onClick={() => handleConfirmCreation()}
-          className="w-full"
-          disabled={selectedRequirements.length === 0}
-        >
-          Create Report with Selected Requirements
-        </Button>
-      </div>
-    )}
-  </div>
-)}
+        {currentStep === "requirements" && (
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2 mb-4">
+              <span className="text-sm font-medium">Framework:</span>
+              <span className="text-sm text-muted-foreground">
+                {FRAMEWORKS.find(f => f.value === selectedFramework)?.label}
+              </span>
+            </div>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                handleStepChange("sections");
+                setSelectedGroups([]);
+                setSelectedRequirements([]);
+              }}
+              className="text-sm -ml-4"
+            >
+              ← Back to Sections
+            </Button>
+
+            {requirementGroups.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Requirement Groups</h3>
+                <div className="max-h-64 overflow-y-auto border p-4 rounded mb-4">
+                  {requirementGroups.map((group) => (
+                    <div key={group.id} className="flex items-start space-x-2 mb-2">
+                      <Checkbox
+                        id={`group-${group.id}`}
+                        checked={selectedGroups.includes(group.id)}
+                        onCheckedChange={(checked) => {
+                          setSelectedGroups(prev =>
+                            checked
+                              ? [...prev, group.id]
+                              : prev.filter(id => id !== group.id)
+                          );
+                        }}
+                        className="mt-1"
+                      />
+                      <label htmlFor={`group-${group.id}`} className="text-sm flex-1">
+                        <span className="font-medium">{group.name}</span>
+                        <p className="text-xs text-gray-500">{group.description}</p>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="space-y-2">
+                  <Button
+                    onClick={() => handleConfirmCreation()}
+                    disabled={selectedGroups.length === 0}
+                    className="w-full"
+                  >
+                    Create Report with Selected Groups
+                  </Button>
+                  <Button
+                    onClick={loadChildGroups}
+                    variant="outline"
+                    disabled={selectedGroups.length === 0}
+                    className="w-full"
+                  >
+                    Select Requirements Within Groups
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {requirements.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Requirements</h3>
+                <div className="max-h-64 overflow-y-auto border p-4 rounded mb-4">
+                  {requirements.map((requirement) => (
+                    <div key={requirement.id} className="flex items-start space-x-2 mb-2">
+                      <Checkbox
+                        id={`requirement-${requirement.id}`}
+                        checked={selectedRequirements.includes(requirement.id)}
+                        onCheckedChange={(checked) => {
+                          setSelectedRequirements(prev =>
+                            checked
+                              ? [...prev, requirement.id]
+                              : prev.filter(id => id !== requirement.id)
+                          );
+                        }}
+                        className="mt-1"
+                      />
+                      <label htmlFor={`requirement-${requirement.id}`} className="text-sm flex-1">
+                        <span className="font-medium">{requirement.name}</span>
+                        <p className="text-xs text-gray-500">{requirement.description}</p>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+
+                <Button
+                  onClick={() => handleConfirmCreation()}
+                  className="w-full"
+                  disabled={selectedRequirements.length === 0}
+                >
+                  Create Report with Selected Requirements
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
 
         <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
           <DialogContent>
@@ -512,6 +650,12 @@ return (
             {selectionSummary && (
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium">Framework</span>
+                    <span className="text-sm text-muted-foreground">
+                      {FRAMEWORKS.find(f => f.value === selectionSummary.framework)?.label}
+                    </span>
+                  </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium">Sections</span>
                     <span className="text-sm text-muted-foreground">
@@ -532,7 +676,6 @@ return (
                   </div>
                 </div>
 
-                {/* Show detailed selections if any specific items were selected */}
                 {(selectionSummary.sections.length > 0 ||
                   selectionSummary.requirementGroups.length > 0 ||
                   selectionSummary.requirements.length > 0) && (
@@ -586,8 +729,9 @@ return (
           </DialogContent>
         </Dialog>
 
-    </CardContent>
-  </Card>
-);
-
+      </CardContent>
+    </Card>
+  );
 }
+
+export default ReportCreator;
