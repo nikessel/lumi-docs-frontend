@@ -1,24 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { Dropdown, Menu, Checkbox } from 'antd';
+import { Dropdown, Checkbox } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
-import type { Report } from '@wasm';
 import Typography from "@/components/typography";
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import type { MenuProps } from 'antd';
+import type { CheckboxChangeEvent } from 'antd/es/checkbox';
+import type { Report as WasmReport } from '@wasm';
+
+// Define interfaces for better type safety
+interface SectionAssessment {
+    section_id: string;
+}
+
+interface Report extends Omit<WasmReport, 'section_assessments'> {
+    section_assessments: Map<string, SectionAssessment>;
+}
 
 interface ReportSectionSelectorProps {
     reports?: Report[];
 }
 
 const ReportSectionSelector: React.FC<ReportSectionSelectorProps> = ({ reports }) => {
-    const [selectedSections, setSelectedSections] = useState<any[]>([]);
+    const [selectedSections, setSelectedSections] = useState<string[]>([]);
     const [menuVisible, setMenuVisible] = useState(false);
 
     const searchParams = useSearchParams();
-    const router = useRouter();
 
-    // Update selectedSections from the URL query param
     useEffect(() => {
-        const selectedSectionsFromUrl = searchParams.get('selectedSections')?.split(",") || [];
+        const selectedSectionsFromUrl = searchParams.get('selectedSections')?.split(",").filter(Boolean) || [];
         setSelectedSections(selectedSectionsFromUrl);
     }, [searchParams]);
 
@@ -26,75 +35,68 @@ const ReportSectionSelector: React.FC<ReportSectionSelectorProps> = ({ reports }
         const updatedSearchParams = new URLSearchParams(window.location.search);
         updatedSearchParams.set('selectedSections', newSelectedSections.join(','));
 
-        // Use history.replaceState to update the URL without pushing a new history entry
         window.history.replaceState(
-            { path: updatedSearchParams.toString() }, // state object (can be used for more advanced tracking)
-            '', // title (not used here)
+            { path: updatedSearchParams.toString() },
+            '',
             `${window.location.pathname}?${updatedSearchParams.toString()}`
         );
     };
 
-    // Handle section selection
     const handleSectionChange = (
-        e: React.ChangeEvent<HTMLInputElement>,
-        sectionId: string,
-        checked: boolean
+        e: CheckboxChangeEvent,
+        sectionId: string
     ) => {
-        e.stopPropagation(); // Prevent dropdown from closing
-        const newSelectedSections = checked
+        e.stopPropagation();
+        const newSelectedSections = e.target.checked
             ? [...selectedSections, sectionId]
             : selectedSections.filter((id) => id !== sectionId);
 
         setSelectedSections(newSelectedSections);
-        updateUrlWithSelectedSections(newSelectedSections); // Update the URL with new selections
+        updateUrlWithSelectedSections(newSelectedSections);
     };
 
-    // Render the dropdown menu for each report
-    const renderMenu = () => {
-        if (reports) {
-            return (
-                <Menu>
-                    {reports.map((r) => (
-                        <Menu.SubMenu key={r.id} title={r.title}>
-                            {r.section_assessments?.map((section) => {
-                                const sectionId = section.section_id; // Save the section_id to a variable
-                                if (sectionId) {
-                                    return (
-                                        <Menu.Item key={`${r.id}-${sectionId}`} onClick={(e: any) => e.stopPropagation()}>
-                                            <label>
-                                                <Checkbox
-                                                    checked={selectedSections.includes(sectionId)}
-                                                    onChange={(e: any) =>
-                                                        handleSectionChange(e, sectionId, e.target.checked)
-                                                    }
-                                                >
-                                                    <Typography>{sectionId}</Typography>
-                                                </Checkbox>
-                                            </label>
-                                        </Menu.Item>
-                                    );
-                                }
-                                return null;
-                            })}
-                        </Menu.SubMenu>
-                    ))}
-                </Menu>
-            );
-        }
-        return null;
+    const getMenuItems = (): MenuProps['items'] => {
+        if (!reports) return [];
+
+        return reports.map((report) => ({
+            key: report.id,
+            label: report.title,
+            children: Array.from(report.section_assessments.entries()).map(([, section]) => {
+                const sectionId = section.section_id;
+                if (!sectionId) return null;
+
+                return {
+                    key: `${report.id}-${sectionId}`,
+                    label: (
+                        <label>
+                            <Checkbox
+                                checked={selectedSections.includes(sectionId)}
+                                onChange={(e) => handleSectionChange(e, sectionId)}
+                            >
+                                <Typography>{sectionId}</Typography>
+                            </Checkbox>
+                        </label>
+                    )
+                };
+            }).filter((item): item is NonNullable<typeof item> => item !== null)
+        }));
     };
 
-    const reportCount = reports ? reports.length : 0;
+    const reportCount = reports?.length ?? 0;
     const sectionCount = selectedSections.length;
+    
+    const menuProps: MenuProps = {
+        items: getMenuItems()
+    };
 
     return (
         <div>
             {reports && reports.length === 1 ? (
                 <Dropdown
-                    overlay={renderMenu() || <div></div>}
+                    menu={menuProps}
                     trigger={['click']}
                     open={menuVisible}
-                    onOpenChange={(visible) => setMenuVisible(visible)}
+                    onOpenChange={setMenuVisible}
                 >
                     <a onClick={(e) => e.preventDefault()}>
                         <Typography textSize="h5">
@@ -104,10 +106,10 @@ const ReportSectionSelector: React.FC<ReportSectionSelectorProps> = ({ reports }
                 </Dropdown>
             ) : (
                 <Dropdown
-                    overlay={renderMenu() || <div></div>}
+                    menu={menuProps}
                     trigger={['click']}
                     open={menuVisible}
-                    onOpenChange={(visible) => setMenuVisible(visible)}
+                    onOpenChange={setMenuVisible}
                 >
                     <a onClick={(e) => e.preventDefault()}>
                         <Typography textSize="h5">

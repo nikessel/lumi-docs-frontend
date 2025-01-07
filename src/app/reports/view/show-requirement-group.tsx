@@ -6,6 +6,12 @@ import { FullscreenOutlined } from "@ant-design/icons"
 
 const { Panel } = Collapse;
 
+interface Reference {
+    id: string;
+    title: string;
+    url?: string;
+}
+
 interface RequirementAssessment {
     requirement_id?: string;
     compliance_rating: number;
@@ -13,7 +19,7 @@ interface RequirementAssessment {
     summary: string;
     findings: string[];
     sources: string[];
-    references?: any[];
+    references?: Reference[];
 }
 
 interface RequirementGroup {
@@ -39,7 +45,7 @@ function getBackgroundColorFromNumber(number: number) {
     return uniqueTextColors[number % uniqueTextColors.length];
 }
 
-// Mock data for testing
+// Mock data
 const mockData: RequirementGroup = {
     title: "Requirement Group 1",
     description: "Top-level group description",
@@ -164,8 +170,6 @@ const mockData: RequirementGroup = {
     ],
 };
 
-
-// Aggregation Icons
 const getAggregationIcon = (
     averageScore: number,
     hasLowScores: boolean,
@@ -191,23 +195,22 @@ const RequirementGroup = ({
     aggregation: string;
     level: number
 }) => {
-    const [isOpen, setIsOpen] = useState(false);
+    // Removed unused isOpen state
+    const defaultOpen = aggregation === "Acceptance based aggregation";
 
     // Calculate compliance ratings
     const allScores = [
-        ...data.requirement_assessments.map((r) => r.compliance_rating),
-        ...data.requirement_groups.flatMap((group) =>
-            group.requirement_assessments.map((r) => r.compliance_rating)
+        ...data.requirement_assessments.map((r: RequirementAssessment) => r.compliance_rating),
+        ...data.requirement_groups.flatMap((group: RequirementGroup) =>
+            group.requirement_assessments.map((r: RequirementAssessment) => r.compliance_rating)
         ),
     ];
-
 
     const averageScore =
         allScores.reduce((sum, score) => sum + score, 0) / (allScores.length || 1);
 
     const hasLowScores = allScores.some((score) => score < acceptanceLevel);
 
-    // Handle aggregation logic
     const displayRating =
         aggregation === "Acceptance based aggregation" ? (
             getAggregationIcon(averageScore, hasLowScores, acceptanceLevel)
@@ -228,13 +231,9 @@ const RequirementGroup = ({
         return <Typography.Text>{Math.round(complianceRating)}</Typography.Text>;
     };
 
-    // Determine default open state based on aggregation logic
-    const defaultOpen = aggregation === "Acceptance based aggregation" && hasLowScores;
-
     return (
         <Collapse
-            defaultActiveKey={defaultOpen ? ["1"] : []}
-            onChange={() => setIsOpen((prev) => !prev)}
+            defaultActiveKey={defaultOpen && hasLowScores ? ["1"] : []}
             style={{ backgroundColor: "white", borderTop: "none", borderRight: "none", borderBottom: "none", borderColor: getBackgroundColorFromNumber(level), borderRadius: 0 }}
             size="small"
         >
@@ -246,18 +245,16 @@ const RequirementGroup = ({
                             <Tooltip title={`Average Score: ${averageScore}`}>
                                 {displayRating}
                             </Tooltip>
-                            <Typography >{data.title}</Typography>
+                            <Typography>{data.title}</Typography>
                             <Button size="small" icon={<FullscreenOutlined />}></Button>
-
                         </div>
-
                     </div>
                 }
                 key="1"
             >
                 <List
                     dataSource={data.requirement_assessments}
-                    renderItem={(item) => (
+                    renderItem={(item: RequirementAssessment) => (
                         <List.Item>
                             <div className="flex gap-4 items-center w-full">
                                 <Tooltip title={`Score: ${item.compliance_rating}`}>
@@ -270,7 +267,7 @@ const RequirementGroup = ({
                     )}
                 />
                 <div className="mt-4">
-                    {data.requirement_groups.map((group) => (
+                    {data.requirement_groups.map((group: RequirementGroup) => (
                         <RequirementGroup
                             key={group.id}
                             data={group}
@@ -295,7 +292,7 @@ const RequirementGroups = () => {
     );
 
     useEffect(() => {
-        let timer: NodeJS.Timeout;
+        let timer: ReturnType<typeof setTimeout>;
 
         const newAcceptanceLevel = Number(searchParams.get("acceptanceLevel") || 60);
         const newAggregation = searchParams.get("aggregation") || "Show actual ratings";
@@ -303,7 +300,7 @@ const RequirementGroups = () => {
         timer = setTimeout(() => {
             setAcceptanceLevel(newAcceptanceLevel);
             setAggregation(newAggregation);
-        }, 300); // Delay of 300ms
+        }, 300);
 
         return () => {
             clearTimeout(timer);

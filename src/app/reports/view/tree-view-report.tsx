@@ -1,84 +1,84 @@
-import React from 'react';
-import { ResponsiveTreeMapCanvas } from '@nivo/treemap';
-import type { Report, SectionAssessment, RequirementAssessment, RequirementGroupAssessment } from '@wasm';
+import type { 
+  Report, 
+  RequirementOrRequirementGroupAssessment,
+  RequirementAssessment,
+  RequirementGroupAssessment,
+  IdType
+} from '@wasm';
 
-type SectionData = {
-    section_id: string;
-    title: string;
-    compliance_rating: number;
-};
+interface Section {
+  section_id: IdType;
+  // Add other section properties as needed
+}
 
-type TreeMapProps = {
-    sectionListData: SectionData[];
-    reports: Report[];
-};
+interface TreeNode {
+  id: string;
+  title: string;
+  children?: TreeNode[];
+}
 
-const TreeMap: React.FC<TreeMapProps> = ({ sectionListData, reports }) => {
-    // Transform data to fit Nivo TreeMapCanvas format
-    const buildTreeMapData = () => {
-        const report = reports[0]; // Assuming a single report for simplicity
-        return {
-            name: 'Sections',
-            children: sectionListData.map((section, sectionIndex) => {
-                const sectionAssessment = report.section_assessments.find(
-                    (assessment) => assessment.section_id === section.section_id
-                );
+export function processReport(report: Report, section: Section): TreeNode {
+  // Convert Map to array of entries and find matching section
+  const sectionAssessment = Array.from(report.section_assessments.entries())
+    .find(([id]) => id === section.section_id)?.[1];
 
-                return {
-                    name: `Section ${sectionIndex + 1}`,
-                    children: sectionAssessment?.requirement_assessments?.map((req, reqIndex) => {
-                        if (req.type === 'requirement_group' && 'assessments' in req.content) {
-                            return {
-                                name: `Group ${reqIndex + 1}`,
-                                children: req.content.assessments?.map((assessment: any, assessmentIndex: any) => ({
-                                    name: `Req ${assessmentIndex + 1}`,
-                                    value: assessment.compliance_rating,
-                                })) || [],
-                            };
-                        }
-
-                        if (req.type === 'requirement') {
-                            return {
-                                name: `Req ${reqIndex + 1}`,
-                                value: req.content.compliance_rating,
-                            };
-                        }
-
-                        return null;
-                    }).filter(Boolean) || [],
-                };
-            }),
-        };
+  if (!sectionAssessment) {
+    return {
+      id: section.section_id,
+      title: 'Section Not Found'
     };
+  }
 
-    const treeMapData = buildTreeMapData();
+  // Process requirement assessments if they exist
+  const children = sectionAssessment.requirement_assessments
+    ? Array.from(sectionAssessment.requirement_assessments.entries()).map(([reqId, req]) => 
+        processRequirement(reqId, req)
+      )
+    : undefined;
 
-    return (
-        <div style={{ height: 600 }}>
-            <ResponsiveTreeMapCanvas
-                data={treeMapData}
-                identity="name"
-                value="value"
-                valueFormat={(value) => `${value}%`}
-                label={(node) => node.data.name}
-                colors={{ scheme: 'nivo' }}
-                borderWidth={1}
-                borderColor={{ from: 'color', modifiers: [['darker', 0.5]] }}
-                tooltip={({ node }) => (
-                    <div
-                        style={{
-                            background: 'white',
-                            padding: '5px',
-                            border: '1px solid #ccc',
-                            borderRadius: '4px',
-                        }}
-                    >
-                        <strong>{node.data.name}</strong>: {node.value}%
-                    </div>
-                )}
-            />
-        </div>
-    );
-};
+  return {
+    id: section.section_id,
+    title: `Section ${section.section_id}`,
+    children
+  };
+}
 
-export default TreeMap;
+function processRequirement(
+  reqId: IdType, 
+  requirement: RequirementOrRequirementGroupAssessment
+): TreeNode {
+  const assessmentChildren = 'requirement' in requirement
+    ? processRequirementAssessment(requirement.requirement)
+    : processRequirementGroupAssessment(requirement.requirement_group);
+
+  return {
+    id: reqId,
+    title: `Requirement ${reqId}`,
+    children: assessmentChildren
+  };
+}
+
+function processRequirementAssessment(
+  _assessment: RequirementAssessment
+): TreeNode[] | undefined {
+  // Implement specific assessment processing logic here
+  return [];
+}
+
+function processRequirementGroupAssessment(
+  assessment: RequirementGroupAssessment
+): TreeNode[] | undefined {
+  if (!assessment.assessments) {
+    return undefined;
+  }
+
+  const entries = Array.from(assessment.assessments.entries()) as Array<[IdType, RequirementOrRequirementGroupAssessment]>;
+  
+  return entries.map(([id, childAssessment]) => ({
+    id,
+    title: `Assessment ${id}`,
+    children: 'requirement' in childAssessment
+      ? processRequirementAssessment(childAssessment.requirement)
+      : processRequirementGroupAssessment(childAssessment.requirement_group)
+  }));
+}

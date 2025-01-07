@@ -76,7 +76,7 @@ const createAssessmentWrapper = (content: RequirementOrRequirementGroupAssessmen
 const QuoteDisplay: React.FC<{
   quote: AssessmentQuote;
 }> = ({ quote }) => {
-  const relevancy = Math.round(quote.relevancy_score * 100);
+  const relevancy = Math.round(quote.relevancy_rating);
   
   return (
     <div className="border rounded-lg bg-white shadow-sm overflow-hidden my-4">
