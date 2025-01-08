@@ -51,7 +51,6 @@ interface RequirementGroupWrapper {
 
 type AssessmentWrapper = RequirementWrapper | RequirementGroupWrapper;
 
-// Add helper function to determine if it's a requirement assessment
 const isRequirementOrGroupAssessment = (
   assessment: RequirementOrRequirementGroupAssessment
 ): assessment is { requirement: RequirementAssessment } => {
@@ -131,7 +130,7 @@ const isRequirementAssessment = (
   assessment: AssessmentWrapper
 ): assessment is RequirementWrapper => {
   // Check if it's a requirement wrapper by checking if it has Requirement assessment type properties
-  return 'positive_findings' in assessment.content;
+  return 'objective_research_summary' in assessment.content;
 };
 
 const ThreadViewButton: React.FC<{ 
@@ -366,14 +365,16 @@ const RequirementCard: React.FC<{
   );
 };
 
-// Update RequirementGroupCard to use the same pattern
-const RequirementGroupCard: React.FC<{
+interface RequirementGroupCardProps {
   group: RequirementGroupWrapper;
   reportId: string;
   index: number;
-}> = ({ group, reportId, index }) => {
+}
+
+
+const RequirementGroupCard: React.FC<RequirementGroupCardProps> = ({ group, reportId, index }) => {
   const { wasmModule } = useWasm();
-  const [groupDetails, setGroupDetails] = React.useState<RequirementGroup | undefined>();
+  const [groupDetails, setGroupDetails] = React.useState<RequirementGroup | null>(null);
 
   React.useEffect(() => {
     const fetchRequirementGroup = async () => {
@@ -394,14 +395,53 @@ const RequirementGroupCard: React.FC<{
     }
   }, [wasmModule, group.id, groupDetails]);
 
-  if (!group.content.assessments) return null;
+  const renderNestedAssessments = () => {
+    if (!group.content.assessments) {
+      console.log('No assessments found for group:', group.id);
+      return null;
+    }
+
+    console.log('Group assessments:', Array.from(group.content.assessments.entries()));
+    
+    return (
+      <div className="mt-6 space-y-4">
+        <h4 className="font-medium">Requirements</h4>
+        <Accordion type="multiple" className="space-y-4">
+          {Array.from(group.content.assessments.entries() as IterableIterator<[string, RequirementOrRequirementGroupAssessment]>)
+            .map(([key, assessment], i) => {
+              console.log('Processing nested assessment:', { key, assessment });
+              const wrapper = createAssessmentWrapper(assessment, key);
+              return (
+                <div key={key}>
+                  {isRequirementAssessment(wrapper) ? (
+                    <RequirementCard 
+                      req={wrapper}
+                      reportId={reportId}
+                      index={i} 
+                    />
+                  ) : (
+                    <RequirementGroupCard 
+                      group={wrapper}
+                      reportId={reportId}
+                      index={i} 
+                    />
+                  )}
+                </div>
+              );
+          })}
+        </Accordion>
+      </div>
+    );
+  };
 
   return (
     <AccordionItem value={`group-${index}`} className="border rounded-lg bg-gray-50">
       <AccordionTrigger className="px-4 py-2 hover:no-underline w-full">
         <div className="flex justify-between items-center w-full gap-4">
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <span className="truncate">{groupDetails?.name || `Requirement Group ${index + 1}`}</span>
+            <span className="truncate">
+              {groupDetails?.name || `Requirement Group ${index + 1}`}
+            </span>
             <InfoTooltip 
               name={groupDetails?.name}
               description={groupDetails?.description}
@@ -426,24 +466,7 @@ const RequirementGroupCard: React.FC<{
             <h4 className="font-medium mb-1">Assessment Details</h4>
             <p className="text-sm text-gray-700">{group.content.details}</p>
           </div>
-      {group.content.assessments && Array.from(group.content.assessments.entries()).map(([key, assessment], i) => {
-            const wrapper = createAssessmentWrapper(assessment, key);
-            return isRequirementAssessment(wrapper) ? (
-              <RequirementCard 
-                key={key} 
-                req={wrapper}
-                reportId={reportId}
-                index={i} 
-              />
-            ) : (
-              <RequirementGroupCard 
-                key={key} 
-                group={wrapper}
-                reportId={reportId}
-                index={i} 
-              />
-            );
-          })}
+          {renderNestedAssessments()}
         </div>
       </AccordionContent>
     </AccordionItem>
