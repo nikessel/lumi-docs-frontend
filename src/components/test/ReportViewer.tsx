@@ -198,10 +198,103 @@ const InfoTooltip: React.FC<{
   );
 };
 
-const TaskList: React.FC<{
+
+interface TaskDisplayProps {
+  task: Task;
+}
+
+const TaskDisplay: React.FC<TaskDisplayProps> = ({ task }) => {
+  const getStatusIcon = (status: TaskStatus | undefined) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'ignored':
+        return <XCircle className="h-4 w-4 text-gray-500" />;
+      case 'open':
+        return <Clock className="h-4 w-4 text-yellow-500" />;
+      default:
+        return null;
+    }
+  };
+
+  const getStatusColor = (status: TaskStatus | undefined) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'ignored':
+        return 'bg-gray-100 text-gray-800';
+      case 'open':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  return (
+    <Card className="w-full mb-4">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-lg font-bold">{task.title}</CardTitle>
+        {task.status && (
+          <div className="flex items-center gap-2">
+            {getStatusIcon(task.status)}
+            <Badge className={getStatusColor(task.status)}>
+              {task.status.charAt(0).toUpperCase() + task.status.slice(1)}
+            </Badge>
+          </div>
+        )}
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-500 mb-1">Description</h3>
+            <p className="text-sm text-gray-700">{task.description}</p>
+          </div>
+          
+          <div>
+            <h3 className="text-sm font-semibold text-gray-500 mb-1">Task Details</h3>
+            <p className="text-sm text-gray-700">{task.task}</p>
+          </div>
+
+          {task.suggestion && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 mb-1">Suggestion</h3>
+              <div className="bg-blue-50 p-3 rounded-md">
+                <p className="text-sm font-medium text-blue-900 mb-1">
+                  {task.suggestion.kind.split('_').map((word: string) => 
+                    word.charAt(0).toUpperCase() + word.slice(1)
+                  ).join(' ')}
+                </p>
+                <p className="text-sm text-blue-800">{task.suggestion.description}</p>
+                <p className="text-sm text-blue-700 mt-2">{task.suggestion.content}</p>
+              </div>
+            </div>
+          )}
+
+          {task.associated_document && (
+            <div>
+              <h3 className="text-sm font-semibold text-gray-500 mb-1">Associated Document</h3>
+              <p className="text-sm text-gray-700">{task.associated_document}</p>
+            </div>
+          )}
+
+          {task.id && (
+            <div className="text-xs text-gray-400">
+              ID: {task.id}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+
+interface TaskListProps {
   reportId: string;
   requirementId: string;
-}> = ({ reportId, requirementId }) => {
+}
+
+const TaskList: React.FC<TaskListProps> = ({ reportId, requirementId }) => {
   const { wasmModule } = useWasm();
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -232,36 +325,12 @@ const TaskList: React.FC<{
   if (loading) return <Skeleton className="h-20" />;
   if (tasks.length === 0) return null;
 
-  const getTaskStatusIcon = (status: TaskStatus) => {
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'ignored':
-        return <XCircle className="h-4 w-4 text-gray-500" />;
-      default:
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-    }
-  };
-
   return (
     <div className="mt-4">
       <h4 className="font-medium mb-2">Tasks</h4>
       <div className="space-y-2">
-        {tasks.map((task, index) => (
-          <Card key={index} className="p-4">
-            <div className="flex items-start gap-2">
-              {task.status && getTaskStatusIcon(task.status)}
-              <div className="flex-1">
-                <div className="font-medium">{task.title}</div>
-                <p className="text-sm text-gray-600">{task.description}</p>
-                {task.associated_document && (
-                  <div className="text-sm text-gray-500 mt-1">
-                    Document: {task.associated_document}
-                  </div>
-                )}
-              </div>
-            </div>
-          </Card>
+        {tasks.map((task) => (
+          <TaskDisplay key={task.id || Math.random()} task={task} />
         ))}
       </div>
     </div>
