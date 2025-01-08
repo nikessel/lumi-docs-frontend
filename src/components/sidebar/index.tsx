@@ -7,6 +7,8 @@ import { FilePdfOutlined, FileDoneOutlined, ProjectOutlined, BarChartOutlined, F
 import SidebarToggleButton from "./sider-toggle-button";
 import SiderLogo from "./sider-logo";
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+
 
 const { Sider } = Layout;
 // const { SubMenu } = Menu;
@@ -14,6 +16,7 @@ const { Sider } = Layout;
 const AppSiderComponent: React.FC = () => {
     const [collapsed, setCollapsed] = useState(false);
     const [showToggleButton, setShowToggleButton] = useState(true);
+    const searchParams = useSearchParams(); // Read the current search params
 
     const checkWindowWidth = () => {
         if (window.innerWidth <= 1200) {
@@ -35,6 +38,12 @@ const AppSiderComponent: React.FC = () => {
 
     const toggleCollapse = () => {
         setCollapsed(!collapsed);
+    };
+
+    // Helper function to append query params
+    const createUrlWithParams = (basePath: string) => {
+        const params = searchParams.toString();
+        return `${basePath}${params ? `?${params}` : ''}`;
     };
 
     return (
@@ -69,7 +78,7 @@ const AppSiderComponent: React.FC = () => {
                                     },
                                     {
                                         key: "2-2",
-                                        label: <Link href="/reports/sections">All Requirements</Link>,
+                                        label: <Link href={createUrlWithParams("/reports/all_requirements")}>All Requirements</Link>,
                                     },
                                     {
                                         key: "2-3",

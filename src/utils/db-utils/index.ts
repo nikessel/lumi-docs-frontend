@@ -1,3 +1,6 @@
+export const dbVersion = 1
+export const dbName = "lumi-docs"
+
 export async function openDatabase(
     dbName: string,
     dbVersion: number,
@@ -141,8 +144,6 @@ export async function saveMetadata(
             db.createObjectStore("meta", { keyPath: "key" });
         }
     });
-
-    console.log("db", db)
 
     const transaction = db.transaction("meta", "readwrite");
     console.log("transaction", transaction)

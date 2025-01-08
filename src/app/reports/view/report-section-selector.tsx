@@ -5,16 +5,16 @@ import Typography from "@/components/typography";
 import { useSearchParams } from 'next/navigation';
 import type { MenuProps } from 'antd';
 import type { CheckboxChangeEvent } from 'antd/es/checkbox';
-import type { Report as WasmReport } from '@wasm';
+import { Report } from '@wasm';
 
 // Define interfaces for better type safety
 interface SectionAssessment {
     section_id: string;
 }
 
-interface Report extends Omit<WasmReport, 'section_assessments'> {
-    section_assessments: Map<string, SectionAssessment>;
-}
+// interface Report extends Omit<WasmReport, 'section_assessments'> {
+//     section_assessments: Map<string, SectionAssessment>;
+// }
 
 interface ReportSectionSelectorProps {
     reports?: Report[];
@@ -62,7 +62,7 @@ const ReportSectionSelector: React.FC<ReportSectionSelectorProps> = ({ reports }
             key: report.id,
             label: report.title,
             children: Array.from(report.section_assessments.entries()).map(([, section]) => {
-                const sectionId = section.section_id;
+                const sectionId = "setoberemoved";
                 if (!sectionId) return null;
 
                 return {
@@ -84,7 +84,7 @@ const ReportSectionSelector: React.FC<ReportSectionSelectorProps> = ({ reports }
 
     const reportCount = reports?.length ?? 0;
     const sectionCount = selectedSections.length;
-    
+
     const menuProps: MenuProps = {
         items: getMenuItems()
     };
