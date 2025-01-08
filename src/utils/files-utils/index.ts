@@ -1,8 +1,9 @@
 import { saveData, getData, getMetadata, saveMetadata } from "@/utils/db-utils";
 import type { File } from "@wasm";
 import type * as WasmModule from "@wasm";
+import { dbName } from "@/utils/db-utils";
 
-const FILES_DB_NAME = "FilesCacheDB";
+const FILES_DB_NAME = dbName;
 const FILES_STORE_NAME = "files";
 const FILES_DB_VERSION = 1;
 const FILES_CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds

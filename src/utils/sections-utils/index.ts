@@ -1,11 +1,15 @@
-import { saveData, getData, getMetadata, saveMetadata } from "@/utils/db-utils";
+import { saveData, getData, getMetadata } from "@/utils/db-utils";
 import type { Section } from "@wasm";
 import type * as WasmModule from "@wasm";
 import { dbName, dbVersion } from "@/utils/db-utils";
 
+// Extended type for cached sections
+interface CachedSection extends Section {
+    timestamp?: number;
+}
+
 const SECTIONS_STORE_NAME = "sections";
-const DB_VERSION = dbVersion;
-const CACHE_TTL = 5 * 60 * 1000;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 export async function fetchSectionsByIds(
     wasmModule: typeof WasmModule | null,
@@ -15,13 +19,37 @@ export async function fetchSectionsByIds(
         sections: [],
         errors: {},
     };
+    console.log("SECTUIONS BEFOEE")
+    // Fetch cached sections
+    const cachedSections = await getData<CachedSection>(dbName, SECTIONS_STORE_NAME, dbVersion) || [];
+    console.log("SECTUIONS AFTER")
 
-    const cachedSections = await getData<Section>(dbName, SECTIONS_STORE_NAME, DB_VERSION);
-    const sectionsToFetch = sectionIds.filter(
-        (id) => !cachedSections.some((section) => section.id === id)
-    );
+    const sectionsToFetch: string[] = [];
+    const validCachedSections: Section[] = [];
 
-    result.sections.push(...cachedSections.filter((section) => sectionIds.includes(section.id)));
+    // Check cache for valid entries
+    sectionIds.forEach((sectionId) => {
+        const cachedSection = cachedSections.find((section) => section.id === sectionId);
+
+        const isExpired = cachedSection?.timestamp
+            ? Date.now() - cachedSection.timestamp > CACHE_TTL
+            : true;
+
+        if (cachedSection && !isExpired) {
+            console.log(`Using cached section for ID: ${sectionId}`);
+            validCachedSections.push(cachedSection);
+        } else {
+            sectionsToFetch.push(sectionId);
+        }
+    });
+
+    // Include valid cached sections in the result
+    result.sections.push(...validCachedSections);
+
+    if (sectionsToFetch.length === 0) {
+        // All required sections were found in the cache
+        return result;
+    }
 
     if (!wasmModule) {
         sectionsToFetch.forEach((id) => {
@@ -30,195 +58,30 @@ export async function fetchSectionsByIds(
         return result;
     }
 
+    console.log(`Fetching sections for IDs: ${sectionsToFetch.join(", ")}`);
+
     const fetchPromises = sectionsToFetch.map(async (id) => {
         try {
             const response = await wasmModule.get_sections({ input: [id] });
+
             if (response.output) {
                 const section = response.output.output[0];
-                await saveData(dbName, SECTIONS_STORE_NAME, [section], DB_VERSION, false);
+
+                // Save fetched section to cache
+                await saveData(dbName, SECTIONS_STORE_NAME, [{ ...section, timestamp: Date.now() }], dbVersion, false);
+
                 result.sections.push(section);
             } else if (response.error) {
                 result.errors[id] = response.error.message;
             }
         } catch (err: unknown) {
+            console.error(`Error fetching section with ID: ${id}`, err);
             result.errors[id] = "Failed to fetch section";
         }
     });
 
+    // Wait for all fetch operations to complete
     await Promise.all(fetchPromises);
+
     return result;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import { saveData, getData, getMetadata, saveMetadata } from "@/utils/db-utils";
-// import type { Section, IdType } from "@wasm";
-
-// import type * as WasmModule from "@wasm";
-
-// const DB_NAME = "SectionsCacheDB";
-// const STORE_NAME = "sections";
-// const DB_VERSION = 1;
-// const CACHE_TTL = 5 * 60 * 1000;
-
-// export async function fetchSectionsByIds(
-//     wasmModule: typeof WasmModule | null,
-//     sectionIds: IdType[]
-// ): Promise<{
-//     sections: Section[];
-//     error: string | null;
-// }> {
-//     const result: {
-//         sections: Section[];
-//         error: string | null;
-//     } = {
-//         sections: [],
-//         error: null,
-//     };
-
-
-//     if (!sectionIds || sectionIds.length === 0) {
-//         result.error = "No section IDs provided";
-//         return result;
-//     }
-
-//     // Fetch cached sections
-//     const cachedSections = await getData<Section>(DB_NAME, STORE_NAME, DB_VERSION);
-//     const lastFetchTimestamp = await getMetadata(DB_NAME, "lastFetch", DB_VERSION);
-
-//     const isExpired = lastFetchTimestamp
-//         ? Date.now() - lastFetchTimestamp > CACHE_TTL
-//         : true;
-
-//     // Check for cached sections
-//     const foundSections: Section[] = [];
-//     const missingIds: IdType[] = [];
-
-//     sectionIds.forEach((id) => {
-//         const cachedSection = cachedSections.find((section) => section.id === id);
-//         if (cachedSection) {
-//             foundSections.push(cachedSection);
-//         } else {
-//             missingIds.push(id);
-//         }
-//     });
-
-//     // If all sections are found in the cache and not expired, return them
-//     if (missingIds.length === 0 && !isExpired) {
-//         console.log("Using cached sections data");
-//         result.sections = foundSections;
-//         return result;
-//     }
-
-//     if (!wasmModule) {
-//         result.error = "WASM module not loaded";
-//         return result;
-//     }
-
-//     console.log("Fetching missing sections data from WASM");
-
-//     try {
-//         // const response = await wasmModule.get_all_sections();
-//         const response = await wasmModule.get_sections({ input: missingIds });
-//         // await wasmModule.get_all_sections()
-
-//         if (response.output) {
-//             let fetchedSections = response.output.output;
-
-//             // Combine cached and fetched sections
-//             const combinedSections = [...foundSections, ...fetchedSections];
-
-//             // Save sections and metadata
-//             await saveData(DB_NAME, STORE_NAME, combinedSections, DB_VERSION, true);
-//             await saveMetadata(DB_NAME, "lastFetch", Date.now(), DB_VERSION);
-
-//             result.sections = combinedSections;
-//         } else if (response.error) {
-//             result.error = response.error.message;
-//         }
-//     } catch (err) {
-//         console.error("Error fetching sections by IDs:", err);
-//         result.error = "Failed to fetch sections by IDs";
-//     }
-
-//     return result;
-// }
-
-
-// export async function fetchSections(
-//     wasmModule: typeof WasmModule | null
-// ): Promise<{
-//     sections: Section[];
-//     error: string | null;
-// }> {
-//     const result: {
-//         sections: Section[];
-//         error: string | null;
-//     } = {
-//         sections: [],
-//         error: null,
-//     };
-
-//     // Fetch cached sections
-//     const cachedSections = await getData<Section>(DB_NAME, STORE_NAME, DB_VERSION);
-//     const isFullFetch = await getMetadata(DB_NAME, "fullFetch", DB_VERSION);
-//     const lastFetchTimestamp = await getMetadata(DB_NAME, "lastFetch", DB_VERSION);
-
-//     const isExpired = lastFetchTimestamp
-//         ? Date.now() - lastFetchTimestamp > CACHE_TTL
-//         : true;
-
-//     if (cachedSections.length > 0 && !isExpired && isFullFetch) {
-//         console.log("Using cached sections data");
-//         result.sections = cachedSections;
-//         return result;
-//     }
-
-//     if (!wasmModule) {
-//         result.error = "WASM module not loaded";
-//         return result;
-//     }
-
-//     console.log("Fetching refreshing sections data");
-
-//     try {
-//         const response = await wasmModule.get_all_sections();
-
-//         if (response.output) {
-//             const sectionsData = response.output.output;
-
-//             // Save sections and metadata
-//             await saveData(DB_NAME, STORE_NAME, sectionsData, DB_VERSION, true);
-//             await saveMetadata(DB_NAME, "fullFetch", true, DB_VERSION);
-//             await saveMetadata(DB_NAME, "lastFetch", Date.now(), DB_VERSION);
-
-//             result.sections = sectionsData;
-//         } else if (response.error) {
-//             result.error = response.error.message;
-//         }
-//     } catch (err) {
-//         console.error("Error fetching sections:", err);
-//         result.error = "Failed to fetch sections";
-//     }
-
-//     return result;
-// }

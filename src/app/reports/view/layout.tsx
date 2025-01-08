@@ -7,21 +7,27 @@ import "@/styles/globals.css";
 import ReportSectionSelector from './report-section-selector';
 import ReportCreatedOn from './created-on';
 import FilterBar from './filter-bar';
-import RequirementGroups from './show-requirement-group';
-import { useSelectedFilteredReports } from '@/hooks/report-hooks'; // Adjust the path if needed
+import { useSelectedFilteredReports } from '@/hooks/report-hooks';
 import ReportStateHandler from '@/components/report-state-handler'
 
-const ReportPage = () => {
+interface LayoutProps {
+    children: React.ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
     const { reports, loading, error } = useSelectedFilteredReports();
 
     return (
-        <ReportStateHandler loading={loading} error={error} reports={reports} expectReports={true}>
+        <ReportStateHandler loading={loading} error={error} reports={reports} expectReports={false}>
             <div>
                 <div className="flex justify-between items-center">
                     <div>
-                        <div className="space-y-4">
-                            <ReportSectionSelector reports={reports} />
-                        </div>
+                        {reports.length > 0 ?
+                            <div className="space-y-4">
+                                <ReportSectionSelector reports={reports} />
+                            </div>
+                            : <div>Reports</div>
+                        }
                     </div>
                     <div className="flex items-center space-x-2">
                         <Button icon={<SaveOutlined />}>Save view</Button>
@@ -33,18 +39,18 @@ const ReportPage = () => {
                 <Divider className="border-thin mt-2 mb-2" />
 
                 <div className="flex justify-between items-center">
-                    <div className="flex justify-between w-full">
+                    {reports.length > 0 ? <div className="flex justify-between w-full">
                         <ReportCreatedOn reports={reports} />
                         <div className="flex items-center gap-4">
                             <FilterBar reports={reports} />
                         </div>
-                    </div>
+                    </div> : ""}
                 </div>
 
-                <RequirementGroups />
+                <div className="mt-2">{children}</div>
             </div>
         </ReportStateHandler>
     );
 };
 
-export default ReportPage;
+export default Layout;

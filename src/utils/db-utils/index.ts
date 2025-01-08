@@ -1,33 +1,29 @@
 export const dbVersion = 1
 export const dbName = "lumi-docs"
 
-export async function openDatabase(
-    dbName: string,
-    dbVersion: number,
-    storeName: string,
-    onUpgrade: (db: IDBDatabase) => void
-): Promise<IDBDatabase> {
+const REQUIRED_STORE_NAMES = ["files", "reports", "sections", "requirement_groups", "requirements", "meta"];
+
+export async function openDatabase(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(dbName, dbVersion);
 
         request.onupgradeneeded = (event) => {
             const db = request.result;
             console.log("Upgrading database...");
-            if (!db.objectStoreNames.contains(storeName)) {
-                db.createObjectStore(storeName, { keyPath: "id" });
-                console.log(`Created  ${storeName} object store.`);
-            }
-            if (!db.objectStoreNames.contains("meta")) {
-                db.createObjectStore("meta", { keyPath: "key" });
-                console.log("Created 'meta' object store.");
-            }
+
+            REQUIRED_STORE_NAMES.forEach((storeName) => {
+                if (!db.objectStoreNames.contains(storeName)) {
+                    const keyPath = storeName === "meta" ? "key" : "id";
+                    db.createObjectStore(storeName, { keyPath });
+                    console.log(`Created object store: ${storeName}`);
+                }
+            });
         };
 
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
     });
 }
-
 
 export async function saveData<T>(
     dbName: string,
@@ -36,12 +32,7 @@ export async function saveData<T>(
     dbVersion: number,
     clearStore = false
 ): Promise<void> {
-    const db = await openDatabase(dbName, dbVersion, storeName, (db) => {
-        // Create the object store if it doesn't exist
-        if (!db.objectStoreNames.contains(storeName)) {
-            db.createObjectStore(storeName, { keyPath: "id" });
-        }
-    });
+    const db = await openDatabase();
 
     const transaction = db.transaction(storeName, "readwrite");
     const store = transaction.objectStore(storeName);
@@ -74,15 +65,18 @@ export async function getData<T>(
     storeName: string,
     dbVersion: number
 ): Promise<T[]> {
-    const db = await openDatabase(dbName, dbVersion, storeName, (db) => {
-        // Create the object store if it doesn't exist
-        if (!db.objectStoreNames.contains(storeName)) {
-            db.createObjectStore(storeName, { keyPath: "id" });
-        }
-    });
+
+    const db = await openDatabase();
+
+    console.log("Before transaction", dbName, storeName, dbVersion)
 
     const transaction = db.transaction(storeName, "readonly");
+
+    console.log("After transaction", transaction, dbName, storeName, dbVersion)
+
     const store = transaction.objectStore(storeName);
+
+
 
     const result: T[] = [];
     return new Promise((resolve) => {
@@ -107,11 +101,7 @@ export async function getMetadata(
     key: string,
     dbVersion: number
 ): Promise<any | null> {
-    const db = await openDatabase(dbName, dbVersion, "meta", (db) => {
-        if (!db.objectStoreNames.contains("meta")) {
-            db.createObjectStore("meta", { keyPath: "key" });
-        }
-    });
+    const db = await openDatabase();
 
     const transaction = db.transaction("meta", "readonly");
     const store = transaction.objectStore("meta");
@@ -139,11 +129,7 @@ export async function saveMetadata(
     dbVersion: number
 ): Promise<void> {
     console.log("saveMetadata started")
-    const db = await openDatabase(dbName, dbVersion, "meta", (db) => {
-        if (!db.objectStoreNames.contains("meta")) {
-            db.createObjectStore("meta", { keyPath: "key" });
-        }
-    });
+    const db = await openDatabase();
 
     const transaction = db.transaction("meta", "readwrite");
     console.log("transaction", transaction)
