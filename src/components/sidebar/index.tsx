@@ -3,15 +3,15 @@
 'use client';
 import React, { useState, useEffect } from "react";
 import { Layout, Menu, Divider } from "antd";
-import { FilePdfOutlined, FileDoneOutlined, BarChartOutlined, FileSearchOutlined, SettingOutlined, CreditCardOutlined, LogoutOutlined } from "@ant-design/icons";
+import { FilePdfOutlined, FileDoneOutlined, ProjectOutlined, BarChartOutlined, FileSearchOutlined, SettingOutlined, CreditCardOutlined, LogoutOutlined } from "@ant-design/icons";
 import SidebarToggleButton from "./sider-toggle-button";
 import SiderLogo from "./sider-logo";
 import Link from 'next/link';
 
 const { Sider } = Layout;
-const { SubMenu } = Menu;
+// const { SubMenu } = Menu;
 
-const AppSiderComponent: React.FC = ({ }) => {
+const AppSiderComponent: React.FC = () => {
     const [collapsed, setCollapsed] = useState(false);
     const [showToggleButton, setShowToggleButton] = useState(true);
 
@@ -69,13 +69,18 @@ const AppSiderComponent: React.FC = ({ }) => {
                                     },
                                     {
                                         key: "2-2",
-                                        label: <Link href="/reports/findings">Findings</Link>,
+                                        label: <Link href="/reports/sections">All Requirements</Link>,
                                     },
                                     {
                                         key: "2-3",
-                                        label: <Link href="/reports/implementation">Implementation</Link>,
+                                        label: <Link href="/reports/findings">Key Issues</Link>,
                                     },
                                 ],
+                            },
+                            {
+                                key: "3",
+                                icon: <ProjectOutlined />,
+                                label: <Link href="/files">Tasks</Link>,
                             },
                             {
                                 key: "3",
@@ -97,12 +102,12 @@ const AppSiderComponent: React.FC = ({ }) => {
                             {
                                 key: "5",
                                 icon: <SettingOutlined />,
-                                label: <Link href="/">Settings</Link>,
+                                label: <Link href="/settings">Settings</Link>,
                             },
                             {
                                 key: "6",
                                 icon: <CreditCardOutlined />,
-                                label: <Link href="/">Billing</Link>,
+                                label: <Link href="/billing">Billing</Link>,
                             },
                             {
                                 key: "7",
