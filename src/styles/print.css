@@ -1,0 +1,27 @@
+/* app/styles/print.css */
+.pdf-mode * {
+  visibility: visible !important;
+  height: auto !important;
+  opacity: 1 !important;
+  display: block !important;
+  break-inside: auto !important;
+  color-adjust: exact !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+.pdf-mode [data-state="closed"],
+.pdf-mode [data-state="open"] {
+  max-height: none !important;
+  height: auto !important;
+}
+
+.pdf-mode button,
+.pdf-mode .no-print {
+  display: none !important;
+}
+
+.pdf-mode .requirement-card {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { File } from '@wasm';
 import { useParams } from 'next/navigation';
 import { useWasm } from '@/components/WasmProvider';
@@ -39,6 +39,11 @@ import type {
   TaskStatus,
   RequirementOrRequirementGroupAssessment,
 } from '@wasm';
+import dynamic from 'next/dynamic';
+
+const PDFExportButton = dynamic(() => import('@/components/test/pdf-export-button'), {
+  ssr: false,
+});
 
 interface RequirementWrapper {
   content: RequirementAssessment;
@@ -428,7 +433,7 @@ const RequirementCard: React.FC<{
   }, [wasmModule, req.id, reqDetails]);
 
   return (
-    <AccordionItem value={`req-${index}`} className="border rounded-lg bg-white">
+<AccordionItem value={`req-${index}`} className="border rounded-lg bg-white">
       <AccordionTrigger className="px-4 py-2 hover:no-underline w-full">
         <div className="flex justify-between items-center w-full gap-4">
           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -494,10 +499,22 @@ interface RequirementGroupCardProps {
   group: RequirementGroupWrapper;
   reportId: string;
   index: number;
+  expandedRequirements: string[];
+  setExpandedRequirements: (values: string[]) => void;
+  expandedGroups: string[];
+  setExpandedGroups: (values: string[]) => void;
 }
 
 
-const RequirementGroupCard: React.FC<RequirementGroupCardProps> = ({ group, reportId, index }) => {
+const RequirementGroupCard: React.FC<RequirementGroupCardProps> = ({ 
+  group, 
+  reportId, 
+  index,
+  expandedRequirements,
+  setExpandedRequirements,
+  expandedGroups,
+  setExpandedGroups
+}) => {
   const { wasmModule } = useWasm();
   const [groupDetails, setGroupDetails] = React.useState<RequirementGroup | null>(null);
 
@@ -531,7 +548,12 @@ const RequirementGroupCard: React.FC<RequirementGroupCardProps> = ({ group, repo
     return (
       <div className="mt-6 space-y-4">
         <h4 className="font-medium">Requirements</h4>
-        <Accordion type="multiple" className="space-y-4">
+<Accordion 
+  type="multiple" 
+  className="space-y-4"
+  value={expandedRequirements}
+  onValueChange={setExpandedRequirements}
+>
           {Array.from(group.content.assessments.entries() as IterableIterator<[string, RequirementOrRequirementGroupAssessment]>)
             .map(([key, assessment], i) => {
               console.log('Processing nested assessment:', { key, assessment });
@@ -549,6 +571,10 @@ const RequirementGroupCard: React.FC<RequirementGroupCardProps> = ({ group, repo
                       group={wrapper}
                       reportId={reportId}
                       index={i} 
+      expandedRequirements={expandedRequirements}
+      setExpandedRequirements={setExpandedRequirements}
+      expandedGroups={expandedGroups}
+      setExpandedGroups={setExpandedGroups}
                     />
                   )}
                 </div>
@@ -681,25 +707,70 @@ const getStatusBadge = (status: ReportStatus) => {
   );
 };
 
-
 const ReportViewer = () => {
   const params = useParams();
   const reportId = params?.reportId as string;
   const { wasmModule } = useWasm();
   const [report, setReport] = React.useState<Report | null>(null);
-  const [error, setError] = React.useState('');
+  const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [retryCount, setRetryCount] = React.useState(0);
+const [expandedSections, setExpandedSections] = useState<string[]>([]);
+const [expandedRequirements, setExpandedRequirements] = useState<string[]>([]);
+const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
-  React.useEffect(() => {
+  
+const expandAll = useCallback(() => {
+  if (!report?.section_assessments) return;
+  
+  // Collect all IDs that need to be expanded
+  const sections: string[] = [];
+  const requirements: string[] = [];
+  const groups: string[] = [];
+
+  Array.from(report.section_assessments.entries()).forEach(([_, section], sectionIndex) => {
+    sections.push(`section-${sectionIndex}`);
+    
+    if (section.requirement_assessments) {
+      Array.from(section.requirement_assessments.entries()).forEach(([_, req], reqIndex) => {
+        const wrapper = createAssessmentWrapper(req, reqIndex.toString());
+        if (isRequirementAssessment(wrapper)) {
+          requirements.push(`req-${reqIndex}`);
+        } else {
+          groups.push(`group-${reqIndex}`);
+          // Handle nested requirements in groups
+          if (wrapper.content.assessments) {
+            Array.from(wrapper.content.assessments.entries()).forEach((_, nestedIndex) => {
+              requirements.push(`nested-req-${nestedIndex}`);
+            });
+          }
+        }
+      });
+    }
+  });
+
+  setExpandedSections(sections);
+  setExpandedRequirements(requirements);
+  setExpandedGroups(groups);
+}, [report]);
+
+const handleExportPDF = useCallback(async () => {
+  expandAll();
+  
+  // Wait longer for DOM to update since we have more content to expand
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  
+  return new Promise<void>((resolve) => {
+    // Signal completion to the PDFExportButton
+    resolve();
+  });
+}, [expandAll]);
+
+  useEffect(() => {
     const fetchReport = async () => {
-      console.log('Fetching report, WASM module status:', !!wasmModule);
-      
       if (!wasmModule) {
         if (retryCount < 3) {
-          setTimeout(() => {
-            setRetryCount(prev => prev + 1);
-          }, 1000);
+          setTimeout(() => setRetryCount(prev => prev + 1), 1000);
           return;
         }
         setError('WASM module not loaded. Please refresh the page.');
@@ -714,19 +785,10 @@ const ReportViewer = () => {
       }
 
       try {
-        console.log('Making WASM call with reportId:', reportId);
         const response = await wasmModule.get_report({ input: reportId });
-        console.log('Got report response:', response);
-        
         if (response.output) {
-          console.log('Report data:', {
-            title: response.output.output.title,
-            sectionsCount: Object.keys(response.output.output.section_assessments || {}).length,
-            sections: response.output.output.section_assessments
-          });
           setReport(response.output.output);
         } else if (response.error) {
-          console.error('Report error:', response.error);
           setError(response.error.message);
         }
       } catch (err) {
@@ -740,85 +802,72 @@ const ReportViewer = () => {
     fetchReport();
   }, [wasmModule, reportId, retryCount]);
 
-
+  // Keep your existing renderSections function
   const renderSections = () => {
-    if (!report?.section_assessments) {
-      console.log('No section assessments found in report');
-      return null;
-    }
+    if (!report?.section_assessments) return null;
 
-    const sectionEntries = Array.from(report.section_assessments.entries());
-    console.log('Section entries:', sectionEntries);
-
-    return sectionEntries.map(([sectionId, section], index) => {
-      console.log('Rendering section:', {
-        sectionId,
-        abstractText: section.abstract_text,
-        requirementCount: section.requirement_assessments ? Array.from(section.requirement_assessments.entries()).length : 0
-      });
-
-      return (
-        <AccordionItem value={`section-${index}`} key={sectionId} className="border rounded-lg">
-          <AccordionTrigger className="px-4 py-2 hover:no-underline">
-            <SectionHeader 
-              sectionId={sectionId}
-              complianceRating={section.compliance_rating}
-              index={index}
-              reportId={reportId}
-            />
-          </AccordionTrigger>
-          <AccordionContent className="px-4 py-2">
-            <div className="space-y-4">
-              <p className="text-gray-700">{section.abstract_text}</p>
-              
-              {section.requirement_assessments && Array.from(section.requirement_assessments.entries()).map(([reqId, req], reqIndex) => {
-                console.log('Rendering requirement:', {
-                  reqId,
-                  type: isRequirementOrGroupAssessment(req) ? 'requirement' : 'group'
-                });
-
-                const wrapper = createAssessmentWrapper(req, reqId);
-                return isRequirementAssessment(wrapper) ? (
-                  <RequirementCard 
-                    key={reqId}
-                    req={wrapper}
-                    index={reqIndex}
-                    reportId={reportId}
-                  />
-                ) : (
-                  <RequirementGroupCard 
-                    key={reqId}
-                    group={wrapper}
-                    reportId={reportId}
-                    index={reqIndex}
-                  />
-                );
-              })}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      );
-    });
+    return Array.from(report.section_assessments.entries()).map(([sectionId, section], index) => (
+      <AccordionItem value={`section-${index}`} key={sectionId} className="border rounded-lg">
+        <AccordionTrigger className="px-4 py-2 hover:no-underline">
+          <SectionHeader
+            sectionId={sectionId}
+            complianceRating={section.compliance_rating}
+            index={index}
+            reportId={reportId}
+          />
+        </AccordionTrigger>
+        <AccordionContent className="px-4 py-2">
+          <div className="space-y-4">
+            <p className="text-gray-700">{section.abstract_text}</p>
+            
+{section.requirement_assessments && Array.from(section.requirement_assessments.entries()).map(([reqId, req], reqIndex) => {
+  const wrapper = createAssessmentWrapper(req, reqId);
+  return isRequirementAssessment(wrapper) ? (
+    <RequirementCard
+      key={reqId}
+      req={wrapper}
+      index={reqIndex}
+      reportId={reportId}
+    />
+  ) : (
+    <RequirementGroupCard
+      key={reqId}
+      group={wrapper}
+      reportId={reportId}
+      index={reqIndex}
+      expandedRequirements={expandedRequirements}
+      setExpandedRequirements={setExpandedRequirements}
+      expandedGroups={expandedGroups}
+      setExpandedGroups={setExpandedGroups}
+    />
+  );
+})}
+          </div>
+        </AccordionContent>
+      </AccordionItem>
+    ));
   };
 
+  if (error) {
+    return <div className="p-4 text-red-600">Error: {error}</div>;
+  }
+
+  if (loading && !report) {
+    return <div className="p-4">Loading...</div>;
+  }
+
   if (!report) {
-    console.log('No report data available');
     return null;
   }
 
-  console.log('Rendering full report:', {
-    title: report.title,
-    status: report.status,
-    sectionsCount: Object.keys(report.section_assessments || {}).length
-  });
-
   return (
-    <div className="max-w-4xl mx-auto p-4 space-y-6">
+  <div id="report-content" className="max-w-4xl mx-auto p-4 space-y-6">
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>{report.title}</CardTitle>
             <div className="flex items-center gap-4">
+              <PDFExportButton onClick={handleExportPDF} />
               <ThreadViewButton reportId={report.id} />
               {getStatusBadge(report.status)}
             </div>
@@ -840,7 +889,12 @@ const ReportViewer = () => {
         </CardContent>
       </Card>
 
-      <Accordion type="multiple" className="space-y-4">
+      <Accordion 
+        type="multiple" 
+        className="space-y-4"
+        value={expandedSections}
+        onValueChange={setExpandedSections}
+      >
         {renderSections()}
       </Accordion>
     </div>

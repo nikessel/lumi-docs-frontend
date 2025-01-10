@@ -77,3 +77,54 @@ body {
         left: 300px;
     }
 }
+
+@media print {
+  .printing {
+    /* Hide UI elements during printing */
+    button:not([data-print-show]),
+    .no-print {
+      display: none !important;
+    }
+    
+    /* Force show all accordion content */
+    [data-state="closed"] {
+      display: block !important;
+    }
+    
+    [data-state="open"] {
+      display: block !important;
+    }
+    
+    /* Ensure all content is visible */
+    [role="region"] {
+      display: block !important;
+      height: auto !important;
+      visibility: visible !important;
+    }
+    
+    /* Break pages appropriately */
+    .requirement-card {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    
+    /* Remove interactive styles */
+    * {
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    
+    /* Ensure white background */
+    body {
+      background: white !important;
+    }
+    
+    /* Remove shadows */
+    .shadow,
+    .shadow-sm,
+    .shadow-md,
+    .shadow-lg {
+      box-shadow: none !important;
+    }
+  }
+}
