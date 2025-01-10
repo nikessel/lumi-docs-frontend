@@ -1,6 +1,7 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
+import { File } from '@wasm';
 import { useParams } from 'next/navigation';
 import { useWasm } from '@/components/WasmProvider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,6 +49,68 @@ interface RequirementGroupWrapper {
   content: RequirementGroupAssessment;
   id: string; // Store the ID from the Map key
 }
+
+interface FileSourceListProps {
+  sourceNumbers: number[];
+}
+
+const FileSourceList: React.FC<FileSourceListProps> = ({ sourceNumbers }) => {
+  const { wasmModule } = useWasm();
+  const [files, setFiles] = React.useState<File[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchFiles = async () => {
+      if (!wasmModule || !sourceNumbers.length) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await wasmModule.get_files_by_numbers({ input: sourceNumbers });
+        if (response.output) {
+          setFiles(response.output.output);
+        } else if (response.error) {
+          setError(response.error.message);
+        }
+      } catch (err) {
+        setError('Failed to fetch file information');
+        console.error('Error fetching files:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFiles();
+  }, [wasmModule, sourceNumbers]);
+
+  if (loading) {
+    return <div className="space-y-2">
+      {[...Array(3)].map((_, i) => (
+        <Skeleton key={i} className="h-4 w-full" />
+      ))}
+    </div>;
+  }
+
+  if (error) {
+    return <p className="text-sm text-red-600">Error: {error}</p>;
+  }
+
+  if (!files.length) {
+    return <p className="text-sm text-gray-500">No source files available</p>;
+  }
+
+  return (
+    <ul className="list-disc pl-4">
+      {files.map((file) => (
+        <li key={file.id} className="text-sm text-gray-700">
+          {file.title}
+        </li>
+      ))}
+    </ul>
+  );
+};
 
 type AssessmentWrapper = RequirementWrapper | RequirementGroupWrapper;
 
@@ -415,14 +478,7 @@ const RequirementCard: React.FC<{
             </div>
           )}
           {req.content.sources?.length > 0 && (
-            <div>
-              <h4 className="font-medium mb-1">Source Documents</h4>
-              <ul className="list-disc pl-4">
-                {req.content.sources.map((source, i) => (
-                  <li key={i} className="text-sm text-gray-700">{source}</li>
-                ))}
-              </ul>
-            </div>
+            <FileSourceList sourceNumbers={req.content.sources} />
           )}
           <TaskList 
             reportId={reportId}
