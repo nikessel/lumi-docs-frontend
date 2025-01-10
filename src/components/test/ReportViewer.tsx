@@ -39,11 +39,6 @@ import type {
   TaskStatus,
   RequirementOrRequirementGroupAssessment,
 } from '@wasm';
-import dynamic from 'next/dynamic';
-
-const PDFExportButton = dynamic(() => import('@/components/test/pdf-export-button'), {
-  ssr: false,
-});
 
 interface RequirementWrapper {
   content: RequirementAssessment;
@@ -91,11 +86,13 @@ const FileSourceList: React.FC<FileSourceListProps> = ({ sourceNumbers }) => {
   }, [wasmModule, sourceNumbers]);
 
   if (loading) {
-    return <div className="space-y-2">
-      {[...Array(3)].map((_, i) => (
-        <Skeleton key={i} className="h-4 w-full" />
-      ))}
-    </div>;
+    return (
+      <div className="space-y-2">
+        {[...Array(3)].map((_, i) => (
+          <Skeleton key={`skeleton-${i}`} className="h-4 w-full" />
+        ))}
+      </div>
+    );
   }
 
   if (error) {
@@ -108,8 +105,8 @@ const FileSourceList: React.FC<FileSourceListProps> = ({ sourceNumbers }) => {
 
   return (
     <ul className="list-disc pl-4">
-      {files.map((file) => (
-        <li key={file.id} className="text-sm text-gray-700">
+      {files.map((file, index) => (
+        <li key={`${file.id}-${index}`} className="text-sm text-gray-700">
           {file.title}
         </li>
       ))}
@@ -482,6 +479,8 @@ const RequirementCard: React.FC<{
               </div>
             </div>
           )}
+
+          <h4 className="font-medium mb-1">Sources</h4>
           {req.content.sources?.length > 0 && (
             <FileSourceList sourceNumbers={req.content.sources} />
           )}
@@ -499,10 +498,6 @@ interface RequirementGroupCardProps {
   group: RequirementGroupWrapper;
   reportId: string;
   index: number;
-  expandedRequirements: string[];
-  setExpandedRequirements: (values: string[]) => void;
-  expandedGroups: string[];
-  setExpandedGroups: (values: string[]) => void;
 }
 
 
@@ -510,10 +505,6 @@ const RequirementGroupCard: React.FC<RequirementGroupCardProps> = ({
   group, 
   reportId, 
   index,
-  expandedRequirements,
-  setExpandedRequirements,
-  expandedGroups,
-  setExpandedGroups
 }) => {
   const { wasmModule } = useWasm();
   const [groupDetails, setGroupDetails] = React.useState<RequirementGroup | null>(null);
@@ -551,8 +542,6 @@ const RequirementGroupCard: React.FC<RequirementGroupCardProps> = ({
 <Accordion 
   type="multiple" 
   className="space-y-4"
-  value={expandedRequirements}
-  onValueChange={setExpandedRequirements}
 >
           {Array.from(group.content.assessments.entries() as IterableIterator<[string, RequirementOrRequirementGroupAssessment]>)
             .map(([key, assessment], i) => {
@@ -571,10 +560,6 @@ const RequirementGroupCard: React.FC<RequirementGroupCardProps> = ({
                       group={wrapper}
                       reportId={reportId}
                       index={i} 
-      expandedRequirements={expandedRequirements}
-      setExpandedRequirements={setExpandedRequirements}
-      expandedGroups={expandedGroups}
-      setExpandedGroups={setExpandedGroups}
                     />
                   )}
                 </div>
@@ -716,56 +701,8 @@ const ReportViewer = () => {
   const [loading, setLoading] = React.useState(true);
   const [retryCount, setRetryCount] = React.useState(0);
 const [expandedSections, setExpandedSections] = useState<string[]>([]);
-const [expandedRequirements, setExpandedRequirements] = useState<string[]>([]);
-const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
   
-const expandAll = useCallback(() => {
-  if (!report?.section_assessments) return;
-  
-  // Collect all IDs that need to be expanded
-  const sections: string[] = [];
-  const requirements: string[] = [];
-  const groups: string[] = [];
-
-  Array.from(report.section_assessments.entries()).forEach(([_, section], sectionIndex) => {
-    sections.push(`section-${sectionIndex}`);
-    
-    if (section.requirement_assessments) {
-      Array.from(section.requirement_assessments.entries()).forEach(([_, req], reqIndex) => {
-        const wrapper = createAssessmentWrapper(req, reqIndex.toString());
-        if (isRequirementAssessment(wrapper)) {
-          requirements.push(`req-${reqIndex}`);
-        } else {
-          groups.push(`group-${reqIndex}`);
-          // Handle nested requirements in groups
-          if (wrapper.content.assessments) {
-            Array.from(wrapper.content.assessments.entries()).forEach((_, nestedIndex) => {
-              requirements.push(`nested-req-${nestedIndex}`);
-            });
-          }
-        }
-      });
-    }
-  });
-
-  setExpandedSections(sections);
-  setExpandedRequirements(requirements);
-  setExpandedGroups(groups);
-}, [report]);
-
-const handleExportPDF = useCallback(async () => {
-  expandAll();
-  
-  // Wait longer for DOM to update since we have more content to expand
-  await new Promise(resolve => setTimeout(resolve, 1500));
-  
-  return new Promise<void>((resolve) => {
-    // Signal completion to the PDFExportButton
-    resolve();
-  });
-}, [expandAll]);
-
   useEffect(() => {
     const fetchReport = async () => {
       if (!wasmModule) {
@@ -835,10 +772,6 @@ const handleExportPDF = useCallback(async () => {
       group={wrapper}
       reportId={reportId}
       index={reqIndex}
-      expandedRequirements={expandedRequirements}
-      setExpandedRequirements={setExpandedRequirements}
-      expandedGroups={expandedGroups}
-      setExpandedGroups={setExpandedGroups}
     />
   );
 })}
@@ -867,7 +800,6 @@ const handleExportPDF = useCallback(async () => {
           <div className="flex justify-between items-center">
             <CardTitle>{report.title}</CardTitle>
             <div className="flex items-center gap-4">
-              <PDFExportButton onClick={handleExportPDF} />
               <ThreadViewButton reportId={report.id} />
               {getStatusBadge(report.status)}
             </div>
