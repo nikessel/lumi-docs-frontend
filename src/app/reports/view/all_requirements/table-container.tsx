@@ -1,8 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Table, Breadcrumb } from 'antd';
+import { Table, Breadcrumb, Progress } from 'antd';
 import { Report, Section, Requirement, RequirementGroup, SectionAssessment, RequirementGroupAssessment, RequirementAssessment } from '@wasm';
+import DetailedAssessmentModal from '@/components/detailed-assessment-modal';
+import { getComplianceColorCode } from '@/utils/formating';
+import RegulatoryFrameworkTag from '@/components/regulatory-framework-tag';
 
 // Union type for rows in the table
 type TableRow = (SectionAssessment | RequirementGroupAssessment | RequirementAssessment) & { id: string };
@@ -19,7 +22,16 @@ type BreadcrumbState = {
     data: TableRow[];
 };
 
-const TableContainer: React.FC<TableContainerProps> = ({ reports, sections }) => {
+const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requirements, requirement_groups }) => {
+    const [selectedRequirement, setSelectedRequirement] = useState<{
+        requirement: Requirement | undefined;
+        requirementAssessment: RequirementAssessment | undefined;
+    }>({
+        requirement: undefined,
+        requirementAssessment: undefined,
+    });
+    const [openModal, setOpenModal] = useState<boolean>(false)
+
     const [breadcrumb, setBreadcrumb] = useState<BreadcrumbState[]>([
         {
             title: 'Sections',
@@ -90,7 +102,10 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections }) =>
                 ]);
             }
         } else {
-            console.log('Requirement clicked:', record); // Handle modal or detailed view
+            const { id, ...assessment } = record;
+            console.log("!!!!!1", record)
+            setOpenModal(true)
+            setSelectedRequirement({ requirement: requirements.find((req) => req.id === record.id), requirementAssessment: assessment as RequirementAssessment })
         }
     };
 
@@ -100,18 +115,46 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections }) =>
 
     const columns = [
         {
-            title: 'Section Name',
+            title: 'Title',
             key: 'name',
             render: (_: unknown, record: TableRow) => {
-                // Find the section by its ID
                 const section = sections.find((section) => section.id === record.id);
-                return section ? section.name : record.id; // Fallback to ID if name is not found
+                const requirement = requirements.find((req) => req.id === record.id);
+                const requirementGroup = requirement_groups.find((group) => group.id === record.id);
+
+                // Render with primary and secondary text
+                return section ? (
+                    <div >
+                        <div className="mb-1"><RegulatoryFrameworkTag standard={section.regulatory_framework} /> {section.name}</div>
+                        <small style={{ color: '#888' }}>[add description]</small>
+                    </div>
+                ) : requirement ? (
+                    <div>
+                        <div>{requirement.name}</div>
+                        <small style={{ color: '#888' }}>[add description]</small>
+                    </div>
+                ) : requirementGroup ? (
+                    <div>
+                        <div>{requirementGroup.name}</div>
+                        <small style={{ color: '#888' }}>[add description]</small>
+                    </div>
+                ) : (
+                    <div>
+                        <div>{record.id}</div>
+                        <small style={{ color: '#888' }}>[add description]</small>
+                    </div>
+                );
             },
         },
         {
             title: 'Compliance Rating',
             dataIndex: 'compliance_rating',
             key: 'compliance_rating',
+            render: (_: unknown, record: TableRow) => {
+                return (
+                    <div> <Progress percent={Number(record.compliance_rating)} strokeColor={getComplianceColorCode(Number(record.compliance_rating))} /> </div>
+                )
+            }
         },
         {
             title: '',
@@ -125,13 +168,16 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections }) =>
                                 : 0;
 
                     return (
-                        <a onClick={() => handleRowClick(record)}>
-                            View Children ({childrenCount})
-                        </a>
+                        <div className="w-full flex justify-end">
+                            <a onClick={() => handleRowClick(record)}>
+                                View Children ({childrenCount})
+                            </a>
+                        </div>
                     );
                 }
 
-                return <a onClick={() => console.log('View Details:', record)}>View Details</a>;
+                return <div className="w-full flex justify-end">
+                    <a onClick={() => handleRowClick(record)}>View Details</a></div>;
             },
         },
     ];
@@ -154,7 +200,7 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections }) =>
                     }
 
                     return (
-                        <Breadcrumb.Item key={index}>
+                        <Breadcrumb.Item key={`${index}-${crumb.title}`}>
                             <a onClick={() => handleBreadcrumbClick(index)}>{displayTitle}</a>
                         </Breadcrumb.Item>
                     );
@@ -162,10 +208,11 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections }) =>
             </Breadcrumb>
             <Table
                 dataSource={currentView.data}
-                rowKey={(record) => record.id} // Use the ID as the unique key
+                rowKey={(record) => `${record.id}-${Math.random()}`} // Add a unique suffix to prevent duplicates
                 columns={columns}
                 pagination={false}
             />
+            <DetailedAssessmentModal requirement={selectedRequirement.requirement} requirementAssessment={selectedRequirement.requirementAssessment} onClose={() => setOpenModal(false)} open={openModal} />
         </div>
     );
 };

@@ -77,3 +77,8 @@ body {
         left: 300px;
     }
 }
+
+.file-row {
+    user-select: none;
+    /* Prevents text highlighting */
+}
