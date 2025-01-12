@@ -1,7 +1,7 @@
 export const dbVersion = 1
 export const dbName = "lumi-docs"
 
-const REQUIRED_STORE_NAMES = ["files", "reports", "sections", "requirement_groups", "requirements", "meta"];
+const REQUIRED_STORE_NAMES = ["files", "reports", "sections", "requirement_groups", "requirements", "meta", "user"];
 
 export async function openDatabase(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
@@ -33,6 +33,9 @@ export async function saveData<T>(
     clearStore = false
 ): Promise<void> {
     const db = await openDatabase();
+
+    console.log("userrr !!!! saveData", data, dbName, storeName)
+
 
     const transaction = db.transaction(storeName, "readwrite");
     const store = transaction.objectStore(storeName);
@@ -152,5 +155,45 @@ export async function saveMetadata(
         };
     });
 }
+
+export async function deleteData(
+    dbName: string,
+    storeName: string,
+    dbVersion: number,
+    key?: string | number
+): Promise<void> {
+    const db = await openDatabase();
+
+    const transaction = db.transaction(storeName, "readwrite");
+    const store = transaction.objectStore(storeName);
+
+    return new Promise((resolve, reject) => {
+        if (key !== undefined) {
+            // Delete a specific record by key
+            const request = store.delete(key);
+            request.onsuccess = () => {
+                console.log(`Record with key "${key}" successfully deleted from store "${storeName}".`);
+                resolve();
+            };
+            request.onerror = (event) => {
+                console.error(`Failed to delete record with key "${key}" from store "${storeName}".`, event);
+                reject(request.error);
+            };
+        } else {
+            // Clear all records in the store
+            const request = store.clear();
+            request.onsuccess = () => {
+                console.log(`All data cleared from store "${storeName}".`);
+                resolve();
+            };
+            request.onerror = (event) => {
+                console.error(`Failed to clear store "${storeName}".`, event);
+                reject(request.error);
+            };
+        }
+    });
+}
+
+
 
 

@@ -11,6 +11,7 @@ import LoadingLogoScreen from "@/components/loading-screen";
 import WasmProviderComponent, { useWasm } from "@/components/WasmProvider";
 import '@syncfusion/ej2-base/styles/material.css';
 import '@syncfusion/ej2-react-filemanager/styles/material.css';
+import '@caldwell619/react-kanban/dist/styles.css';
 
 const { Content } = Layout;
 

@@ -7,6 +7,7 @@ import Typography from '@/components/typography';
 import { fetchFiles } from "@/utils/files-utils";
 import { useWasm } from "@/components/WasmProvider";
 import type { File } from "@wasm";
+import FileManager from './file-manager';
 
 const Page = () => {
     const [files, setFiles] = useState<File[]>([]);
@@ -141,8 +142,11 @@ const Page = () => {
         console.log(`Delete file with id: ${id}`);
     };
 
+    console.log("FUILE", files)
+
     return (
         <div>
+
             <div className="flex justify-between items-center">
                 <div>
                     <Typography textSize="h4">Files</Typography>
@@ -156,50 +160,51 @@ const Page = () => {
             {error ? (
                 <Typography color="secondary">{error}</Typography>
             ) : (
-                <List
-                    dataSource={files}
-                    renderItem={(file) => (
-                        <List.Item>
-                            <div className="w-full flex justify-between items-center">
-                                <div className="flex gap-8">
-                                    <Typography>
-                                        {file.title || file.path || file.id}
-                                    </Typography>
+                <FileManager files={files} />
+                // <List
+                //     dataSource={files}
+                //     renderItem={(file) => (
+                //         <List.Item>
+                //             <div className="w-full flex justify-between items-center">
+                //                 <div className="flex gap-8">
+                //                     <Typography>
+                //                         {file.title || file.path || file.id}
+                //                     </Typography>
 
-                                    <Typography color="secondary" textSize="small">
-                                        {new Date(file.created_date).toLocaleDateString() || 'N/A'}
-                                    </Typography>
-                                </div>
-                                <div className="flex gap-4">
-                                    <Button
-                                        size="small"
-                                        loading={viewLoading[file.id]}
-                                        onClick={() => viewFile(file.id)}
-                                        disabled={viewLoading[file.id]}
-                                    >
-                                        View
-                                    </Button>
-                                    <Button
-                                        size="small"
-                                        loading={downloadLoading[file.id]}
-                                        onClick={() => downloadFile(file.id, file.title || file.path || file.id, "application/pdf")}
-                                        disabled={downloadLoading[file.id]}
-                                    >
-                                        Download
-                                    </Button>
-                                    <Button
-                                        type="default"
-                                        size="small"
-                                        danger
-                                        onClick={() => handleDelete(file.id)}
-                                    >
-                                        Delete
-                                    </Button>
-                                </div>
-                            </div>
-                        </List.Item>
-                    )}
-                />
+                //                     <Typography color="secondary" textSize="small">
+                //                         {new Date(file.created_date).toLocaleDateString() || 'N/A'}
+                //                     </Typography>
+                //                 </div>
+                //                 <div className="flex gap-4">
+                //                     <Button
+                //                         size="small"
+                //                         loading={viewLoading[file.id]}
+                //                         onClick={() => viewFile(file.id)}
+                //                         disabled={viewLoading[file.id]}
+                //                     >
+                //                         View
+                //                     </Button>
+                //                     <Button
+                //                         size="small"
+                //                         loading={downloadLoading[file.id]}
+                //                         onClick={() => downloadFile(file.id, file.title || file.path || file.id, "application/pdf")}
+                //                         disabled={downloadLoading[file.id]}
+                //                     >
+                //                         Download
+                //                     </Button>
+                //                     <Button
+                //                         type="default"
+                //                         size="small"
+                //                         danger
+                //                         onClick={() => handleDelete(file.id)}
+                //                     >
+                //                         Delete
+                //                     </Button>
+                //                 </div>
+                //             </div>
+                //         </List.Item>
+                //     )}
+                // />
             )}
         </div>
     );

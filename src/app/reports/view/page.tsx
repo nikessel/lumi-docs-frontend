@@ -4,9 +4,9 @@ import React from 'react';
 import { Button, Divider } from 'antd';
 import { SaveOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import "@/styles/globals.css";
-import ReportSectionSelector from './report-section-selector';
-import ReportCreatedOn from './created-on';
-import FilterBar from './filter-bar';
+import ReportSectionSelector from '@/components/report-section-selector';
+import ReportCreatedOn from '@/components/created-on';
+import FilterBar from '@/components/filter-bar'
 import RequirementGroups from './show-requirement-group';
 import { useSelectedFilteredReports } from '@/hooks/report-hooks'; // Adjust the path if needed
 import ReportStateHandler from '@/components/report-state-handler'

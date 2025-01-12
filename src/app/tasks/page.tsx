@@ -28,7 +28,7 @@ const Page = () => {
         return (
             <div>
                 <div className="flex justify-between items-center">
-                    <Typography textSize="h4">Reports</Typography>
+                    <Typography textSize="h4">Tasks</Typography>
                     <div className="flex items-center space-x-2">
                         <Input
                             placeholder="Search reports"
@@ -46,7 +46,7 @@ const Page = () => {
                 </Typography>
                 <div className="flex flex-col mt-4">
                     {Array.from({ length: 20 }, (_, index) => (
-                        <ReportMetaView key={index} loading={true} openRedirectPath="/reports/view/overview" />
+                        <ReportMetaView key={index} loading={true} openRedirectPath="/tasks/view" />
                     ))}
                 </div>
             </div>
@@ -69,18 +69,12 @@ const Page = () => {
         <div>
             {/* Header Section */}
             <div className="flex justify-between items-center">
-                <Typography textSize="h4">Reports</Typography>
-                <div className="flex items-center space-x-2">
-                    {/* New Button */}
-                    <Button size="small" type="primary" icon={<PlusOutlined />}>
-                        New
-                    </Button>
-                </div>
+                <Typography textSize="h4">Tasks</Typography>
             </div>
             <Divider className="border-thin mt-2 mb-2" />
             <div className="flex justify-between items-center">
                 <Typography color="secondary">
-                    Open a single report or check more for merged view
+                    Select one or multiple reports to view associated tasks
                 </Typography>
                 <div className="flex gap-3">
                     <Input
@@ -97,7 +91,7 @@ const Page = () => {
                         onClick={(e) => {
                             e.stopPropagation(); // Prevent event from propagating to the parent div
                             if (selectedReports.length > 0) {
-                                router.push(`/reports/view/overview?selectedReports=${encodeURIComponent(selectedReports.join(','))}`);
+                                router.push(`/tasks/view?selectedReports=${encodeURIComponent(selectedReports.join(','))}`);
                             }
                         }}
                     >
@@ -115,7 +109,7 @@ const Page = () => {
                         title={report.title}
                         compliance={report.compliance_rating}
                         createdOn={new Date(report.created_date).toLocaleDateString()}
-                        openRedirectPath="/reports/view/overview"
+                        openRedirectPath="/tasks/view"
                     />
                 ))}
             </div>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useWasm } from '@/components/WasmProvider';
 import { fetchSectionsByIds } from '@/utils/sections-utils';
-import { Section, Report } from '@wasm';
+import { Section, Report, RegulatoryFramework } from '@wasm';
 
 interface UseFilteredReportSections {
     sections: Section[];
@@ -51,3 +51,52 @@ export const useFilteredReportSections = (reports: Report[]): UseFilteredReportS
 
     return { sections, loading, error };
 };
+
+interface UseSectionsForFrameworks {
+    sections: Section[];
+    loading: boolean;
+    error: string | null;
+}
+
+export const useSectionsForRegulatoryFrameworks = (
+    frameworks: RegulatoryFramework[]
+): UseSectionsForFrameworks => {
+    const { wasmModule } = useWasm();
+    const [sections, setSections] = useState<Section[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchSections = async () => {
+            if (!wasmModule || frameworks.length === 0) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                setLoading(true);
+
+                const allSections: Section[] = [];
+                for (const framework of frameworks) {
+                    const response = await wasmModule.get_sections_by_regulatory_framework({ input: framework });
+                    if (response.error) {
+                        throw new Error(response.error.message);
+                    }
+                    allSections.push(...response.output?.output || []);
+                }
+
+                setSections(allSections);
+            } catch (err: any) {
+                console.error(err);
+                setError(err?.message || 'Failed to fetch sections.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchSections();
+    }, [wasmModule, frameworks]);
+
+    return { sections, loading, error };
+};
+

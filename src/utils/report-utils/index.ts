@@ -1,5 +1,5 @@
 import { saveData, getData, getMetadata, saveMetadata } from "@/utils/db-utils"
-import type { Report } from "@wasm";
+import type { Report, RequirementAssessment, RequirementGroupAssessment } from "@wasm";
 import type * as WasmModule from "@wasm";
 import { dbName, dbVersion } from "@/utils/db-utils";
 
@@ -263,4 +263,38 @@ export async function getSelectedFilteredReports(
 export function filterReports(reports: Report[]): Report[] {
     // Placeholder logic; return the reports as is
     return reports;
+}
+
+export function extractAllRequirementAssessments(reports: Report[]): (RequirementAssessment & { id: string })[] {
+    const assessments: (RequirementAssessment & { id: string })[] = [];
+
+    // Helper function to extract requirement assessments recursively
+    function extractFromGroup(group: RequirementGroupAssessment, parentId: string) {
+        if (group.assessments) {
+            for (const [key, value] of group.assessments.entries()) {
+                if ('requirement' in value) {
+                    assessments.push({ ...value.requirement, id: key });
+                } else if ('requirement_group' in value) {
+                    extractFromGroup(value.requirement_group, key);
+                }
+            }
+        }
+    }
+
+    reports.forEach((report) => {
+        // Traverse section assessments
+        report.section_assessments.forEach((section, sectionId) => {
+            if (section.requirement_assessments) {
+                for (const [key, value] of section.requirement_assessments.entries()) {
+                    if ('requirement' in value) {
+                        assessments.push({ ...value.requirement, id: key });
+                    } else if ('requirement_group' in value) {
+                        extractFromGroup(value.requirement_group, key);
+                    }
+                }
+            }
+        });
+    });
+
+    return assessments;
 }
