@@ -45,9 +45,9 @@ const Tree: React.FC<TreeProps> = ({
     const treeData = generateMockTreeData(numberOfGroups, requirementsPerGroup);
 
     return (
-        <div style={{ height: 400, position: 'relative' }}>
+        <div style={{ height: 500, position: 'relative' }}>
             {/* Legend */}
-            <div
+            {/* <div
                 style={{
                     position: 'absolute',
                     top: 10,
@@ -110,11 +110,11 @@ const Tree: React.FC<TreeProps> = ({
                         All tasks implemented
                     </li>
                 </ul>
-            </div>
+            </div> */}
             <ResponsiveTree<TreeNode>
                 data={treeData}
                 identity="id"
-                margin={{ top: 90, right: 90, bottom: 90, left: 90 }}
+                margin={{ top: 20, right: 10, bottom: 90, left: 10 }}
                 nodeColor={(node) => getNodeColor(node)} // Use the color function
                 linkThickness={2}
                 activeLinkThickness={8}
@@ -180,104 +180,3 @@ const Tree: React.FC<TreeProps> = ({
 export default Tree;
 
 
-
-
-
-
-
-
-
-
-
-// import React from 'react';
-// import { ResponsiveTreeCanvas, ResponsiveTree } from '@nivo/tree';
-// import type { Report, SectionAssessment, RequirementAssessment, RequirementGroupAssessment } from '@wasm';
-
-// type SectionData = {
-//     section_id: string;
-//     title: string;
-//     compliance_rating: number;
-// };
-
-// type TreeNode = {
-//     id: string;
-//     children?: TreeNode[];
-// };
-
-// type TreeCanvasProps = {
-//     sectionListData: SectionData[];
-//     reports: Report[];
-// };
-
-// const TreeCanvas: React.FC<TreeCanvasProps> = ({ sectionListData, reports }) => {
-//     // Transform data to fit Nivo TreeCanvas format
-//     const buildTreeData = (): TreeNode => {
-//         const report = reports[0]; // Assuming a single report for simplicity
-//         console.log("report", report);
-
-//         const firstSection = sectionListData[0]; // Only use the first section
-
-//         const sectionAssessment = report.section_assessments.find(
-//             (assessment: SectionAssessment) => assessment.section_id === firstSection.section_id
-//         );
-
-//         return {
-//             id: `Section 1`,
-//             children: sectionAssessment?.requirement_assessments?.map((req, reqIndex): TreeNode | null => {
-//                 if (req.type === 'requirement_group' && 'assessments' in req.content) {
-//                     const group = req.content as RequirementGroupAssessment;
-//                     return {
-//                         id: `Group ${reqIndex + 1}`,
-//                         children: group.assessments?.map((assessment, assessmentIndex): TreeNode => ({
-//                             id: `Req ${assessmentIndex + 1}`,
-//                         })) || [],
-//                     };
-//                 }
-
-//                 if (req.type === 'requirement') {
-//                     const requirement = req.content as RequirementAssessment;
-//                     return {
-//                         id: `Req ${reqIndex + 1}`,
-//                     };
-//                 }
-
-//                 return null;
-//             }).filter(Boolean) as TreeNode[] || [],
-//         };
-//     };
-
-//     const treeData = buildTreeData();
-
-//     console.log("treeData", treeData)
-
-//     return (
-//         <div style={{ height: 600 }}>
-//             <ResponsiveTreeCanvas
-//                 data={treeData}
-//                 identity="id"
-//                 margin={{ top: 50, right: 50, bottom: 50, left: 50 }}
-//                 nodeColor={{ scheme: 'nivo' }}
-//                 linkColor={{ from: 'source.color', modifiers: [['opacity', 0.4]] }}
-//                 nodeSize={12}
-//                 linkThickness={2}
-//                 layout="top-to-bottom"
-//                 label={(node: any) => node.id}
-//                 enableLabel={true}
-//             // tooltip={({ node }: { node: { id: string } }) => (
-//             //     <div
-//             //         style={{
-//             //             background: 'white',
-//             //             padding: '5px',
-//             //             border: '1px solid #ccc',
-//             //             borderRadius: '4px',
-//             //         }}
-//             //     >
-//             //         <strong>{node.id}</strong>
-//             //     </div>
-//             // )}
-//             />
-//         </div>
-//     );
-// };
-
-// export default TreeCanvas;

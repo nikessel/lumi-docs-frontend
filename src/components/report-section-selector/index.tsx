@@ -12,9 +12,6 @@ interface SectionAssessment {
     section_id: string;
 }
 
-// interface Report extends Omit<WasmReport, 'section_assessments'> {
-//     section_assessments: Map<string, SectionAssessment>;
-// }
 
 interface ReportSectionSelectorProps {
     reports?: Report[];

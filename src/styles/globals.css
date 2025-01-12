@@ -20,11 +20,9 @@ body {
         --fg-primary-dim: rgba(0, 0, 0, 0.5);
         --muted: #f5f5f5;
         --border: #d9d9d9;
-
         /* Spacing and Radius */
         --radius: 0.5rem;
     }
-
     .dark {
         /* Override for dark mode */
         --primary: #ffffff;
@@ -43,7 +41,6 @@ body {
 .border-thin {
     border-width: "0.5px";
 }
-
 
 .loader {
     background: var(--bg-secondary);
@@ -68,63 +65,66 @@ body {
     0% {
         left: 300px;
     }
-
     50% {
         left: 0;
     }
-
     100% {
         left: 300px;
     }
 }
 
+.file-row {
+    user-select: none;
+    /* Prevents text highlighting */
+}
+
 @media print {
-  .printing {
-    /* Hide UI elements during printing */
-    button:not([data-print-show]),
-    .no-print {
-      display: none !important;
+    .printing {
+        /* Hide UI elements during printing */
+        button:not([data-print-show]),
+        .no-print {
+            display: none !important;
+        }
+        
+        /* Force show all accordion content */
+        [data-state="closed"] {
+            display: block !important;
+        }
+        
+        [data-state="open"] {
+            display: block !important;
+        }
+        
+        /* Ensure all content is visible */
+        [role="region"] {
+            display: block !important;
+            height: auto !important;
+            visibility: visible !important;
+        }
+        
+        /* Break pages appropriately */
+        .requirement-card {
+            break-inside: avoid;
+            page-break-inside: avoid;
+        }
+        
+        /* Remove interactive styles */
+        * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        
+        /* Ensure white background */
+        body {
+            background: white !important;
+        }
+        
+        /* Remove shadows */
+        .shadow,
+        .shadow-sm,
+        .shadow-md,
+        .shadow-lg {
+            box-shadow: none !important;
+        }
     }
-    
-    /* Force show all accordion content */
-    [data-state="closed"] {
-      display: block !important;
-    }
-    
-    [data-state="open"] {
-      display: block !important;
-    }
-    
-    /* Ensure all content is visible */
-    [role="region"] {
-      display: block !important;
-      height: auto !important;
-      visibility: visible !important;
-    }
-    
-    /* Break pages appropriately */
-    .requirement-card {
-      break-inside: avoid;
-      page-break-inside: avoid;
-    }
-    
-    /* Remove interactive styles */
-    * {
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-    
-    /* Ensure white background */
-    body {
-      background: white !important;
-    }
-    
-    /* Remove shadows */
-    .shadow,
-    .shadow-sm,
-    .shadow-md,
-    .shadow-lg {
-      box-shadow: none !important;
-    }
-  }
 }

@@ -1,5 +1,3 @@
-// src/components/AppSiderComponent.tsx
-
 'use client';
 import React, { useState, useEffect } from "react";
 import { Layout, Menu, Divider } from "antd";
@@ -7,16 +5,14 @@ import { FilePdfOutlined, FileDoneOutlined, ProjectOutlined, BarChartOutlined, F
 import SidebarToggleButton from "./sider-toggle-button";
 import SiderLogo from "./sider-logo";
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-
+import { usePathname } from 'next/navigation';
 
 const { Sider } = Layout;
-// const { SubMenu } = Menu;
 
 const AppSiderComponent: React.FC = () => {
     const [collapsed, setCollapsed] = useState(false);
     const [showToggleButton, setShowToggleButton] = useState(true);
-    const searchParams = useSearchParams(); // Read the current search params
+    const pathname = usePathname();
 
     const checkWindowWidth = () => {
         if (window.innerWidth <= 1200) {
@@ -40,11 +36,58 @@ const AppSiderComponent: React.FC = () => {
         setCollapsed(!collapsed);
     };
 
-    // Helper function to append query params
-    const createUrlWithParams = (basePath: string) => {
-        const params = searchParams.toString();
-        return `${basePath}${params ? `?${params}` : ''}`;
+    const getBasePath = (path: string) => {
+        const segments = path.split('/');
+        return `/${segments[1]}`; // Return the first-level route
     };
+
+    const activeKey = getBasePath(pathname); // Get the base path of the current URL
+
+    const menuItems = [
+        {
+            key: "/dashboard",
+            icon: <BarChartOutlined />,
+            label: <Link href="/dashboard">Dashboard</Link>,
+        },
+        {
+            key: "/reports",
+            icon: <FileDoneOutlined />,
+            label: <Link href="/reports">Reports</Link>,
+        },
+        {
+            key: "/tasks",
+            icon: <ProjectOutlined />,
+            label: <Link href="/tasks">Tasks</Link>,
+        },
+        {
+            key: "/files",
+            icon: <FilePdfOutlined />,
+            label: <Link href="/files">Files</Link>,
+        },
+        {
+            key: "/standards",
+            icon: <FileSearchOutlined />,
+            label: <Link href="/standards">Standards</Link>,
+        },
+    ];
+
+    const accountMenuItems = [
+        {
+            key: "/settings",
+            icon: <SettingOutlined />,
+            label: <Link href="/settings">Settings</Link>,
+        },
+        {
+            key: "/billing",
+            icon: <CreditCardOutlined />,
+            label: <Link href="/billing">Billing</Link>,
+        },
+        {
+            key: "/",
+            icon: <LogoutOutlined />,
+            label: <Link href="/">Sign out</Link>,
+        },
+    ];
 
     return (
         <Sider
@@ -57,73 +100,19 @@ const AppSiderComponent: React.FC = () => {
                 <div>
                     {showToggleButton && <SidebarToggleButton collapsed={collapsed} onToggle={toggleCollapse} />}
                     <SiderLogo collapsed={collapsed} />
-                    <Divider></Divider>
+                    <Divider />
                     <Menu
                         mode="inline"
-                        defaultSelectedKeys={["1"]}
-                        items={[
-                            {
-                                key: "1",
-                                icon: <BarChartOutlined />,
-                                label: <Link href="/dashboard">Dashboard</Link>,
-                            },
-                            {
-                                key: "2",
-                                icon: <FileDoneOutlined />,
-                                label: "Reports",
-                                children: [
-                                    {
-                                        key: "2-1",
-                                        label: <Link href="/reports/overview">Overview</Link>,
-                                    },
-                                    {
-                                        key: "2-2",
-                                        label: <Link href={createUrlWithParams("/reports/all_requirements")}>All Requirements</Link>,
-                                    },
-                                    {
-                                        key: "2-3",
-                                        label: <Link href="/reports/findings">Key Issues</Link>,
-                                    },
-                                ],
-                            },
-                            {
-                                key: "3",
-                                icon: <ProjectOutlined />,
-                                label: <Link href="/files">Tasks</Link>,
-                            },
-                            {
-                                key: "3",
-                                icon: <FilePdfOutlined />,
-                                label: <Link href="/files">Files</Link>,
-                            },
-                            {
-                                key: "4",
-                                icon: <FileSearchOutlined />,
-                                label: <Link href="/standards">Standards</Link>,
-                            },
-                        ]}
+                        selectedKeys={[activeKey]} // Highlight the menu item for the base path
+                        items={menuItems}
                     />
-                    <Divider orientation="left"><div className="text-xs">Account</div></Divider>
+                    <Divider orientation="left">
+                        <div className="text-xs">Account</div>
+                    </Divider>
                     <Menu
                         mode="inline"
-                        defaultSelectedKeys={["1"]}
-                        items={[
-                            {
-                                key: "5",
-                                icon: <SettingOutlined />,
-                                label: <Link href="/settings">Settings</Link>,
-                            },
-                            {
-                                key: "6",
-                                icon: <CreditCardOutlined />,
-                                label: <Link href="/billing">Billing</Link>,
-                            },
-                            {
-                                key: "7",
-                                icon: <LogoutOutlined />,
-                                label: <Link href="/">Sign out</Link>,
-                            },
-                        ]}
+                        selectedKeys={[activeKey]} // Highlight the menu item for the base path
+                        items={accountMenuItems}
                     />
                 </div>
             </div>

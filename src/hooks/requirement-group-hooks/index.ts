@@ -5,6 +5,7 @@ import {
     RequirementGroup,
     Report,
     RequirementOrRequirementGroupAssessment,
+    Section
 } from "@wasm";
 
 interface UseFilteredReportsRequirementGroups {
@@ -77,6 +78,67 @@ export const useFilteredReportsRequirementGroups = (
 
         fetchRequirementGroups();
     }, [wasmModule, reports]);
+
+    return { requirementGroups, loading, error };
+};
+
+interface UseRequirementGroupsForSections {
+    requirementGroups: RequirementGroupWithSectionId[];
+    loading: boolean;
+    error: string | null;
+}
+
+// Extend RequirementGroup to include `section_id`
+interface RequirementGroupWithSectionId extends RequirementGroup {
+    section_id: string;
+}
+
+export const useRequirementGroupsForSectionIds = (
+    sectionIds: string[]
+): UseRequirementGroupsForSections => {
+    const { wasmModule } = useWasm();
+    const [requirementGroups, setRequirementGroups] = useState<RequirementGroupWithSectionId[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchRequirementGroups = async () => {
+            if (!wasmModule || sectionIds.length === 0) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                setLoading(true);
+                const allGroups: RequirementGroupWithSectionId[] = [];
+
+                for (const sectionId of sectionIds) {
+                    const response = await wasmModule.get_requirement_groups_by_section({ input: sectionId });
+
+                    if (response.error) {
+                        throw new Error(response.error.message);
+                    }
+
+                    // Add `section_id` to each group
+                    const groupsWithSectionId = (response.output?.output || []).map((group: RequirementGroup) => ({
+                        ...group,
+                        section_id: sectionId,
+                    }));
+
+                    allGroups.push(...groupsWithSectionId);
+                }
+
+                setRequirementGroups(allGroups);
+            } catch (err: any) {
+                console.error('Error fetching requirement groups:', err);
+                setError(err.message || 'Failed to fetch requirement groups.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRequirementGroups();
+    }, [wasmModule, sectionIds]);
 
     return { requirementGroups, loading, error };
 };
