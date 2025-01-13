@@ -23,6 +23,15 @@ const Page = () => {
             report.regulatory_framework.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
+    const sortedReports = filteredReports.sort((a, b) => {
+        if (a.status === "processing" && b.status !== "processing") {
+            return 1; // Move "processing" to the bottom
+        } else if (a.status !== "processing" && b.status === "processing") {
+            return -1; // Keep non-"processing" at the top
+        }
+        return 0; // Maintain the original order otherwise
+    });
+
     // Render loading placeholders
     if (loading) {
         return (
@@ -46,7 +55,7 @@ const Page = () => {
                 </Typography>
                 <div className="flex flex-col mt-4">
                     {Array.from({ length: 20 }, (_, index) => (
-                        <ReportMetaView key={index} loading={true} openRedirectPath="/tasks/view" />
+                        <ReportMetaView key={index} report={null} loading={true} openRedirectPath="/tasks/view" />
                     ))}
                 </div>
             </div>
@@ -101,14 +110,10 @@ const Page = () => {
             </div>
 
             <div className="flex flex-col mt-4">
-                {filteredReports.map((report) => (
+                {sortedReports.map((report) => (
                     <ReportMetaView
-                        id={report.id}
                         key={report.id}
-                        regulatoryFramework={report.regulatory_framework}
-                        title={report.title}
-                        compliance={report.compliance_rating}
-                        createdOn={new Date(report.created_date).toLocaleDateString()}
+                        report={report}
                         openRedirectPath="/tasks/view"
                     />
                 ))}

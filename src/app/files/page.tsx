@@ -8,11 +8,11 @@ import { fetchFiles } from "@/utils/files-utils";
 import { useWasm } from "@/components/WasmProvider";
 import type { File } from "@wasm";
 import FileManager from './file-manager';
+import { useFiles } from '@/hooks/files-hooks';
 
 const Page = () => {
-    const [files, setFiles] = useState<File[]>([]);
-    const [error, setError] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const { files, isLoading, error } = useFiles();
+
     const { wasmModule, isLoading: wasmLoading } = useWasm();
 
     const [fileData, setFileData] = useState<{ [id: string]: Uint8Array }>({});
@@ -23,7 +23,6 @@ const Page = () => {
     // Function to fetch file data
     const fetchFileData = useCallback(async (fileId: string) => {
         if (!wasmModule) {
-            setError("WASM module not loaded");
             return null;
         }
 
@@ -40,11 +39,9 @@ const Page = () => {
                 return data;
             } else if (response.error) {
                 console.error(`Error fetching data for file ${fileId}:`, response.error.message);
-                setError(`Failed to load file: ${response.error.message}`);
             }
         } catch (err) {
             console.error("Error fetching file data:", err);
-            setError("Failed to load file");
         }
         return null;
     }, [wasmModule, fileData]);
@@ -93,27 +90,6 @@ const Page = () => {
         }
     }, [fetchFileData]);
 
-    // Fetch files
-    useEffect(() => {
-        const loadFiles = async () => {
-            setIsLoading(true);
-            try {
-                const { files, error } = await fetchFiles(wasmModule);
-                if (error) {
-                    setError(error);
-                } else {
-                    setError(null);
-                    setFiles(files);
-                }
-            } catch (err) {
-                console.error("Error loading files:", err);
-                setError("Failed to load files");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        loadFiles();
-    }, [wasmModule]);
 
     if (isLoading || wasmLoading) {
         return (
@@ -141,8 +117,6 @@ const Page = () => {
     const handleDelete = (id: string) => {
         console.log(`Delete file with id: ${id}`);
     };
-
-    console.log("FUILE", files)
 
     return (
         <div>

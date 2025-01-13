@@ -52,6 +52,7 @@ export const useFilteredReportSections = (reports: Report[]): UseFilteredReportS
     return { sections, loading, error };
 };
 
+// Hook: Use Sections for Regulatory Frameworks
 interface UseSectionsForFrameworks {
     sections: Section[];
     loading: boolean;
@@ -82,7 +83,7 @@ export const useSectionsForRegulatoryFrameworks = (
                     if (response.error) {
                         throw new Error(response.error.message);
                     }
-                    allSections.push(...response.output?.output || []);
+                    allSections.push(...(response.output?.output || []));
                 }
 
                 setSections(allSections);
