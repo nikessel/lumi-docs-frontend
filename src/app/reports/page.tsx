@@ -8,6 +8,7 @@ import ReportMetaView from "@/components/report-meta-view";
 import { useRouter } from "next/navigation";
 import { useAllReports } from '@/hooks/report-hooks';
 import { useUrlSelectedReports } from '@/hooks/url-hooks';
+import CreateReportModal from "@/components/create-report/create-report-modal";
 
 const Page = () => {
     const { reports, loading, error } = useAllReports();
@@ -81,9 +82,7 @@ const Page = () => {
                 <Typography textSize="h4">Reports</Typography>
                 <div className="flex items-center space-x-2">
                     {/* New Button */}
-                    <Button size="small" type="primary" icon={<PlusOutlined />}>
-                        New
-                    </Button>
+                    <CreateReportModal />
                 </div>
             </div>
             <Divider className="border-thin mt-2 mb-2" />
