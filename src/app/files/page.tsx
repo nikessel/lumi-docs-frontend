@@ -9,6 +9,7 @@ import { useWasm } from "@/components/WasmProvider";
 import type { File } from "@wasm";
 import FileManager from './file-manager';
 import { useFiles } from '@/hooks/files-hooks';
+import FileUploadModal from '@/components/upload-files/file-upload-modal';
 
 const Page = () => {
     const { files, isLoading, error } = useFiles();
@@ -19,6 +20,7 @@ const Page = () => {
     const [blobUrls, setBlobUrls] = useState<{ [id: string]: string }>({});
     const [viewLoading, setViewLoading] = useState<{ [id: string]: boolean }>({});
     const [downloadLoading, setDownloadLoading] = useState<{ [id: string]: boolean }>({});
+    const [isModalVisible, setIsModalVisible] = useState(false); // State for modal visibility
 
     // Function to fetch file data
     const fetchFileData = useCallback(async (fileId: string) => {
@@ -118,6 +120,15 @@ const Page = () => {
         console.log(`Delete file with id: ${id}`);
     };
 
+    const handleUploadComplete = (uploadedFiles: File[]) => {
+        // Perform any additional actions after upload, e.g., refresh the file list
+        console.log("Uploaded files:", uploadedFiles);
+        // Optionally, trigger a re-fetch of files here
+    };
+
+    const handleOpenModal = () => setIsModalVisible(true);
+    const handleCloseModal = () => setIsModalVisible(false);
+
     return (
         <div>
 
@@ -125,9 +136,13 @@ const Page = () => {
                 <div>
                     <Typography textSize="h4">Files</Typography>
                 </div>
-                <div className="flex items-center space-x-2">
-                    <Button type="primary" icon={<UploadOutlined />}>Upload</Button>
-                </div>
+                <Button
+                    type="primary"
+                    icon={<UploadOutlined />}
+                    onClick={handleOpenModal}
+                >
+                    Upload
+                </Button>
             </div>
             <Divider className="border-thin mt-2 mb-2" />
 
@@ -135,6 +150,7 @@ const Page = () => {
                 <Typography color="secondary">{error}</Typography>
             ) : (
                 <FileManager files={files} />
+
                 // <List
                 //     dataSource={files}
                 //     renderItem={(file) => (
@@ -180,6 +196,11 @@ const Page = () => {
                 //     )}
                 // />
             )}
+            <FileUploadModal
+                visible={isModalVisible}
+                onClose={handleCloseModal}
+                onUploadComplete={handleUploadComplete}
+            />
         </div>
     );
 };

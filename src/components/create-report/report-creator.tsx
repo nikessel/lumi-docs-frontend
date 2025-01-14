@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Button, Steps, Select } from "antd";
-import SelectSections from "./section-step";
+import SelectSections from "./section-selector";
 import SelectDocuments from "./document-selector";
 import Typography from "../typography";
 import { getSupportedFrameworks } from "@/utils/regulatory-frameworks-utils";
@@ -12,6 +12,7 @@ import { useFiles } from '@/hooks/files-hooks';
 import { notification } from "antd";
 import { useRequirementGroupsForSectionIds } from "@/hooks/requirement-group-hooks";
 import { useRequirementsForGroupIds } from "@/hooks/requirement-hooks";
+import SelectRequirementGroups from "./requirement-group-selector";
 
 const { Step } = Steps;
 
@@ -36,6 +37,19 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
     const { requirements, loading: requirementsLoading } = useRequirementsForGroupIds(requrementGroupIds)
     const requirementIds = useMemo(() => requirements.map(f => f.id), [requirements]);
     const [api, contextHolder] = notification.useNotification();
+    const [selectedRequirementGroups, setSelectedRequirementGroups] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (sections && sections.length > 0) {
+            setSelectedSections(sections.map((section) => section.id));
+        }
+    }, [sections]);
+
+    useEffect(() => {
+        if (requirementGroups && requirementGroups.length > 0) {
+            setSelectedRequirementGroups(requirementGroups.map((group) => group.id));
+        }
+    }, [requirementGroups]);
 
     useEffect(() => {
         if (sections && Array.isArray(sections)) {
@@ -51,11 +65,11 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
 
     const steps = [
         {
-            title: "Select Framework",
+            title: "Regulatory Framework",
             content: (
                 <div className="pb-2">
                     <Typography textSize="h6" className="mb-4">Select Regulatory Framework</Typography>
-                    <Typography className="my-4" >Select the regulatory framework you wish to validate your documents against</Typography>
+                    <Typography className="my-4 leading-6" color="secondary" >Select the regulatory framework you wish to validate your documents against</Typography>
                     <Select
                         showSearch
                         value={selectedFramework}
@@ -67,16 +81,16 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                         style={{ width: "100%" }}
                         placeholder="Select Regulatory Framework"
                     />
-                    <Typography className="mt-4" color="secondary">{selectedFramework ? frameworks.find((standard) => standard.id === selectedFramework)?.description : ""}</Typography>
+                    <Typography className="my-4 leading-6" color="secondary">{selectedFramework ? frameworks.find((standard) => standard.id === selectedFramework)?.description : ""}</Typography>
                 </div>
             ),
         },
         {
-            title: "Select Sections",
+            title: "Sections",
             content: (
                 <div>
                     <Typography textSize="h6" className="mb-4">Select Sections</Typography>
-                    <Typography className="my-4 leading-5" >As default LumiDocs divides the analysis into {sections.length} sections related to {formatRegulatoryFramework(selectedFramework)}. If you are only interested in a subset of these sections, you can select them below.</Typography>
+                    <Typography className="my-4 leading-6" color="secondary" >As default LumiDocs divides the analysis into {sections.length} sections related to {formatRegulatoryFramework(selectedFramework)}. If you are only interested in a subset of these sections, you can select them below.</Typography>
                     <SelectSections
                         sections={sections.map((section) => ({
                             id: section.id,
@@ -89,11 +103,30 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
             ),
         },
         {
-            title: "Select Documents",
+            title: "Requirement Groups",
+            content: (
+                <div>
+                    <Typography textSize="h6" className="mb-4">Select Requirement Groups</Typography>
+                    <Typography className="my-4 leading-6" color="secondary">
+                        Based on your selected sections, LumiDocs has identified {requirementGroups.length} requirement groups. You can select a subset of these groups to include in the report below.
+                    </Typography>
+                    <SelectRequirementGroups
+                        requirementGroups={requirementGroups.map((group) => ({
+                            id: group.id,
+                            name: group.name,
+                        }))}
+                        selectedRequirementGroups={selectedRequirementGroups}
+                        setSelectedRequirementGroups={setSelectedRequirementGroups}
+                    />
+                </div>
+            ),
+        },
+        {
+            title: "Documents",
             content: (
                 <div>
                     <Typography textSize="h6" className="mb-4">Select Documents</Typography>
-                    <Typography className="my-4 leading-5" >LumiDocs will read through all the available documents to identify the most relevant information. However, if you have conflicting versions or ambigious information (e.g. several products or trials), you can select specific documents to validate against {formatRegulatoryFramework(selectedFramework)} below.</Typography>
+                    <Typography className="my-4 leading-6" color="secondary">LumiDocs will read through all the available documents to identify the most relevant information. However, if you have conflicting versions or ambigious information (e.g. several products or trials), you can select specific documents to validate against {formatRegulatoryFramework(selectedFramework)} below.</Typography>
                     <SelectDocuments
                         documents={files.map((file) => ({
                             id: file.id,
@@ -184,7 +217,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
         <div className="pt-4">
             {contextHolder}
 
-            <Steps current={currentStep} className="mb-6">
+            <Steps current={currentStep} className="mb-6" size="small">
                 {steps.map((step, index) => (
                     <Step key={index} title={step.title} />
                 ))}

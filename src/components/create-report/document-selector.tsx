@@ -49,7 +49,7 @@ const SelectDocuments: React.FC<SelectDocumentsProps> = ({
             {/* All Documents Checkbox with Show Documents Button */}
             <div className="flex items-center">
                 <Checkbox
-                    checked={allDocumentsSelected}
+                    checked={selectedDocuments.length === documents.length}
                     onChange={(e) => handleAllDocumentsToggle(e.target.checked)}
                 >
                     All Documents ({documents.length})
