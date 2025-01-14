@@ -4,12 +4,13 @@ import { List, Checkbox, Button } from "antd";
 interface Document {
     id: string;
     name: string;
+    number: number;
 }
 
 interface SelectDocumentsProps {
     documents: Document[];
-    selectedDocuments: string[];
-    setSelectedDocuments: React.Dispatch<React.SetStateAction<string[]>>;
+    selectedDocuments: number[];
+    setSelectedDocuments: React.Dispatch<React.SetStateAction<number[]>>;
 }
 
 const SelectDocuments: React.FC<SelectDocumentsProps> = ({
@@ -23,18 +24,18 @@ const SelectDocuments: React.FC<SelectDocumentsProps> = ({
     const handleAllDocumentsToggle = (checked: boolean) => {
         setAllDocumentsSelected(checked);
         if (checked) {
-            setSelectedDocuments(documents.map((document) => document.id)); // Select all documents
+            setSelectedDocuments(documents.map((document) => document.number)); // Select all documents
         } else {
             setSelectedDocuments([]); // Deselect all documents
         }
     };
 
-    const handleDocumentSelect = (id: string) => {
+    const handleDocumentSelect = (document_number: number) => {
         setSelectedDocuments((prev) => {
-            if (prev.includes(id)) {
-                return prev.filter((documentId) => documentId !== id);
+            if (prev.includes(document_number)) {
+                return prev.filter((documentId) => documentId !== document_number);
             } else {
-                return [...prev, id];
+                return [...prev, document_number];
             }
         });
     };
@@ -70,8 +71,8 @@ const SelectDocuments: React.FC<SelectDocumentsProps> = ({
                     renderItem={(document) => (
                         <List.Item>
                             <Checkbox
-                                checked={selectedDocuments.includes(document.id)}
-                                onChange={() => handleDocumentSelect(document.id)}
+                                checked={selectedDocuments.includes(document.number)}
+                                onChange={() => handleDocumentSelect(document.number)}
                             >
                                 {document.name}
                             </Checkbox>

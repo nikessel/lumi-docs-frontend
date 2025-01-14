@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Button, Steps, Alert, Select } from "antd";
+import { Button, Steps, Select } from "antd";
 import SelectSections from "./section-step";
 import SelectDocuments from "./document-selector";
 import Typography from "../typography";
 import { getSupportedFrameworks } from "@/utils/regulatory-frameworks-utils";
 import { formatRegulatoryFramework } from "@/utils/helpers";
-import type { Section, RegulatoryFramework } from "@wasm";
+import type { RegulatoryFramework } from "@wasm";
 import { useWasm } from '@/components/WasmProvider';
 import { useSectionsForRegulatoryFrameworks } from "@/hooks/section-hooks";
 import { useFiles } from '@/hooks/files-hooks';
@@ -23,8 +23,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
     const [currentStep, setCurrentStep] = useState(0);
     const [selectedFramework, setSelectedFramework] = useState<string>("mdr");
     const [selectedSections, setSelectedSections] = useState<string[]>([]);
-    const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]);
-    const [error, setError] = useState<string>("");
+    const [selectedDocumentNumbers, setSelectedDocumentNumbers] = useState<number[]>([]);
     const frameworks = getSupportedFrameworks();
     const frameworkIds = useMemo(() => [selectedFramework as RegulatoryFramework], [selectedFramework]);
 
@@ -46,7 +45,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
 
     useEffect(() => {
         if (files && Array.isArray(files)) {
-            setSelectedDocuments(files.map((file) => file.id));
+            setSelectedDocumentNumbers(files.map((file) => file.number));
         }
     }, [files]);
 
@@ -99,9 +98,10 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                         documents={files.map((file) => ({
                             id: file.id,
                             name: file.title,
+                            number: file.number,
                         }))}
-                        selectedDocuments={selectedDocuments}
-                        setSelectedDocuments={setSelectedDocuments}
+                        selectedDocuments={selectedDocumentNumbers}
+                        setSelectedDocuments={setSelectedDocumentNumbers}
                     />
                 </div>
             ),
@@ -126,13 +126,17 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
             return;
         }
 
+       // Initialize filter object with all properties as undefined
+        const filter = {
+            sections_to_include: selectedSections.length > 0 ? selectedSections : undefined,
+            requirements_to_include: requirementIds.length > 0 ? requirementIds : undefined,
+            requirement_groups_to_include: requrementGroupIds.length > 0 ? requrementGroupIds : undefined,
+            document_numbers_to_include: selectedDocumentNumbers.length > 0 ? selectedDocumentNumbers : undefined,
+        };
+
         const input = {
             regulatory_framework: selectedFramework as RegulatoryFramework,
-            filter: {
-                sections_to_include: selectedSections,
-                requirements_to_include: requirementIds,
-                requirement_groups_to_include: requrementGroupIds
-            },
+            filter,
         };
 
         let errorResponse: string = ""
@@ -161,7 +165,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
             // Clear the state and close the modal
             setSelectedFramework("mdr");
             setSelectedSections([]);
-            setSelectedDocuments([]);
+            setSelectedDocumentNumbers([]);
             setCurrentStep(0);
             onReportSubmitted()
         } catch (error) {
