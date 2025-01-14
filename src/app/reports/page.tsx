@@ -8,6 +8,7 @@ import ReportMetaView from "@/components/report-meta-view";
 import { useRouter } from "next/navigation";
 import { useAllReports } from '@/hooks/report-hooks';
 import { useUrlSelectedReports } from '@/hooks/url-hooks';
+import CreateReportModal from "@/components/create-report/create-report-modal";
 
 const Page = () => {
     const { reports, loading, error } = useAllReports();
@@ -22,6 +23,15 @@ const Page = () => {
             report.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             report.regulatory_framework.toLowerCase().includes(searchQuery.toLowerCase())
     );
+
+    const sortedReports = filteredReports.sort((a, b) => {
+        if (a.status === "processing" && b.status !== "processing") {
+            return 1; // Move "processing" to the bottom
+        } else if (a.status !== "processing" && b.status === "processing") {
+            return -1; // Keep non-"processing" at the top
+        }
+        return 0; // Maintain the original order otherwise
+    });
 
     // Render loading placeholders
     if (loading) {
@@ -46,7 +56,7 @@ const Page = () => {
                 </Typography>
                 <div className="flex flex-col mt-4">
                     {Array.from({ length: 20 }, (_, index) => (
-                        <ReportMetaView key={index} loading={true} openRedirectPath="/reports/view/overview" />
+                        <ReportMetaView key={index} report={null} loading={true} openRedirectPath="/reports/view/overview" />
                     ))}
                 </div>
             </div>
@@ -72,9 +82,7 @@ const Page = () => {
                 <Typography textSize="h4">Reports</Typography>
                 <div className="flex items-center space-x-2">
                     {/* New Button */}
-                    <Button size="small" type="primary" icon={<PlusOutlined />}>
-                        New
-                    </Button>
+                    <CreateReportModal />
                 </div>
             </div>
             <Divider className="border-thin mt-2 mb-2" />
@@ -107,14 +115,10 @@ const Page = () => {
             </div>
 
             <div className="flex flex-col mt-4">
-                {filteredReports.map((report) => (
+                {sortedReports.map((report) => (
                     <ReportMetaView
-                        id={report.id}
+                        report={report}
                         key={report.id}
-                        regulatoryFramework={report.regulatory_framework}
-                        title={report.title}
-                        compliance={report.compliance_rating}
-                        createdOn={new Date(report.created_date).toLocaleDateString()}
                         openRedirectPath="/reports/view/overview"
                     />
                 ))}

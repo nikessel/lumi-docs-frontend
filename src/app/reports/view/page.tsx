@@ -10,10 +10,13 @@ import FilterBar from '@/components/filter-bar'
 import RequirementGroups from './show-requirement-group';
 import { useSelectedFilteredReports } from '@/hooks/report-hooks'; // Adjust the path if needed
 import ReportStateHandler from '@/components/report-state-handler'
+import { useRouter, useSearchParams } from 'next/navigation';
 
 const ReportPage = () => {
     const { reports, loading, error } = useSelectedFilteredReports();
-
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    
     return (
         <ReportStateHandler loading={loading} error={error} reports={reports} expectReports={true}>
             <div>

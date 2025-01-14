@@ -6,6 +6,7 @@ import { useUser } from '@/hooks/user-hooks';
 import { addKanbanColumn, removeKanbanColumn } from '@/utils/kanban-utils';
 import { useWasm } from '@/components/WasmProvider';
 import { ControlledBoard, moveCard, KanbanBoard as KanbanBoardType, Card, OnDragEndNotification } from '@caldwell619/react-kanban';
+import { useSelectedFilteredReportsTasks } from '@/hooks/tasks-hooks';
 
 interface CustomKanbanCard extends Card {
     storyPoints: number;
@@ -16,6 +17,7 @@ const KanbanBoard: React.FC = () => {
     const { wasmModule } = useWasm();
     const [refreshTrigger, setRefreshTrigger] = useState(0); // State for triggering refresh
     const { user, kanbanColumns, loading, error } = useUser(refreshTrigger);
+    const { tasks, loading: tasksLoading, error: tasksError } = useSelectedFilteredReportsTasks();
 
     const [board, setBoard] = useState<KanbanBoardType<CustomKanbanCard>>({
         columns: kanbanColumns.map((column) => ({
@@ -39,6 +41,8 @@ const KanbanBoard: React.FC = () => {
         });
     }, [kanbanColumns]);
 
+    console.log("TASKSSSS", tasks)
+
     const handleAddColumn = async () => {
         if (!newColumnName.trim()) {
             message.warning("Column name cannot be empty");
@@ -47,6 +51,7 @@ const KanbanBoard: React.FC = () => {
 
         try {
             const updatedUser = await addKanbanColumn(wasmModule, newColumnName.trim());
+            console.log("updatedUser", updatedUser)
             if (updatedUser) {
                 message.success(`Column "${newColumnName}" added successfully`);
                 setNewColumnName("");

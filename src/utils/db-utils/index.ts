@@ -1,7 +1,7 @@
 export const dbVersion = 1
 export const dbName = "lumi-docs"
 
-const REQUIRED_STORE_NAMES = ["files", "reports", "sections", "requirement_groups", "requirements", "meta", "user"];
+const REQUIRED_STORE_NAMES = ["files", "reports", "sections", "requirement_groups", "requirements", "meta", "user", "tasks"];
 
 export async function openDatabase(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
