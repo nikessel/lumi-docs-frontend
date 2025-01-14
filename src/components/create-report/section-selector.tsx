@@ -48,7 +48,7 @@ const SelectSections: React.FC<SelectSectionsProps> = ({
             {/* All Sections Checkbox with Show Sections Button */}
             <div className="flex items-center">
                 <Checkbox
-                    checked={allSectionsSelected}
+                    checked={selectedSections.length === sections.length}
                     onChange={(e) => handleAllSectionsToggle(e.target.checked)}
                 >
                     All Sections ({sections.length})

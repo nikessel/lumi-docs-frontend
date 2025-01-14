@@ -5,7 +5,7 @@ import { MoreOutlined, DeleteOutlined, ShareAltOutlined, FolderOutlined } from "
 import Typography from "../typography";
 import "@/styles/globals.css";
 import { useRouter } from "next/navigation";
-import Checked from "@/assets/checked.svg";
+import Checked from "@/assets/checked.svg"
 import Unchecked from "@/assets/unchecked.svg";
 import Image from "next/image";
 import { useSearchParams } from 'next/navigation';
