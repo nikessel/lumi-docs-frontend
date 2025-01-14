@@ -376,6 +376,7 @@ export function ReportCreator() {
           sections_to_include: selectedSections.length > 0 ? selectedSections : undefined,
           requirements_to_include: selectedRequirements.length > 0 ? selectedRequirements : undefined,
           requirement_groups_to_include: selectedGroups.length > 0 ? selectedGroups : undefined,
+          document_numbers_to_include: undefined
         }
       };
 
