@@ -23,7 +23,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <Divider className="border-thin mt-2 mb-2" />
             <div className="flex justify-between items-center">
                 <Typography color="secondary">
-                    Welcome back, {user?.first_name}
+                    Welcome back, John Doe
                 </Typography>
             </div>
             <div className="mt-4">

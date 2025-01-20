@@ -67,7 +67,7 @@ const AppSiderComponent: React.FC = () => {
         {
             key: "/standards",
             icon: <FileSearchOutlined />,
-            label: <Link href="/standards">Standards</Link>,
+            label: <Link href="/standards">Regulatory Frameworks</Link>,
         },
     ];
 

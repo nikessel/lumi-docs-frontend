@@ -25,6 +25,7 @@ const FileUploadModal: React.FC<{
     const [api, contextHolder] = notification.useNotification();
 
     useEffect(() => {
+        console.log("!ASDASDASDASD", uploadManager)
         if (!uploadManager.isUploading && (uploadManager.uploadedFiles > 0 || uploadManager.failedFiles || uploadManager.filesAlreadyExisted)) {
             if (uploadManager.failedFiles.length > 0) {
                 api.error({
@@ -175,7 +176,7 @@ const FileUploadModal: React.FC<{
             ]}
         >
             {contextHolder}
-            <Dragger showUploadList={false} className="w-full" multiple={true} beforeUpload={() => false} onChange={handleFileChange}>
+            <Dragger maxCount={100} showUploadList={false} className="w-full" multiple={true} beforeUpload={() => false} onChange={handleFileChange}>
                 <p className="ant-upload-drag-icon">
                     <InboxOutlined />
                 </p>
@@ -192,6 +193,7 @@ const FileUploadModal: React.FC<{
                         multiple
                         beforeUpload={() => false}
                         onChange={handleFileChange}
+                        maxCount={100}
                     >
                         <Button icon={<FilePdfOutlined />}>Select Files</Button>
                     </Upload>
@@ -201,6 +203,7 @@ const FileUploadModal: React.FC<{
                         beforeUpload={() => false}
                         onChange={handleFileChange}
                         directory
+                        maxCount={100}
                     >
                         <Button icon={<FolderAddOutlined />}>Select Directory</Button>
                     </Upload>

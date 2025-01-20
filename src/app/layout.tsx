@@ -17,6 +17,7 @@ const { Content } = Layout;
 
 function LayoutWithWasm({ children }: { children: ReactNode }) {
   const { isLoading: wasmLoading } = useWasm(); // Now inside the provider context
+  const isDocumentationPage = typeof window !== "undefined" && window.location.pathname === "/documentation";
 
   if (wasmLoading) {
     return <LoadingLogoScreen />;
@@ -27,7 +28,7 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
       <AntdRegistry>
         <ConfigProvider theme={antdconfig}>
           <Layout className="h-full" style={{ minWidth: 1200 }}>
-            <AppSider />
+            {!isDocumentationPage ? <AppSider /> : ""}
             <Layout className="h-full">
               <Content className="pt-8 pb-8 px-4 sm:px-8 container h-full">
                 <div className="bg-white p-6 rounded shadow-sm h-full overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">

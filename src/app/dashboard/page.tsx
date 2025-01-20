@@ -63,15 +63,15 @@ const Page = () => {
     ];
 
     const viewsData: SavedView[] = [
-        { icon: "SV", title: "Saved View 1", onView: () => console.log("Viewing Saved View 1"), description: "This is a descasdasdasdasdasd" },
-        { icon: "TP", title: "Test Plan", onView: () => console.log("Viewing Test Plan"), description: "This is a descasdasdasdasdasd" },
-        { icon: "CD", title: "Clinical Data", onView: () => console.log("Viewing Clinical Data"), description: "This is a descasdasdasdasdasd" },
-        { icon: "SV", title: "Saved View 1", onView: () => console.log("Viewing Saved View 1"), description: "This is a descasdasdasdasdasd" },
-        { icon: "TP", title: "Test Plan", onView: () => console.log("Viewing Test Plan"), description: "This is a descasdasdasdasdasd" },
-        { icon: "CD", title: "Clinical Data", onView: () => console.log("Viewing Clinical Data"), description: "This is a descasdasdasdasdasd" },
-        { icon: "SV", title: "Saved View 1", onView: () => console.log("Viewing Saved View 1"), description: "This is a descasdasdasdasdasd" },
-        { icon: "TP", title: "Test Plan", onView: () => console.log("Viewing Test Plan"), description: "This is a descasdasdasdasdasd" },
-        { icon: "CD", title: "Clinical Data", onView: () => console.log("Viewing Clinical Data"), description: "This is a descasdasdasdasdasd" },
+        { icon: "FR", title: "Findings from 14155 report", onView: () => console.log("Viewing Saved View 1"), description: "" },
+        { icon: "TP", title: "Tasks (all reports)", onView: () => console.log("Viewing Test Plan"), description: "" },
+        { icon: "TD", title: "Tasks for Clinical Trial", onView: () => console.log("Viewing Clinical Data"), description: "" },
+        { icon: "SV", title: "Saved View 1", onView: () => console.log("Viewing Saved View 1"), description: "" },
+        { icon: "TP", title: "Test Plan", onView: () => console.log("Viewing Test Plan"), description: "" },
+        { icon: "CD", title: "Clinical Data", onView: () => console.log("Viewing Clinical Data"), description: "" },
+        { icon: "SV", title: "Saved View 1", onView: () => console.log("Viewing Saved View 1"), description: "" },
+        { icon: "TP", title: "Test Plan", onView: () => console.log("Viewing Test Plan"), description: "" },
+        { icon: "CD", title: "Clinical Data", onView: () => console.log("Viewing Clinical Data"), description: "" },
     ];
 
     return (
