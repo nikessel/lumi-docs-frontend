@@ -16,7 +16,7 @@ const ReportPage = () => {
     const { reports, loading, error } = useSelectedFilteredReports();
     const searchParams = useSearchParams();
     const router = useRouter();
-    
+
     return (
         <ReportStateHandler loading={loading} error={error} reports={reports} expectReports={true}>
             <div>

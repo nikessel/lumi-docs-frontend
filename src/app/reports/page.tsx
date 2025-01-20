@@ -40,10 +40,6 @@ const Page = () => {
         return 0; // Maintain the original order otherwise
     });
 
-    const visibleReports = showArchived
-        ? sortedReports
-        : sortedReports.filter((report) => !isArchived(report.status));
-
     // Render loading placeholders
     if (loading || isLoading) {
         return (
@@ -132,10 +128,11 @@ const Page = () => {
                         key={report.id}
                         openRedirectPath="/reports/view/overview"
                         wasmModule={wasmModule}
+
                     />
                 ))}
             </div>
-            <Button
+            {archivedReports.length > 0 ? <Button
                 className="mt-4"
                 size="small"
                 onClick={() => setShowArchived(!showArchived)}
@@ -144,8 +141,8 @@ const Page = () => {
                 {showArchived
                     ? `Hide archived (${archivedCount})`
                     : `Archived (${archivedCount})`}
-            </Button>
-            {showArchived && (
+            </Button> : ""}
+            {showArchived && archivedReports.length > 0 && (
                 <>
                     <Divider className="border-thin mt-4 mb-2" />
                     <Typography textSize="h5" className="mb-2">Archived Reports</Typography>
@@ -155,6 +152,7 @@ const Page = () => {
                             key={report.id}
                             openRedirectPath="/reports/view/overview"
                             wasmModule={wasmModule}
+
                         />
                     ))}
                 </>

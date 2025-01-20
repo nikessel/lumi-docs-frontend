@@ -4,6 +4,7 @@ import { getSelectedFilteredReports } from '@/utils/report-utils'; // Adjust the
 import { Report } from '@wasm';
 import { fetchReports } from '@/utils/report-utils';
 import { useSearchParams } from 'next/navigation';
+import useCacheInvalidationStore from '@/stores/cache-validation-store';
 
 interface UseSelectedFilteredReports {
     reports: Report[];
@@ -48,29 +49,41 @@ export const useAllReports = (): UseAllReports => {
     const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const lastUpdated = useCacheInvalidationStore((state) => state.lastUpdated["reports"]);
+    const setBeingRefetched = useCacheInvalidationStore((state) => state.setBeingRefetched);
 
     useEffect(() => {
-        const fetchAllReports = async () => {
+        const fetchAllReports = async (isInitialLoad = false) => {
             if (!wasmModule) return;
 
             try {
-                setLoading(true);
-                const { reports, error } = await fetchReports(wasmModule);
+                if (isInitialLoad) {
+                    setLoading(true); // Set loading for the initial fetch
+                } else {
+                    console.log("isRefetchingReports from hook")
+                    setBeingRefetched("reports", true); // Set refetching for subsequent fetches
+                }
+
+                const { reports: fetchedReports, error } = await fetchReports(wasmModule);
 
                 if (error) {
                     setError(error);
                 } else {
-                    setReports(reports);
+                    setReports(fetchedReports);
                 }
             } catch (err: any) {
                 setError(err?.message || "Failed to fetch reports.");
             } finally {
-                setLoading(false);
+                if (isInitialLoad) {
+                    setLoading(false);
+                } else {
+                    setBeingRefetched("reports", false);
+                }
             }
         };
 
-        fetchAllReports();
-    }, [wasmModule]);
+        fetchAllReports(loading);
+    }, [wasmModule, lastUpdated]);
 
     return { reports, loading, error };
 };
