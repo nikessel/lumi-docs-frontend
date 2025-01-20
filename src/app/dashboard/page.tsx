@@ -9,83 +9,26 @@ import { useAllReports } from "@/hooks/report-hooks";
 import { useAllReportsTasks } from "@/hooks/tasks-hooks";
 import ReportList from "./report-list";
 import TaskList from "./task-list";
-import SavedViews, { SavedView } from "./saved-views";
+import SavedViews from "./saved-views";
+import { useRouter } from "next/navigation";
 
 const Page = () => {
+    const router = useRouter();
     const { user, loading: userLoading, error: userError } = useUser(0)
     const { reports, loading: reportsLoading, error: reportsError } = useAllReports()
     const { tasks, loading: tasksLoading, error: tasksError } = useAllReportsTasks(reports)
-
-    const reportsData = [
-        {
-            regulatoryFramework: "iso13485",
-            complianceRating: 25,
-            unresolvedTasks: 97,
-            title: "This is a report title"
-        },
-        {
-            regulatoryFramework: "mdr",
-            complianceRating: 40,
-            unresolvedTasks: 42,
-            title: "This is a report title"
-        },
-        {
-            regulatoryFramework: "iso14971",
-            complianceRating: 70,
-            unresolvedTasks: 15,
-            title: "This is a report title"
-        },
-        {
-            regulatoryFramework: "iso14971",
-            complianceRating: 55,
-            unresolvedTasks: 20,
-            title: "This is a report title"
-        },
-        {
-            regulatoryFramework: "iso14155",
-            complianceRating: 80,
-            unresolvedTasks: 5,
-            title: "This is a report title"
-        },
-    ];
-
-    const handleViewAll = () => {
-        console.log("View All clicked");
-    };
-
-    const tasksData = [
-        { title: "Instructions For Use", taskCount: 8, icon: "IFU" },
-        { title: "Clinical Investigation Plan", taskCount: 6, icon: "CIP" },
-        { title: "Intended Purpose", taskCount: 7, icon: "P" },
-        { title: "Clinical Evaluation Report", taskCount: 9, icon: "CER" },
-        { title: "Risk Traceability Matrix", taskCount: 2, icon: "RTM" },
-        { title: "Biological Evaluation Plan", taskCount: 10, icon: "BEP" },
-    ];
-
-    const viewsData: SavedView[] = [
-        { icon: "FR", title: "Findings from 14155 report", onView: () => console.log("Viewing Saved View 1"), description: "" },
-        { icon: "TP", title: "Tasks (all reports)", onView: () => console.log("Viewing Test Plan"), description: "" },
-        { icon: "TD", title: "Tasks for Clinical Trial", onView: () => console.log("Viewing Clinical Data"), description: "" },
-        { icon: "SV", title: "Saved View 1", onView: () => console.log("Viewing Saved View 1"), description: "" },
-        { icon: "TP", title: "Test Plan", onView: () => console.log("Viewing Test Plan"), description: "" },
-        { icon: "CD", title: "Clinical Data", onView: () => console.log("Viewing Clinical Data"), description: "" },
-        { icon: "SV", title: "Saved View 1", onView: () => console.log("Viewing Saved View 1"), description: "" },
-        { icon: "TP", title: "Test Plan", onView: () => console.log("Viewing Test Plan"), description: "" },
-        { icon: "CD", title: "Clinical Data", onView: () => console.log("Viewing Clinical Data"), description: "" },
-    ];
-
+    const isLoading = tasksLoading || reportsLoading || userLoading
     return (
-        <div>
-            <div className="flex w-full ">
-                <div className="w-2/3 pr-4 flex flex-col gap-6">
-                    <ReportList reports={reportsData} onViewAll={handleViewAll} />
-                    <SavedViews views={viewsData} />
-                </div>
-                <div className="w-1/3">
-                    <TaskList tasks={tasksData} onViewAll={handleViewAll} />
+        <div className="flex" style={{ height: "75vh" }}>
+            <div className="w-2/3 pr-4 flex flex-col gap-6">
+                <ReportList reports={reports} onViewAll={() => router.push("/reports")} isLoading={isLoading} />
+                <div style={{ height: "38vh" }}>
+                    <SavedViews isLoading={isLoading} />
                 </div>
             </div>
-
+            <div className="w-1/3">
+                <TaskList tasks={tasks} onViewAll={() => router.push("/tasks")} isLoading={isLoading} />
+            </div>
         </div>
     );
 };

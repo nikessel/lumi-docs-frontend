@@ -1,61 +1,33 @@
 import React from "react";
 import { Button } from "antd";
 import Typography from "@/components/typography";
-import { genColor } from "@/utils/styling-utils";
-
-export interface SavedView {
-    icon: string;
-    title: string;
-    description: string;
-    onView: () => void;
-}
+import { useUser } from "@/hooks/user-hooks";
+import SavedViewRender from "./saved-view-card";
 
 interface SavedViewsProps {
-    views: SavedView[];
+    isLoading: boolean;
 }
 
-const SavedViews: React.FC<SavedViewsProps> = ({ views }) => {
-    const topViews = views.slice(0, 3); // Display only the top 5 views
+const SavedViews: React.FC<SavedViewsProps> = ({ isLoading }) => {
+    const { user, loading: userLoading, error } = useUser(0);
+    const allSavedViews = user?.task_management?.saved_views || [];
 
     return (
-        <div className="">
+        <div className="flex flex-col h-full">
             {/* Header */}
             <div className="flex justify-between items-center mb-4">
                 <Typography textSize="h3">Saved Views</Typography>
-                <Button type="link" className="p-0 text-blue-500">
-                    View All
-                </Button>
             </div>
 
-            <div className="space-y-4">
-                {topViews.map((view, index) => (
-                    <div
-                        key={index}
-                        className="flex items-center justify-between p-2 bg-gray-50 rounded-lg shadow-sm"
-                    >
-                        {/* Icon and Title */}
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center justify-center w-8 h-8 rounded-full text-xs " style={{ color: genColor(view.title).color, backgroundColor: genColor(view.title).backgroundColor }}>
-                                {view.icon}
-                            </div>
-                            <div>
-                                <Typography className="font-medium">{view.title}</Typography>
-                                <Typography textSize="small" color="secondary">
-                                    {view.description}
-                                </Typography>
-                            </div>
-                        </div>
-
-                        {/* View Button */}
-                        <Button
-                            type="link"
-                            className="text-blue-500"
-                            onClick={view.onView}
-                        >
-                            View
-                        </Button>
-                    </div>
-                ))}
+            {/* Top Views with Scrollable Container */}
+            <div className="flex-1 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                {isLoading
+                    ? Array.from({ length: 10 }).map((_, index) => (
+                        <SavedViewRender key={index} isLoading={true} />
+                    ))
+                    : allSavedViews.map((view, index) => (
+                        <SavedViewRender key={index} view={view} isLoading={false} />
+                    ))}
             </div>
         </div>
     );

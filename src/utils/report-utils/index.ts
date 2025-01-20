@@ -1,5 +1,5 @@
 import { saveData, getData, getMetadata, saveMetadata } from "@/utils/db-utils"
-import type { Report, RequirementAssessment, RequirementGroupAssessment } from "@wasm";
+import type { Report, ReportStatus, RequirementAssessment, RequirementGroupAssessment } from "@wasm";
 import type * as WasmModule from "@wasm";
 import { dbName, dbVersion } from "@/utils/db-utils";
 
@@ -16,7 +16,7 @@ interface CachedReport extends Report {
 const DB_NAME = dbName;
 const STORE_NAME = "reports";
 const DB_VERSION = dbVersion;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+const CACHE_TTL = 5 * 60 * 1000 * 0; // 5 minutes in milliseconds
 
 export async function fetchReports(
     wasmModule: typeof WasmModule | null
@@ -298,3 +298,53 @@ export function extractAllRequirementAssessments(reports: Report[]): (Requiremen
 
     return assessments;
 }
+
+export async function archiveReport(
+    wasmModule: typeof WasmModule | null,
+    reportId: string
+): Promise<string> {
+    if (!wasmModule) {
+        throw new Error("WASM module not loaded");
+    }
+
+    try {
+        const response = await wasmModule.archive_report({ input: reportId });
+        if (response.output) {
+            return `Report with ID ${reportId} archived successfully.`;
+        } else if (response.error) {
+            throw new Error(response.error.message);
+        }
+        // Add an explicit return statement in case neither condition is met
+        return "Unexpected response from archive_report.";
+    } catch (err: unknown) {
+        console.error("Error archiving report:", err);
+        throw new Error(`Failed to archive report with ID ${reportId}`);
+    }
+}
+
+export async function restoreReport(
+    wasmModule: typeof WasmModule | null,
+    reportId: string
+): Promise<string> {
+    if (!wasmModule) {
+        throw new Error("WASM module not loaded");
+    }
+
+    try {
+        const response = await wasmModule.restore_report({ input: reportId });
+        if (response.output) {
+            return `Report with ID ${reportId} restored successfully.`;
+        } else if (response.error) {
+            throw new Error(response.error.message);
+        }
+        // Add a fallback return or throw to ensure all code paths are covered
+        throw new Error("Unexpected response from restore_report.");
+    } catch (err: unknown) {
+        console.error("Error restoring report:", err);
+        throw new Error(`Failed to restore report with ID ${reportId}`);
+    }
+}
+
+export const isArchived = (status: ReportStatus | undefined): boolean => {
+    return typeof status === "object" && "archived" in status;
+};

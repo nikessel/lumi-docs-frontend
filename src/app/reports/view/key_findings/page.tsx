@@ -56,18 +56,18 @@ const Page = () => {
             key: 'name',
             render: (id: string) => requirements.find((req) => req.id === id)?.name || 'Unknown Requirement',
         },
-        {
-            title: 'Description',
-            dataIndex: 'description',
-            key: 'description',
-            render: () => '[Insert description]',
-        },
-        {
-            title: 'Details',
-            dataIndex: 'details',
-            key: 'details',
-            render: () => '[Insert details]',
-        },
+        // {
+        //     title: 'Description',
+        //     dataIndex: 'description',
+        //     key: 'description',
+        //     render: () => '[Insert description]',
+        // },
+        // {
+        //     title: 'Details',
+        //     dataIndex: 'details',
+        //     key: 'details',
+        //     render: () => '[Insert details]',
+        // },
         {
             title: 'Compliance Rating',
             dataIndex: 'compliance_rating',

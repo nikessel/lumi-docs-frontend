@@ -1,3 +1,6 @@
+import type { ReportStatus } from "@wasm";
+
+
 export function genColor(text: string) {
     if (!text || typeof text !== "string") {
         // Return default colors for invalid or missing input
@@ -37,12 +40,13 @@ export function genColor(text: string) {
     }
 }
 
-export const formatStatus = (status: string | undefined): string => {
-    if (!status) return "";
+export const formatStatus = (status: ReportStatus | undefined): string => {
+    if (!status || typeof status !== "string") return "";
+
     return status
-        .replace(/_/g, " ") // Replace underscores with spaces
-        .toLowerCase() // Convert to lowercase
-        .split(" ") // Split into words
+        .replace(/_/g, " ")
+        .toLowerCase()
+        .split(" ")
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize first letter of each word
-        .join(" "); // Join back into a string
+        .join(" ");
 };

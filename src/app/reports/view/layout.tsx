@@ -12,7 +12,9 @@ import ReportStateHandler from '@/components/report-state-handler'
 import SubMenu from './sub-menu';
 import { createUrlWithParams } from '@/utils/url-utils';
 import { useRouter, useSearchParams } from 'next/navigation';
-
+import SaveViewButton from '@/components/save-view';
+import Typography from '@/components/typography';
+import ReportsHeader from './report-header';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -36,13 +38,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         {reports.length > 0 ?
 
                             <div className="space-y-4">
-                                <ReportSectionSelector reports={reports} />
+                                <ReportsHeader reports={reports} />
                             </div>
                             : <div>Reports</div>
                         }
                     </div>
                     <div className="flex items-center space-x-2">
-                        <Button icon={<SaveOutlined />}>Save view</Button>
+                        <SaveViewButton />
                         <Button
                             icon={<ArrowRightOutlined />}
                             type="primary"
