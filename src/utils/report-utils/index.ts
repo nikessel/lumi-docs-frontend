@@ -17,7 +17,7 @@ interface CachedReport extends Report {
 const DB_NAME = dbName;
 const STORE_NAME = "reports";
 const DB_VERSION = dbVersion;
-const CACHE_TTL = 5 * 60 * 1000 * 0; // 5 minutes in milliseconds
+const CACHE_TTL = 60 * 60 * 1000; 
 
 export async function fetchReports(
     wasmModule: typeof WasmModule | null

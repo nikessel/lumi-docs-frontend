@@ -8,9 +8,10 @@ import { useRequirementGroupsForSectionIds } from '@/hooks/requirement-group-hoo
 import { useRequirementsForGroupIds } from '@/hooks/requirement-hooks';
 import { Section, RequirementGroup, Requirement } from '@wasm';
 import RegulatoryFrameworkTag from '@/components/regulatory-framework-tag';
+import { useRegulatoryFrameworksContext } from '@/contexts/regulatory-frameworks-context';
 
 const RegulatoryFrameworksTable: React.FC = () => {
-    const { frameworks, loading: frameworksLoading } = useRegulatoryFrameworks();
+    const { frameworks, loading: frameworksLoading } = useRegulatoryFrameworksContext();
     const frameworkIds = useMemo(() => frameworks.map(f => f.id), [frameworks]);
     const { sections, loading: sectionsLoading } = useSectionsForRegulatoryFrameworks(frameworkIds);
     const sectionIds = useMemo(() => sections.map(section => section.id), [sections]);

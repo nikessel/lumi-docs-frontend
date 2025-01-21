@@ -12,6 +12,9 @@ import WasmProviderComponent, { useWasm } from "@/components/WasmProvider";
 import '@syncfusion/ej2-base/styles/material.css';
 import '@syncfusion/ej2-react-filemanager/styles/material.css';
 import '@caldwell619/react-kanban/dist/styles.css';
+import { AllReportsProvider } from "@/contexts/reports-context/all-reports-context";
+import { RegulatoryFrameworksProvider } from '@/contexts/regulatory-frameworks-context';
+import { FilesProvider } from '@/contexts/files-context';
 
 const { Content } = Layout;
 
@@ -30,11 +33,17 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
           <Layout className="h-full" style={{ minWidth: 1200 }}>
             {!isDocumentationPage ? <AppSider /> : ""}
             <Layout className="h-full">
-              <Content className="pt-8 pb-8 px-4 sm:px-8 container h-full">
-                <div className="bg-white p-6 rounded shadow-sm h-full overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-                  {children}
-                </div>
-              </Content>
+              <AllReportsProvider>
+                <RegulatoryFrameworksProvider>
+                  <FilesProvider>
+                    <Content className="pt-8 pb-8 px-4 sm:px-8 container h-full">
+                      <div className="bg-white p-6 rounded shadow-sm h-full overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                        {children}
+                      </div>
+                    </Content>
+                  </FilesProvider>
+                </RegulatoryFrameworksProvider>
+              </AllReportsProvider>
             </Layout>
           </Layout>
         </ConfigProvider>

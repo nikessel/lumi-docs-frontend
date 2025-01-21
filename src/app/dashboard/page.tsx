@@ -11,13 +11,18 @@ import ReportList from "./report-list";
 import TaskList from "./task-list";
 import SavedViews from "./saved-views";
 import { useRouter } from "next/navigation";
+import { useAllReportsContext } from "@/contexts/reports-context/all-reports-context";
+import { useAllReportsTasksContext } from '@/contexts/tasks-context/all-report-tasks';
 
 const Page = () => {
     const router = useRouter();
+
     const { user, loading: userLoading, error: userError } = useUser(0)
-    const { reports, loading: reportsLoading, error: reportsError } = useAllReports()
-    const { tasks, loading: tasksLoading, error: tasksError } = useAllReportsTasks(reports)
+    const { reports, loading: reportsLoading, error: reportsError } = useAllReportsContext()
+    const { tasks, loading: tasksLoading, error: tasksError } = useAllReportsTasksContext()
+
     const isLoading = tasksLoading || reportsLoading || userLoading
+
     return (
         <div className="flex" style={{ height: "75vh" }}>
             <div className="w-2/3 pr-4 flex flex-col gap-6">

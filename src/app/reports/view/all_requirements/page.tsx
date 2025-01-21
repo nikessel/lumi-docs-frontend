@@ -1,18 +1,19 @@
 'use client';
 
 import React from 'react';
-import { useSelectedFilteredReports } from '@/hooks/report-hooks';
-import { useFilteredReportSections } from '@/hooks/section-hooks';
-import { useFilteredReportsRequirements } from '@/hooks/requirement-hooks';
-import { useFilteredReportsRequirementGroups } from '@/hooks/requirement-group-hooks';
 import ReportStateHandler from '@/components/report-state-handler';
 import TableContainer from './table-container';
+import { useSelectedFilteredReportsContext } from '@/contexts/reports-context/selected-filtered-reports';
+import { useFilteredSectionsContext } from '@/contexts/sections/filtered-report-sections';
+import { useFilteredRequirementsContext } from '@/contexts/requirement-context/filtered-report-requirement-context';
+import { useFilteredRequirementGroupsContext } from '@/contexts/requirement-group-context/filtered-report-requirement-group';
 
 const Page = () => {
-    const { reports, loading: reportsLoading, error: reportsError } = useSelectedFilteredReports();
-    const { sections, loading: sectionsLoading, error: sectionsError } = useFilteredReportSections(reports);
-    const { requirements, loading: requirementsLoading, error: requirementsError } = useFilteredReportsRequirements(reports);
-    const { requirementGroups, loading: groupsLoading, error: groupsError } = useFilteredReportsRequirementGroups(reports);
+    const { reports, loading: reportsLoading, error: reportsError } = useSelectedFilteredReportsContext();
+
+    const { sections, loading: sectionsLoading, error: sectionsError } = useFilteredSectionsContext();
+    const { requirements, loading: requirementsLoading, error: requirementsError } = useFilteredRequirementsContext();
+    const { requirementGroups, loading: groupsLoading, error: groupsError } = useFilteredRequirementGroupsContext();
 
     const loading = reportsLoading || sectionsLoading || requirementsLoading || groupsLoading;
     const error = reportsError || sectionsError || requirementsError || groupsError;

@@ -10,9 +10,10 @@ import type { File } from "@wasm";
 import FileManager from './file-manager';
 import { useFiles } from '@/hooks/files-hooks';
 import FileUploadModal from '@/components/upload-files/file-upload-modal';
+import { useFilesContext } from '@/contexts/files-context';
 
 const Page = () => {
-    const { files, isLoading, error } = useFiles();
+    const { files, isLoading, error } = useFilesContext();
 
     const { wasmModule, isLoading: wasmLoading } = useWasm();
 

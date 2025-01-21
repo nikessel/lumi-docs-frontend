@@ -6,13 +6,14 @@ import { PlusOutlined } from "@ant-design/icons";
 import "@/styles/globals.css";
 import ReportMetaView from "@/components/report-meta-view";
 import { useRouter } from "next/navigation";
-import { useAllReports } from '@/hooks/report-hooks';
+// import { useAllReports } from '@/hooks/report-hooks';
 import { useUrlSelectedReports } from '@/hooks/url-hooks';
 import { useWasm } from '@/components/WasmProvider';
 import { isArchived } from "@/utils/report-utils";
+import { useAllReportsContext } from "@/contexts/reports-context/all-reports-context";
 
 const Page = () => {
-    const { reports, loading, error } = useAllReports();
+    const { reports, loading, error } = useAllReportsContext();
     const { selectedReports, selectedCount } = useUrlSelectedReports();
     const { wasmModule, isLoading } = useWasm();
 

@@ -25,10 +25,10 @@ const generateMockTreeData = (groups: number, requirementsPerGroup: number): Tre
 
 const getNodeColor = (node: TreeNode): string => {
     const colors = [
-        'rgb(106,176,76)', // Green
-        'rgb(252,215,0)', // Yellow
-        'rgb(234,67,53)', // Red
-        'rgba(106,176,76,0.5)', // Opaque Green
+        'rgb(106,176,76)',
+        'rgb(252,215,0)',
+        'rgb(234,67,53)',
+        'rgba(106,176,76,0.5)',
     ];
 
     // Extract the last digit from the ID
@@ -45,76 +45,11 @@ const Tree: React.FC<TreeProps> = ({
     const treeData = generateMockTreeData(numberOfGroups, requirementsPerGroup);
 
     return (
-        <div style={{ height: 500, position: 'relative' }}>
-            {/* Legend */}
-            {/* <div
-                style={{
-                    position: 'absolute',
-                    top: 10,
-                    left: 10,
-                    background: 'white',
-                    padding: '10px',
-                    border: '1px solid #ccc',
-                    borderRadius: '5px',
-                    zIndex: 10,
-                }}
-            >
-                <ul style={{ listStyleType: 'none', padding: 0 }}>
-                    <li className="flex items-center">
-                        <span
-                            style={{
-                                display: 'inline-block',
-                                width: '15px',
-                                height: '15px',
-                                backgroundColor: 'rgb(106,176,76)',
-                                marginRight: '10px',
-                            }}
-                        ></span>
-                        <div>{`> 80`}</div>
-                    </li>
-                    <li className="flex items-center">
-                        <span
-                            style={{
-                                display: 'inline-block',
-                                width: '15px',
-                                height: '15px',
-                                backgroundColor: 'rgb(252,215,0)',
-                                marginRight: '10px',
-                            }}
-                        ></span>
-                        <div>{`> 60`}</div>
-                    </li>
-                    <li className="flex items-center">
-                        <span
-                            style={{
-                                display: 'inline-block',
-                                width: '15px',
-                                height: '15px',
-                                backgroundColor: 'rgb(234,67,53)',
-                                marginRight: '10px',
-                            }}
-                        ></span>
-                        <div>{`< 40 `}</div>
-
-                    </li>
-                    <li className="flex items-center">
-                        <span
-                            style={{
-                                display: 'inline-block',
-                                width: '15px',
-                                height: '15px',
-                                backgroundColor: 'rgba(106,176,76,0.5)',
-                                marginRight: '10px',
-                            }}
-                        ></span>
-                        All tasks implemented
-                    </li>
-                </ul>
-            </div> */}
+        <div style={{ height: 350, width: "100%" }}>
             <ResponsiveTree<TreeNode>
                 data={treeData}
                 identity="id"
-                margin={{ top: 20, right: 10, bottom: 90, left: 10 }}
+                margin={{ top: 10, right: 10, bottom: 10, left: 10 }}
                 nodeColor={(node) => getNodeColor(node)} // Use the color function
                 linkThickness={2}
                 activeLinkThickness={8}
