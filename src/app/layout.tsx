@@ -16,8 +16,12 @@ import { AllReportsProvider } from "@/contexts/reports-context/all-reports-conte
 import { RegulatoryFrameworksProvider } from '@/contexts/regulatory-frameworks-context';
 import { FilesProvider } from '@/contexts/files-context';
 import { UserProvider } from "@/contexts/user-context";
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 
 const { Content } = Layout;
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
 function LayoutWithWasm({ children }: { children: ReactNode }) {
   const { isLoading: wasmLoading } = useWasm(); // Now inside the provider context
@@ -30,26 +34,28 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
       <AntdRegistry>
-        <ConfigProvider theme={antdconfig}>
-          <Layout className="h-full" style={{ minWidth: 1200 }}>
-            {!isDocumentationPage ? <AppSider /> : ""}
-            <Layout className="h-full">
-              <AllReportsProvider>
-                <RegulatoryFrameworksProvider>
-                  <FilesProvider>
-                    <UserProvider>
-                      <Content className="pt-8 pb-8 px-4 sm:px-8 container h-full">
-                        <div className="bg-white p-6 rounded shadow-sm h-full overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-                          {children}
-                        </div>
-                      </Content>
-                    </UserProvider>
-                  </FilesProvider>
-                </RegulatoryFrameworksProvider>
-              </AllReportsProvider>
+        <Elements stripe={stripePromise}>
+          <ConfigProvider theme={antdconfig}>
+            <Layout className="h-full" style={{ minWidth: 1200 }}>
+              {!isDocumentationPage ? <AppSider /> : ""}
+              <Layout className="h-full">
+                <AllReportsProvider>
+                  <RegulatoryFrameworksProvider>
+                    <FilesProvider>
+                      <UserProvider>
+                        <Content className="pt-8 pb-8 px-4 sm:px-8 container h-full">
+                          <div className="bg-white p-6 rounded shadow-sm h-full overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                            {children}
+                          </div>
+                        </Content>
+                      </UserProvider>
+                    </FilesProvider>
+                  </RegulatoryFrameworksProvider>
+                </AllReportsProvider>
+              </Layout>
             </Layout>
-          </Layout>
-        </ConfigProvider>
+          </ConfigProvider>
+        </Elements>
       </AntdRegistry>
     </AuthProvider>
   );

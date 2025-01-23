@@ -9,8 +9,9 @@ import dayjs from 'dayjs';
 import Image from 'next/image';
 import FileContextMenu from './file-context-menu';
 import { Select } from 'antd';
+import { File } from "@wasm";
 
-const FileManager: React.FC<{ files: any[] }> = ({ files }) => {
+const FileManager: React.FC<{ files: File[] }> = ({ files }) => {
     const [fileList, setFileList] = useState(files);
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
@@ -177,7 +178,7 @@ const FileManager: React.FC<{ files: any[] }> = ({ files }) => {
                 size: 0,
                 path: currentPath,
             };
-            setFileList(prev => [newFolder, ...prev]);
+            //setFileList(prev => [newFolder, ...prev]);
         } else if (modalAction === 'rename' && fileToRename) {
             setFileList(prev =>
                 prev.map(file =>
