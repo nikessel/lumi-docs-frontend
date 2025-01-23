@@ -53,7 +53,7 @@ const Page = () => {
                 </Typography>
                 <div className="flex flex-col mt-4">
                     {Array.from({ length: 20 }, (_, index) => (
-                        <ReportMetaView key={index} report={null} loading={true} openRedirectPath="/tasks/view" wasmModule={wasmModule} />
+                        <ReportMetaView key={index} report={null} loading={true} openRedirectPath="/tasks/overview/view" wasmModule={wasmModule} />
                     ))}
                 </div>
             </div>
@@ -98,7 +98,7 @@ const Page = () => {
                         onClick={(e) => {
                             e.stopPropagation(); // Prevent event from propagating to the parent div
                             if (selectedReports.length > 0) {
-                                router.push(`/tasks/view?selectedReports=${encodeURIComponent(selectedReports.join(','))}`);
+                                router.push(`/tasks/view/overview?selectedReports=${encodeURIComponent(selectedReports.join(','))}`);
                             }
                         }}
                     >
@@ -112,7 +112,7 @@ const Page = () => {
                     <ReportMetaView
                         report={report}
                         key={report.id}
-                        openRedirectPath="/reports/view/overview"
+                        openRedirectPath="/tasks/view/overview"
                         wasmModule={wasmModule}
 
                     />
@@ -136,7 +136,7 @@ const Page = () => {
                         <ReportMetaView
                             report={report}
                             key={report.id}
-                            openRedirectPath="/reports/view/overview"
+                            openRedirectPath="/tasks/view/overview"
                             wasmModule={wasmModule}
 
                         />

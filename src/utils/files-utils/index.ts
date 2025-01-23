@@ -71,3 +71,10 @@ export async function fetchFiles(
 
     return result;
 }
+
+export const getDocumentIconLetters = (title: string) =>
+    title
+        .split(" ")
+        .slice(0, 3) // Take up to the first three words
+        .map((word) => word.charAt(0).toUpperCase()) // Take the first letter of each word
+        .join("");

@@ -4,11 +4,11 @@ import Typography from "@/components/typography";
 import { Button, Divider } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import "@/styles/globals.css";
-import { useUser } from "@/hooks/user-hooks";
+import { useUserContext } from "@/contexts/user-context";
 import { useAllReports } from "@/hooks/report-hooks";
 import { useAllReportsTasks } from "@/hooks/tasks-hooks";
 import ReportList from "./report-list";
-import TaskList from "./task-list";
+import TaskList from "@/components/tasks-list/task-list";
 import SavedViews from "./saved-views";
 import { useRouter } from "next/navigation";
 import { useAllReportsContext } from "@/contexts/reports-context/all-reports-context";
@@ -17,7 +17,7 @@ import { useAllReportsTasksContext } from '@/contexts/tasks-context/all-report-t
 const Page = () => {
     const router = useRouter();
 
-    const { user, loading: userLoading, error: userError } = useUser(0)
+    const { user, loading: userLoading, error: userError } = useUserContext()
     const { reports, loading: reportsLoading, error: reportsError } = useAllReportsContext()
     const { tasks, loading: tasksLoading, error: tasksError } = useAllReportsTasksContext()
 

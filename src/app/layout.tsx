@@ -15,6 +15,7 @@ import '@caldwell619/react-kanban/dist/styles.css';
 import { AllReportsProvider } from "@/contexts/reports-context/all-reports-context";
 import { RegulatoryFrameworksProvider } from '@/contexts/regulatory-frameworks-context';
 import { FilesProvider } from '@/contexts/files-context';
+import { UserProvider } from "@/contexts/user-context";
 
 const { Content } = Layout;
 
@@ -36,11 +37,13 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
               <AllReportsProvider>
                 <RegulatoryFrameworksProvider>
                   <FilesProvider>
-                    <Content className="pt-8 pb-8 px-4 sm:px-8 container h-full">
-                      <div className="bg-white p-6 rounded shadow-sm h-full overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-                        {children}
-                      </div>
-                    </Content>
+                    <UserProvider>
+                      <Content className="pt-8 pb-8 px-4 sm:px-8 container h-full">
+                        <div className="bg-white p-6 rounded shadow-sm h-full overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                          {children}
+                        </div>
+                      </Content>
+                    </UserProvider>
                   </FilesProvider>
                 </RegulatoryFrameworksProvider>
               </AllReportsProvider>

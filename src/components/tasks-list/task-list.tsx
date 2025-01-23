@@ -3,6 +3,7 @@ import { Button, Input } from "antd";
 import DocumentTaskCard from "./task-card";
 import Typography from "@/components/typography";
 import { Task } from "@wasm";
+import { getDocumentIconLetters } from "@/utils/files-utils";
 
 interface TaskListProps {
     tasks: Task[];
@@ -46,14 +47,6 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, isLoading, onViewAll }) => {
             )
         );
     });
-
-    // Generate document icon letters
-    const getDocumentIconLetters = (title: string) =>
-        title
-            .split(" ")
-            .slice(0, 3) // Take up to the first three words
-            .map((word) => word.charAt(0).toUpperCase()) // Take the first letter of each word
-            .join("");
 
     return (
         <div className="flex flex-col h-full">

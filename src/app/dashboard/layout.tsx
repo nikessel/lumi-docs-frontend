@@ -3,10 +3,10 @@ import React from "react";
 import Typography from "@/components/typography";
 import { Divider } from "antd";
 import "@/styles/globals.css";
-import { useUser } from "@/hooks/user-hooks";
 import { AllReportsTasksProvider } from '@/contexts/tasks-context/all-report-tasks';
 import ReportStateHandler from "@/components/report-state-handler";
 import { useAllReportsContext } from "@/contexts/reports-context/all-reports-context";
+import { useUserContext } from "@/contexts/user-context";
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -14,7 +14,7 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
 
-    const { user, loading: userLoading, error: userError } = useUser(0)
+    const { user, loading: userLoading, error: userError } = useUserContext()
 
     const { reports, loading, error } = useAllReportsContext();
 

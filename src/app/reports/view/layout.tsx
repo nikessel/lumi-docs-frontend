@@ -20,6 +20,7 @@ import { SelectedFilteredReportsProvider } from '@/contexts/reports-context/sele
 import { FilteredSectionsProvider } from '@/contexts/sections/filtered-report-sections';
 import { FilteredRequirementGroupsProvider } from '@/contexts/requirement-group-context/filtered-report-requirement-group';
 import { FilteredRequirementsProvider } from '@/contexts/requirement-context/filtered-report-requirement-context';
+import { SelectedFilteredReportsTasksProvider } from '@/contexts/tasks-context/selected-filtered-report-tasks';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -43,44 +44,46 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <FilteredSectionsProvider reports={reports}>
                     <FilteredRequirementsProvider reports={reports}>
                         <FilteredRequirementGroupsProvider reports={reports}>
-                            <div>
-                                <div className="flex justify-between items-center">
-                                    <div>
-                                        {reports.length > 0 ?
+                            <SelectedFilteredReportsTasksProvider>
+                                <div>
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            {reports.length > 0 ?
 
-                                            <div className="space-y-4">
-                                                <ReportsHeader reports={reports} />
-                                            </div>
-                                            : <div>Reports</div>
-                                        }
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <SaveViewButton />
-                                        <Button
-                                            icon={<ArrowRightOutlined />}
-                                            type="primary"
-                                            onClick={handleGoToTasks}
-                                        >
-                                            Go to tasks
-                                        </Button>
-                                    </div>
-                                </div>
-                                <Divider className="border-thin mt-2 mb-2" />
-
-                                <div className="flex justify-between items-center">
-                                    {reports.length > 0 ? <div className="flex justify-between w-full">
-                                        <SubMenu />
-                                        <div className="flex items-center gap-4">
-                                            <ReportCreatedOn reports={reports} />
-                                            <FilterBar reports={reports} />
+                                                <div className="space-y-4">
+                                                    <ReportsHeader reports={reports} />
+                                                </div>
+                                                : <div>Reports</div>
+                                            }
                                         </div>
-                                    </div> : ""}
-                                </div>
+                                        <div className="flex items-center space-x-2">
+                                            <SaveViewButton />
+                                            <Button
+                                                icon={<ArrowRightOutlined />}
+                                                type="primary"
+                                                onClick={handleGoToTasks}
+                                            >
+                                                Go to tasks
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <Divider className="border-thin mt-2 mb-2" />
 
-                                <div className="mt-2">
-                                    {children}
+                                    <div className="flex justify-between items-center">
+                                        {reports.length > 0 ? <div className="flex justify-between w-full">
+                                            <SubMenu />
+                                            <div className="flex items-center gap-4">
+                                                <ReportCreatedOn reports={reports} />
+                                                <FilterBar reports={reports} />
+                                            </div>
+                                        </div> : ""}
+                                    </div>
+
+                                    <div className="mt-2">
+                                        {children}
+                                    </div>
                                 </div>
-                            </div>
+                            </SelectedFilteredReportsTasksProvider>
                         </FilteredRequirementGroupsProvider>
                     </FilteredRequirementsProvider>
                 </FilteredSectionsProvider>

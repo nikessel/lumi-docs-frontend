@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "antd";
 import Typography from "@/components/typography";
-import { useUser } from "@/hooks/user-hooks";
+import { useUserContext } from "@/contexts/user-context";
 import SavedViewRender from "./saved-view-card";
 
 interface SavedViewsProps {
@@ -9,7 +9,7 @@ interface SavedViewsProps {
 }
 
 const SavedViews: React.FC<SavedViewsProps> = ({ isLoading }) => {
-    const { user, loading: userLoading, error } = useUser(0);
+    const { user, loading: userLoading, error } = useUserContext();
     const allSavedViews = user?.task_management?.saved_views || [];
 
     return (

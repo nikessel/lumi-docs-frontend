@@ -3,9 +3,10 @@ import { saveData, getData } from "@/utils/db-utils";
 import type { User, SavedView, UpdateUserInput } from "@wasm";
 import { dbName, dbVersion } from "@/utils/db-utils";
 import { deleteData } from "@/utils/db-utils"; // Ensure this utility exists for deleting indexedDB entries
+import useCacheInvalidationStore from "@/stores/cache-validation-store";
 
 const USER_STORE = "user";
-const USER_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const USER_CACHE_TTL = 60 * 60 * 1000; // 5 minutes
 
 interface CachedUser extends User {
     timestamp: number;
@@ -17,9 +18,12 @@ export async function fetchUser(wasmModule: typeof WasmModule | null): Promise<U
         return null;
     }
 
-    const cachedUser: CachedUser[] | null = await getData<CachedUser>(dbName, USER_STORE, dbVersion);
+    const { staleIds, removeStaleIds } = useCacheInvalidationStore.getState();
 
-    if (cachedUser && cachedUser.length > 0 && Date.now() - cachedUser[0].timestamp < USER_CACHE_TTL) {
+    const cachedUser: CachedUser[] | null = await getData<CachedUser>(dbName, USER_STORE, dbVersion);
+    const isStale = staleIds.indexOf(cachedUser[0]?.id) > -1;
+
+    if (cachedUser && cachedUser.length > 0 && Date.now() - cachedUser[0].timestamp < USER_CACHE_TTL && !isStale) {
         console.log("Using cached user data");
         return cachedUser[0];
     }
@@ -28,10 +32,6 @@ export async function fetchUser(wasmModule: typeof WasmModule | null): Promise<U
         const response = await wasmModule.get_user();
         if (response.output) {
             const user = response.output.output;
-
-            // if (!user.preferences) {
-            //     user.preferences = JSON.stringify({ kanban: [] });
-            // }
 
             await saveData(dbName, USER_STORE, [{ ...user, timestamp: Date.now() }], dbVersion, true);
 
@@ -44,15 +44,6 @@ export async function fetchUser(wasmModule: typeof WasmModule | null): Promise<U
     }
 
     return null;
-}
-
-export async function clearUserCache() {
-    try {
-        await deleteData(dbName, USER_STORE, dbVersion); // Delete user data from the cache
-        console.log("User cache cleared");
-    } catch (err) {
-        console.error("Failed to clear user cache:", err);
-    }
 }
 
 export async function saveViewToUser(
