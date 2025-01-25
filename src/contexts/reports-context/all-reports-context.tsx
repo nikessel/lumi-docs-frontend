@@ -12,6 +12,7 @@ const AllReportsContext = createContext<AllReportsContextType | undefined>(undef
 
 export const AllReportsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { reports, loading, error } = useAllReports();
+    console.log("create1asdasdasd AllReportsContext", reports, loading, error)
 
     return (
         <AllReportsContext.Provider value={{ reports, loading, error }}>

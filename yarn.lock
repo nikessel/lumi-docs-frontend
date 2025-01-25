@@ -1311,7 +1311,7 @@
   "resolved" "https://registry.npmjs.org/@react-spring/types/-/types-9.7.5.tgz"
   "version" "9.7.5"
 
-"@react-spring/web@9.4.5 || ^9.7.2":
+"@react-spring/web@^9.7.5", "@react-spring/web@9.4.5 || ^9.7.2":
   "integrity" "sha512-lmvqGwpe+CSttsWNZVr+Dg62adtKhauGwLyGE/RRyZ8AAMLgb9x3NDMA5RMElXo+IMyTkPp7nxTB8ZQlmhb6JQ=="
   "resolved" "https://registry.npmjs.org/@react-spring/web/-/web-9.7.5.tgz"
   "version" "9.7.5"

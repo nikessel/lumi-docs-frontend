@@ -13,6 +13,10 @@ import { notification } from "antd";
 import { useRequirementGroupsForSectionIds } from "@/hooks/requirement-group-hooks";
 import { useRequirementsForGroupIds } from "@/hooks/requirement-hooks";
 import SelectRequirementGroups from "./requirement-group-selector";
+import { useCreateReportStore } from "@/stores/create-report-store";
+import EmbeddedPaymentForm from "../payment/embedded-payment-form";
+import { validateReportInput } from "@/utils/report-utils/create-report-utils";
+import { PRICE_PER_REQUIREMENT_IN_EURO } from "@/utils/report-utils/create-report-utils";
 
 const { Step } = Steps;
 
@@ -20,48 +24,110 @@ interface ReportCreatorProps {
     onReportSubmitted: () => void;
 }
 
+const arraysAreEqual = (arr1: string[], arr2: string[]): boolean => {
+    if (arr1.length !== arr2.length) {
+        return false; // Different lengths mean the arrays are not equal
+    }
+
+    // Compare elements (ignoring order)
+    return arr1.every((item) => arr2.includes(item)) && arr2.every((item) => arr1.includes(item));
+};
+
 const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
-    const [currentStep, setCurrentStep] = useState(0);
-    const [selectedFramework, setSelectedFramework] = useState<string>("mdr");
-    const [selectedSections, setSelectedSections] = useState<string[]>([]);
-    const [selectedDocumentNumbers, setSelectedDocumentNumbers] = useState<number[]>([]);
+    const {
+        currentStep,
+        selectedFramework,
+        selectedSections,
+        selectedDocumentNumbers,
+        selectedRequirementGroups,
+        selectedRequirements,
+        sectionsSetForFramework,
+        setSectionsSetForFramework,
+        groupsSetForSections,
+        setGroupsSetForSections,
+        requirementsSetForGroups,
+        setRequirementsSetForGroups,
+        setCurrentStep,
+        setSelectedFramework,
+        setSelectedSections,
+        setSelectedDocumentNumbers,
+        setSelectedRequirementGroups,
+        setSelectedRequirements,
+        resetState,
+    } = useCreateReportStore();
+
     const frameworks = getSupportedFrameworks();
+
     const frameworkIds = useMemo(() => [selectedFramework as RegulatoryFramework], [selectedFramework]);
 
     const { wasmModule } = useWasm();
+
     const { sections } = useSectionsForRegulatoryFrameworks(frameworkIds)
+
+    const allSectionIds = useMemo(() => sections.map(f => f.id), [sections]);
+
+    const { requirementGroups: allRequirementGroups, loading: allRequirementGroupsLoading } = useRequirementGroupsForSectionIds(allSectionIds)
+
+    const allRequirementGroupsIds = useMemo(() => allRequirementGroups.map(f => f.id), [allRequirementGroups]);
+
+    const { requirements: allRequirements, loading: allRequirementsLoading } = useRequirementsForGroupIds(allRequirementGroupsIds)
+
     const { files } = useFiles()
-    const [isSubmittingReport, setIsSubmittingReport] = useState(false)
+
     const { requirementGroups, loading: requirementGroupsLoading } = useRequirementGroupsForSectionIds(selectedSections)
+
     const requrementGroupIds = useMemo(() => requirementGroups.map(f => f.id), [requirementGroups]);
-    const { requirements, loading: requirementsLoading } = useRequirementsForGroupIds(requrementGroupIds)
+
+    const { requirements, loading: requirementsLoading } = useRequirementsForGroupIds(selectedRequirementGroups)
+
     const requirementIds = useMemo(() => requirements.map(f => f.id), [requirements]);
+
     const [api, contextHolder] = notification.useNotification();
-    const [selectedRequirementGroups, setSelectedRequirementGroups] = useState<string[]>([]);
 
     useEffect(() => {
-        if (sections && sections.length > 0) {
-            setSelectedSections(sections.map((section) => section.id));
+        if (sections && sections.length > 0 && sectionsSetForFramework !== selectedFramework) {
+            setSelectedSections([sections[0].id]);
+            setSectionsSetForFramework(selectedFramework)
         }
     }, [sections]);
 
     useEffect(() => {
-        if (requirementGroups && requirementGroups.length > 0) {
+        if (requirementGroups && !arraysAreEqual(groupsSetForSections, selectedSections)) {
             setSelectedRequirementGroups(requirementGroups.map((group) => group.id));
+            setGroupsSetForSections(selectedSections)
         }
     }, [requirementGroups]);
 
     useEffect(() => {
-        if (sections && Array.isArray(sections)) {
-            setSelectedSections(sections.map((section) => section.id));
+        if (requirementIds && !arraysAreEqual(requirementsSetForGroups, selectedRequirementGroups)) {
+            setSelectedRequirements(requirementIds);
+            setRequirementsSetForGroups(selectedRequirementGroups)
         }
-    }, [sections]);
+    }, [requirementIds]);
+
 
     useEffect(() => {
         if (files && Array.isArray(files)) {
             setSelectedDocumentNumbers(files.map((file) => file.number));
         }
     }, [files]);
+
+    const getPriceForSection = (sectionId: string): number => {
+        const relatedGroups = allRequirementGroups.filter((group) => group.section_id === sectionId);
+        const relatedRequirements = allRequirements.filter((requirement) =>
+            relatedGroups.some((group) => group.id === requirement.group_id)
+        );
+        return PRICE_PER_REQUIREMENT_IN_EURO * relatedRequirements.length;
+    };
+
+    const getPriceForGroup = (groupId: string): number => {
+        const relatedRequirements = allRequirements.filter(
+            (requirement) => requirement.group_id === groupId
+        );
+
+        return PRICE_PER_REQUIREMENT_IN_EURO * relatedRequirements.length;
+    };
+
 
     const steps = [
         {
@@ -95,9 +161,8 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                         sections={sections.map((section) => ({
                             id: section.id,
                             name: section.name,
+                            price_for_section: getPriceForSection(section.id),
                         }))}
-                        selectedSections={selectedSections}
-                        setSelectedSections={setSelectedSections}
                     />
                 </div>
             ),
@@ -114,9 +179,8 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                         requirementGroups={requirementGroups.map((group) => ({
                             id: group.id,
                             name: group.name,
+                            price_for_group: getPriceForGroup(group.id)
                         }))}
-                        selectedRequirementGroups={selectedRequirementGroups}
-                        setSelectedRequirementGroups={setSelectedRequirementGroups}
                     />
                 </div>
             ),
@@ -133,85 +197,93 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                             name: file.title,
                             number: file.number,
                         }))}
-                        selectedDocuments={selectedDocumentNumbers}
-                        setSelectedDocuments={setSelectedDocumentNumbers}
                     />
+                </div>
+            ),
+        },
+        {
+            title: "Payment",
+            content: (
+                <div>
+                    <EmbeddedPaymentForm quantity={selectedRequirements.length} />
                 </div>
             ),
         },
     ];
 
     const next = () => {
-        setCurrentStep((prev) => prev + 1);
+        setCurrentStep(currentStep + 1);
     };
 
     const prev = () => {
-        setCurrentStep((prev) => prev - 1);
+        setCurrentStep(currentStep - 1);
     };
 
-    const handleReportCreation = async () => {
+    // const handleReportCreation = async () => {
 
-        if (!wasmModule) {
-            api.error({
-                message: "Error",
-                description: "WASM module is not loaded. Please try again.",
-            });
-            return;
-        }
+    //     if (!wasmModule) {
+    //         api.error({
+    //             message: "Error",
+    //             description: "WASM module is not loaded. Please try again.",
+    //         });
+    //         return;
+    //     }
 
-       // Initialize filter object with all properties as undefined
-        const filter = {
-            sections_to_include: selectedSections.length > 0 ? selectedSections : undefined,
-            requirements_to_include: requirementIds.length > 0 ? requirementIds : undefined,
-            requirement_groups_to_include: requrementGroupIds.length > 0 ? requrementGroupIds : undefined,
-            document_numbers_to_include: selectedDocumentNumbers.length > 0 ? selectedDocumentNumbers : undefined,
-        };
+    //     // Initialize filter object with all properties as undefined
+    //     const filter = {
+    //         sections_to_include: selectedSections.length > 0 ? selectedSections : undefined,
+    //         requirements_to_include: requirementIds.length > 0 ? requirementIds : undefined,
+    //         requirement_groups_to_include: requrementGroupIds.length > 0 ? requrementGroupIds : undefined,
+    //         document_numbers_to_include: selectedDocumentNumbers.length > 0 ? selectedDocumentNumbers : undefined,
+    //     };
 
-        const input = {
-            regulatory_framework: selectedFramework as RegulatoryFramework,
-            filter,
-        };
+    //     const input = {
+    //         regulatory_framework: selectedFramework as RegulatoryFramework,
+    //         filter,
+    //     };
 
-        let errorResponse: string = ""
+    //     let errorResponse: string = ""
 
-        try {
-            // Set the button to loading state
-            setIsSubmittingReport(true)
+    //     try {
+    //         // Set the button to loading state
+    //         setIsSubmittingReport(true)
 
-            // Call the WASM module's create report function
-            const response = await wasmModule.create_report(input);
+    //         // Call the WASM module's create report function
+    //         const response = await wasmModule.create_report(input);
 
-            errorResponse = response.error?.message || ""
+    //         errorResponse = response.error?.message || ""
 
-            console.log("RESPONSE!!!", response)
-            if (response.error) {
-                throw new Error(response.error.message);
-            }
+    //         console.log("RESPONSE!!!", response)
+    //         if (response.error) {
+    //             throw new Error(response.error.message);
+    //         }
 
-            // Notify success
-            api.success({
-                message: "Success",
-                description: "The report was successfully created. Please allow 24 hours processing time.",
-                placement: "topRight"
-            });
+    //         // Notify success
+    //         api.success({
+    //             message: "Success",
+    //             description: "The report was successfully created. Please allow 24 hours processing time.",
+    //             placement: "topRight"
+    //         });
 
-            // Clear the state and close the modal
-            setSelectedFramework("mdr");
-            setSelectedSections([]);
-            setSelectedDocumentNumbers([]);
-            setCurrentStep(0);
-            onReportSubmitted()
-        } catch (error) {
-            // Notify failure
-            api.error({
-                message: "Error",
-                description: errorResponse || "Failed to create the report. Please try again.",
-            });
-        } finally {
-            // Reset the loading state of the button
-            setIsSubmittingReport(false)
-        }
-    };
+    //         // Clear the state and close the modal
+    //         setSelectedFramework("mdr");
+    //         setSelectedSections([]);
+    //         setSelectedDocumentNumbers([]);
+    //         setCurrentStep(0);
+    //         onReportSubmitted()
+    //     } catch (error) {
+    //         // Notify failure
+    //         api.error({
+    //             message: "Error",
+    //             description: errorResponse || "Failed to create the report. Please try again.",
+    //         });
+    //     } finally {
+    //         // Reset the loading state of the button
+    //         setIsSubmittingReport(false)
+    //     }
+    // };
+
+    const validationResult = validateReportInput();
 
     return (
         <div className="pt-4">
@@ -229,16 +301,15 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                 <Button disabled={currentStep === 0} onClick={prev}>
                     Back
                 </Button>
+                {currentStep === steps.length - 2 && (
+                    validationResult.error ? <div className="bg-red-50 text-red-500 p-2 rounded-md">To create a report you must select at least 1 section, 1 group, and 1 document</div> : null
+                )}
                 {currentStep < steps.length - 1 && (
-                    <Button type="primary" onClick={next}>
+                    <Button type="primary" onClick={next} disabled={validationResult.error && currentStep === steps.length - 2}>
                         Next
                     </Button>
                 )}
-                {currentStep === steps.length - 1 && (
-                    <Button loading={isSubmittingReport || requirementsLoading || requirementGroupsLoading} disabled={requirementsLoading || requirementGroupsLoading} type="primary" onClick={handleReportCreation}>
-                        Create Report
-                    </Button>
-                )}
+
             </div>
         </div>
     );

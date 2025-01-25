@@ -19,6 +19,7 @@ import { LoadingOutlined } from "@ant-design/icons";
 import { Spin } from "antd";
 import ReportStatusTag from "../report-status-tag";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
+import { useGlobalActionsStore } from "@/stores/global-actions-store";
 
 interface ReportMetaViewProps {
     openRedirectPath: string,
@@ -39,37 +40,15 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
     const [isSelected, setIsSelected] = useState(selectedReports.includes(report?.id || ""));
     const [actionLoading, setActionLoading] = useState("");
     const [messageApi, contextHolder] = antdMessage.useMessage();
-    const reportsBeingRefetched = useCacheInvalidationStore((state) => state.beingRefetched["reports"])
-
-    useEffect(() => {
-        const key = actionLoading === "archive" ? "archiving" : "restoring";
-
-        console.log("beingRefetched", reportsBeingRefetched, actionLoading)
-
-        if (actionLoading) {
-            messageApi.open({
-                key,
-                type: "loading",
-                content: actionLoading === "archive" ? "Archiving..." : "Restoring...",
-                duration: 0, // Persistent until updated
-            });
-        }
-
-        if (!reportsBeingRefetched && actionLoading) {
-            messageApi.open({
-                key,
-                type: "success",
-                content: actionLoading === "archive" ? "Report archived successfully." : "Report restored successfully.",
-            });
-
-            setActionLoading("");
-        }
-    }, [reportsBeingRefetched, messageApi]);
-
+    const addStaleReportId = useCacheInvalidationStore((state) => state.addStaleReportId)
+    const addRestoringId = useGlobalActionsStore((state) => state.addRestoringId)
+    const addArchivingId = useGlobalActionsStore((state) => state.addArchivingId)
+    const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate)
 
     useEffect(() => {
         setIsSelected(selectedReports.includes(report?.id || ""));
     }, [selectedReports, report?.id]);
+
 
     const toggleSelection = () => {
         const updatedReports = isSelected
@@ -87,12 +66,10 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
         setActionLoading(action);
 
         try {
-            await archiveReport(wasmModule, report.id);
-
-            // Mark the report ID as stale and trigger a refetch
-            const cacheStore = useCacheInvalidationStore.getState();
-            cacheStore.addStaleId(report.id);
-            cacheStore.triggerUpdate("reports");
+            const res = await archiveReport(wasmModule, report.id);
+            addArchivingId(report.id)
+            addStaleReportId(report.id)
+            triggerUpdate("reports")
         } catch (error) {
             console.error("Error archiving report:", error);
         }
@@ -105,114 +82,14 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
         setActionLoading(action);
 
         try {
-            await restoreReport(wasmModule, report.id);
-
-            // Mark the report ID as stale and trigger a refetch
-            const cacheStore = useCacheInvalidationStore.getState();
-            cacheStore.addStaleId(report.id);
-            cacheStore.triggerUpdate("reports");
+            const res = await restoreReport(wasmModule, report.id);
+            addRestoringId(report.id)
+            addStaleReportId(report.id)
+            triggerUpdate("reports")
         } catch (error) {
             console.error("Error archiving report:", error);
         }
     };
-
-
-    // const handleArchiveReport = async (e: React.MouseEvent, action: string) => {
-    //     e.stopPropagation()
-    //     if (!report?.id) return;
-
-    //     const key = "archiving"; // Unique key for the message
-
-    //     messageApi.open({
-    //         key,
-    //         type: "loading",
-    //         content: "Archiving...",
-    //         duration: 0, // Persistent until updated
-    //     });
-
-    //     setActionLoading(action);
-
-    //     try {
-    //         const res = await archiveReport(wasmModule, report.id);
-
-    //         const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-    //         await delay(1000);
-
-    //         // Mark the report ID as stale and trigger a refetch
-    //         const cacheStore = useCacheInvalidationStore.getState();
-    //         cacheStore.addStaleId(report.id);
-    //         cacheStore.triggerUpdate("reports");
-
-    //         console.log("isRefetchingReports before loop", useCacheInvalidationStore.getState())
-
-    //         // Monitor isRefetching from useAllReports
-    //         const checkRefetchCompletion = async () => {
-
-    //             return new Promise<void>((resolve) => {
-    //                 const interval = setInterval(() => {
-    //                     if (!beingRefetched) {
-    //                         clearInterval(interval);
-    //                         resolve();
-    //                     }
-    //                 }, 100);
-    //             });
-    //         };
-
-    //         await checkRefetchCompletion();
-
-    //         messageApi.open({
-    //             key,
-    //             type: "success",
-    //             content: "Report archived successfully.",
-    //         });
-
-    //     } catch (error) {
-    //         console.error("Error archiving report:", error);
-
-    //         messageApi.open({
-    //             key,
-    //             type: "error",
-    //             content: "Failed to archive the report. Please try again.",
-    //         });
-    //     } finally {
-    //         setActionLoading("");
-    //     }
-    // };
-
-    // const handleRestoreReport = async (e: React.MouseEvent, action: string) => {
-    //     e.stopPropagation()
-    //     if (!report?.id) return;
-
-    //     const key = "restoring"; // Unique key for the message
-    //     messageApi.open({
-    //         key,
-    //         type: "loading",
-    //         content: "Restoring...",
-    //         duration: 0, // Persistent until updated
-    //     });
-
-    //     setActionLoading(action);
-
-    //     try {
-    //         const res = await restoreReport(wasmModule, report.id);
-
-    //         messageApi.open({
-    //             key,
-    //             type: "success",
-    //             content: "Report restored successfully.",
-    //         });
-    //     } catch (error) {
-    //         console.error("Error restoring report:", error);
-
-    //         messageApi.open({
-    //             key,
-    //             type: "error",
-    //             content: "Failed to restore the report. Please try again.",
-    //         });
-    //     } finally {
-    //         setActionLoading("");
-    //     }
-    // };
 
 
     const menu = (
@@ -259,7 +136,6 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
                 }`}
             onClick={report?.status === "processing" ? undefined : toggleSelection}
         >{contextHolder}
-            {/* Overlay for processing */}
             {report?.status === "processing" && (
                 <div className="absolute inset-0 bg-gray-100 bg-opacity-70 flex items-center justify-center z-10">
                     <Typography textSize="small" className="text-gray-500">

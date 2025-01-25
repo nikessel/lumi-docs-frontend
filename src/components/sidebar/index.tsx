@@ -69,6 +69,11 @@ const AppSiderComponent: React.FC = () => {
             icon: <FileSearchOutlined />,
             label: <Link href="/standards">Regulatory Frameworks</Link>,
         },
+        {
+            key: "/",
+            icon: <LogoutOutlined />,
+            label: <Link href="/">Sign out</Link>,
+        },
     ];
 
     const accountMenuItems = [
@@ -106,14 +111,14 @@ const AppSiderComponent: React.FC = () => {
                         selectedKeys={[activeKey]} // Highlight the menu item for the base path
                         items={menuItems}
                     />
-                    <Divider orientation="left">
+                    {/* <Divider orientation="left">
                         <div className="text-xs">Account</div>
                     </Divider>
                     <Menu
                         mode="inline"
                         selectedKeys={[activeKey]} // Highlight the menu item for the base path
                         items={accountMenuItems}
-                    />
+                    /> */}
                 </div>
             </div>
         </Sider>

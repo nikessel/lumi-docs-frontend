@@ -29,13 +29,13 @@ const DefaultSetupComponent: React.FC<DefaultSetupComponentProps> = ({
                 No columns available
             </Typography>
             <Typography color='secondary' className="mb-4">
-                You do not have any columns setup for your kanban board. Please select an option below.
+                You do not have any columns setup for your kanban board. Please click the button below to create the default setup.
             </Typography>
             <div style={{ display: 'flex', gap: '16px' }}>
                 <Button type="primary" onClick={onDefaultSetup}>
                     Create Default Setup
                 </Button>
-                <Button onClick={onCustomSetup}>Create Custom Setup</Button>
+                {/* <Button onClick={onCustomSetup}>Create Custom Setup</Button> */}
             </div>
         </div>
     );

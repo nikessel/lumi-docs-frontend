@@ -22,7 +22,6 @@ const CommentRenderAndAdder: React.FC<CommentRenderAndAdderProps> = ({ task_id }
     const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set());
     const [messageApi, contextHolder] = message.useMessage(); // Initialize message API
     const [deletingComment, setDeletingComment] = useState<{ content: string, created_date: string } | null>(null)
-
     const [prevCommentsLength, setPrevCommentsLength] = useState<number | null>(null);
     const [addingComment, setAddingComment] = useState<boolean>(false);
 
@@ -36,13 +35,14 @@ const CommentRenderAndAdder: React.FC<CommentRenderAndAdderProps> = ({ task_id }
     }, [task?.comments?.length]);
 
     useEffect(() => {
-        if ((task?.comments?.length || task?.comments?.length === 0) && prevCommentsLength) {
+        if ((task?.comments?.length || task?.comments?.length === 0) && (prevCommentsLength || prevCommentsLength === 0)) {
+            console.log("???????", task?.comments?.length, prevCommentsLength)
             task?.comments?.length > prevCommentsLength && messageApi.success("Comment added successfully.");
             task?.comments?.length < prevCommentsLength && messageApi.success("Comment deleted successfully.");
             setAddingComment(false);
             setNewComment("");
         }
-        task?.comments?.length && setPrevCommentsLength(task?.comments?.length)
+        (task?.comments?.length || task?.comments?.length === 0) && setPrevCommentsLength(task?.comments?.length)
     }, [task?.comments?.length])
 
     const visibleComments = useMemo(() => sortedComments.slice(0, commentsToShow), [sortedComments, commentsToShow]);

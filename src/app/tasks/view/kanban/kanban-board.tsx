@@ -42,7 +42,6 @@ const KanbanBoard: React.FC = () => {
     const [settingUpBoard, setSettingUpBoard] = useState(false);
 
     useEffect(() => {
-        console.log("THISERROR", user)
         if (user?.task_management?.kanban?.columns && user.task_management.kanban.columns.length > 0) {
             // Map user kanban columns to board state
             setSettingUpBoard(true)
@@ -119,7 +118,6 @@ const KanbanBoard: React.FC = () => {
     if (loading) return <p>Loading Kanban board...</p>;
     if (error) return <p>Error loading Kanban board: {error}</p>;
     if (settingUpBoard) return <p>Setting up Kanban board...</p>;
-    if (!board) return <p>No Kanban board data available</p>;
 
     return (
         <div>
@@ -133,7 +131,7 @@ const KanbanBoard: React.FC = () => {
                         onDefaultSetup={handleDefaultSetup}
                     />
                     :
-                    <div>
+                    board ? <div>
                         <UnassignedTasksIndicator
                             tasks={tasks}
                             kanbanColumns={user?.task_management?.kanban?.columns || []}
@@ -201,48 +199,6 @@ const KanbanBoard: React.FC = () => {
                                 }
                             }}
 
-
-
-                            // onCardDragEnd={async (card, source, destination) => {
-                            //     if (!destination) return; // If the card is dropped outside of a valid column, do nothing
-
-                            //     setBoard((prevBoard) => (prevBoard ? moveCard(prevBoard, source, destination) : null));
-
-                            //     if (!wasmModule) {
-                            //         console.error("WASM module is not available.");
-                            //         return;
-                            //     }
-
-                            //     // Find the full task object from the tasks list using the card ID
-                            //     const taskToUpdate = tasks.find((task) => task.id === card.id);
-
-                            //     if (!taskToUpdate) {
-                            //         console.error(`Task with ID "${card.id}" not found.`);
-                            //         return;
-                            //     }
-
-
-
-                            //     try {
-                            //         const updates = [
-                            //             {
-                            //                 task: taskToUpdate, // Use the full task object
-                            //                 targetColumnName: String(destination.toColumnId), // Map destination column ID
-                            //             },
-                            //         ];
-
-                            //         const success = await moveTasksToColumns(wasmModule, updates);
-
-                            //         if (success) {
-                            //             console.log(`Task "${card.title}" moved successfully to "${destination.toColumnId}".`);
-                            //         } else {
-                            //             message.error(`Failed to move task "${card.title}".`);
-                            //         }
-                            //     } catch (error) {
-                            //         console.error("Error moving task:", error);
-                            //         message.error("Failed to update the backend for the moved task.");
-                            //     }
-                            // }}
                             renderCard={(card) => (
                                 <CustomCard task={tasks.find((task) => task.id === card.id)} /> // Pass the entire task object to the card
                             )}
@@ -254,16 +210,16 @@ const KanbanBoard: React.FC = () => {
                                 />
                             )}
                             allowAddCard={false}
-                            renderColumnAdder={() => <AddColumnSection
-                                newColumnName={newColumnName}
-                                setNewColumnName={setNewColumnName}
-                                selectedStatus={selectedStatus}
-                                setSelectedStatus={setSelectedStatus}
-                                handleAddColumn={handleAddColumn}
-                            />}
+                        // renderColumnAdder={() => <AddColumnSection
+                        //     newColumnName={newColumnName}
+                        //     setNewColumnName={setNewColumnName}
+                        //     selectedStatus={selectedStatus}
+                        //     setSelectedStatus={setSelectedStatus}
+                        //     handleAddColumn={handleAddColumn}
+                        // />}
                         >
                             {board}
-                        </ControlledBoard></div>}
+                        </ControlledBoard></div> : ""}
 
             </div>
         </div>

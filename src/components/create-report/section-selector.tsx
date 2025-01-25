@@ -1,23 +1,26 @@
 import React, { useState } from "react";
 import { List, Checkbox, Button } from "antd";
+import { useCreateReportStore } from "@/stores/create-report-store";
+import { formatPrice } from "../payment/price-tracker";
 
-interface Section {
+interface SectionDisplay {
     id: string;
     name: string;
+    price_for_section: number;
 }
 
 interface SelectSectionsProps {
-    sections: Section[];
-    selectedSections: string[];
-    setSelectedSections: React.Dispatch<React.SetStateAction<string[]>>;
+    sections: SectionDisplay[];
 }
 
-const SelectSections: React.FC<SelectSectionsProps> = ({
-    sections,
-    selectedSections,
-    setSelectedSections,
-}) => {
+const SelectSections: React.FC<SelectSectionsProps> = ({ sections }) => {
+    const {
+        selectedSections,
+        setSelectedSections,
+    } = useCreateReportStore(); // Zustand store access
+
     const [allSectionsSelected, setAllSectionsSelected] = useState(true);
+
     const [showSections, setShowSections] = useState(false);
 
     const handleAllSectionsToggle = (checked: boolean) => {
@@ -25,23 +28,23 @@ const SelectSections: React.FC<SelectSectionsProps> = ({
         if (checked) {
             setSelectedSections(sections.map((section) => section.id)); // Select all sections
         } else {
-            setSelectedSections([]); // Deselect all sections
+            setSelectedSections([]);
         }
     };
 
     const handleSectionSelect = (id: string) => {
-        setSelectedSections((prev) => {
-            if (prev.includes(id)) {
-                return prev.filter((sectionId) => sectionId !== id);
-            } else {
-                return [...prev, id];
-            }
-        });
+        if (selectedSections.includes(id)) {
+            setSelectedSections(selectedSections.filter((sectionId) => sectionId !== id));
+        } else {
+            setSelectedSections([...selectedSections, id]);
+        }
     };
 
     const toggleShowSections = () => {
         setShowSections((prev) => !prev);
     };
+
+    console.log("SECTIONS", sections);
 
     return (
         <div className="space-y-4">
@@ -51,13 +54,9 @@ const SelectSections: React.FC<SelectSectionsProps> = ({
                     checked={selectedSections.length === sections.length}
                     onChange={(e) => handleAllSectionsToggle(e.target.checked)}
                 >
-                    All Sections ({sections.length})
+                    All Sections ({selectedSections.length}/{sections.length})
                 </Checkbox>
-                <Button
-                    type="link"
-                    onClick={toggleShowSections}
-
-                >
+                <Button type="link" onClick={toggleShowSections}>
                     {showSections ? "Hide sections" : "Show sections"}
                 </Button>
             </div>
@@ -69,13 +68,16 @@ const SelectSections: React.FC<SelectSectionsProps> = ({
                     bordered
                     dataSource={sections}
                     renderItem={(section) => (
-                        <List.Item>
-                            <Checkbox
-                                checked={selectedSections.includes(section.id)}
-                                onChange={() => handleSectionSelect(section.id)}
-                            >
-                                {section.name}
-                            </Checkbox>
+                        <List.Item className="w-full">
+                            <div className="flex justify-between items-center w-full">
+                                <Checkbox
+                                    checked={selectedSections.includes(section.id)}
+                                    onChange={() => handleSectionSelect(section.id)}
+                                >
+                                    {section.name}
+                                </Checkbox>
+                                <div className="px-2 py-1 rounded-md text-primary bg-bg_secondary text-center text-xs">{formatPrice(section.price_for_section)}</div>
+                            </div>
                         </List.Item>
                     )}
                 />
