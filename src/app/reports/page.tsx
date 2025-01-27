@@ -18,6 +18,7 @@ import useCacheInvalidationStore from "@/stores/cache-validation-store";
 // import { fetchReportsByIds } from "@/utils/report-utils";
 import { useGlobalActionsStore } from "@/stores/global-actions-store";
 import { message } from "antd";
+import ReportStateHandler from "@/components/report-state-handler";
 
 const Page = () => {
     const { reports, loading, error } = useAllReportsContext();
@@ -122,83 +123,60 @@ const Page = () => {
     }
 
     // Render error state
-    if (error) {
-        return (
-            <div className="flex flex-col items-center justify-center h-full">
-                <Typography textSize="h5" color="secondary">
-                    No reports
-                </Typography>
-            </div>
-        );
-    }
+    // if (error) {
+    //     return (
+    //         <div className="flex flex-col items-center justify-center h-full">
+    //             <Typography textSize="h5" color="secondary">
+    //                 No reports
+    //             </Typography>
+    //         </div>
+    //     );
+    // }
 
     // Render reports
     return (
-        <div>
-            <PaymentChecker />
-            {/* Header Section */}
-            <div className="flex justify-between items-center">
-                <Typography textSize="h4">Reports</Typography>
-                <div className="flex items-center space-x-2">
-                    {/* New Button */}
-                    <CreateReportModal />
+        <ReportStateHandler expectReports={true} loading={false} reports={reports} error={error}>
+            <div>
+                <PaymentChecker />
+                {/* Header Section */}
+                <div className="flex justify-between items-center">
+                    <Typography textSize="h4">Reports</Typography>
+                    <div className="flex items-center space-x-2">
+                        {/* New Button */}
+                        <CreateReportModal />
+                    </div>
                 </div>
-            </div>
-            <Divider className="border-thin mt-2 mb-2" />
-            <div className="flex justify-between items-center">
-                <Typography color="secondary">
-                    Open a single report or check more for merged view
-                </Typography>
-                <div className="flex gap-3">
-                    <Input
-                        size="small"
-                        placeholder="Search reports"
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        allowClear
-                        style={{ width: 200 }}
-                    />
-                    <Button
-                        size="small"
-                        type="primary"
-                        disabled={selectedCount === 0}
-                        onClick={(e) => {
-                            e.stopPropagation(); // Prevent event from propagating to the parent div
-                            if (selectedReports.length > 0) {
-                                router.push(`/reports/view/overview?selectedReports=${encodeURIComponent(selectedReports.join(','))}`);
-                            }
-                        }}
-                    >
-                        {selectedCount === 0 ? "Select reports" : selectedCount === 1 ? `Open ${selectedCount} report` : `Open ${selectedCount} reports`}
-                    </Button>
+                <Divider className="border-thin mt-2 mb-2" />
+                <div className="flex justify-between items-center">
+                    <Typography color="secondary">
+                        Open a single report or check more for merged view
+                    </Typography>
+                    <div className="flex gap-3">
+                        <Input
+                            size="small"
+                            placeholder="Search reports"
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            allowClear
+                            style={{ width: 200 }}
+                        />
+                        <Button
+                            size="small"
+                            type="primary"
+                            disabled={selectedCount === 0}
+                            onClick={(e) => {
+                                e.stopPropagation(); // Prevent event from propagating to the parent div
+                                if (selectedReports.length > 0) {
+                                    router.push(`/reports/view/overview?selectedReports=${encodeURIComponent(selectedReports.join(','))}`);
+                                }
+                            }}
+                        >
+                            {selectedCount === 0 ? "Select reports" : selectedCount === 1 ? `Open ${selectedCount} report` : `Open ${selectedCount} reports`}
+                        </Button>
+                    </div>
                 </div>
-            </div>
 
-            <div className="flex flex-col mt-4">
-                {sortedReports.filter((report) => !isArchived(report.status)).map((report) => (
-                    <ReportMetaView
-                        report={report}
-                        key={report.id}
-                        openRedirectPath="/reports/view/overview"
-                        wasmModule={wasmModule}
-
-                    />
-                ))}
-            </div>
-            {archivedReports.length > 0 ? <Button
-                className="mt-4"
-                size="small"
-                onClick={() => setShowArchived(!showArchived)}
-                type="link"
-            >
-                {showArchived
-                    ? `Hide archived (${archivedCount})`
-                    : `Archived (${archivedCount})`}
-            </Button> : ""}
-            {showArchived && archivedReports.length > 0 && (
-                <>
-                    <Divider className="border-thin mt-4 mb-2" />
-                    <Typography textSize="h5" className="mb-2">Archived Reports</Typography>
-                    {archivedReports.map((report) => (
+                <div className="flex flex-col mt-4">
+                    {sortedReports.filter((report) => !isArchived(report.status)).map((report) => (
                         <ReportMetaView
                             report={report}
                             key={report.id}
@@ -207,10 +185,35 @@ const Page = () => {
 
                         />
                     ))}
-                </>
-            )}
-            {contextHolder}
-        </div>
+                </div>
+                {archivedReports.length > 0 ? <Button
+                    className="mt-4"
+                    size="small"
+                    onClick={() => setShowArchived(!showArchived)}
+                    type="link"
+                >
+                    {showArchived
+                        ? `Hide archived (${archivedCount})`
+                        : `Archived (${archivedCount})`}
+                </Button> : ""}
+                {showArchived && archivedReports.length > 0 && (
+                    <>
+                        <Divider className="border-thin mt-4 mb-2" />
+                        <Typography textSize="h5" className="mb-2">Archived Reports</Typography>
+                        {archivedReports.map((report) => (
+                            <ReportMetaView
+                                report={report}
+                                key={report.id}
+                                openRedirectPath="/reports/view/overview"
+                                wasmModule={wasmModule}
+
+                            />
+                        ))}
+                    </>
+                )}
+                {contextHolder}
+            </div>
+        </ReportStateHandler>
     );
 };
 

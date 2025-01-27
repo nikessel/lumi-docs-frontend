@@ -13,6 +13,7 @@ import type { StorageKey, Claims } from "@wasm";
 import { useRouter } from "next/navigation";
 import { useWasm } from "@/components/WasmProvider";
 import { storage, useStorage } from "@/storage";
+import LoadingLogoScreen from "./loading-screen";
 
 const SK = {
   id_token: "id_token" as StorageKey,
@@ -78,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const { wasmModule, isLoading: isWasmLoading } = useWasm();
   const [idToken] = useStorage(SK.id_token);
+
   const router = useRouter();
 
   const handleEmailVerification = useCallback(async (email: string) => {
@@ -249,6 +251,7 @@ export function AuthCallback() {
   const [processing, setProcessing] = useState(true);
   const { wasmModule, isLoading: isWasmLoading } = useWasm();
 
+
   const handleEmailVerification = useCallback(
     async (email: string) => {
       storage.clear();
@@ -284,6 +287,7 @@ export function AuthCallback() {
       return;
     }
 
+
     (async () => {
       try {
         const exchangeResult = await wasmModule.exchange_code_for_identity({
@@ -301,12 +305,16 @@ export function AuthCallback() {
           }
           throw new Error(exchangeResult.error.message);
         }
+        console.log("CALLBACKCOMPONENT", wasmModule)
+
 
         if (!exchangeResult.output?.output) {
           throw new Error("No output received from identity exchange");
         }
 
         const tokens = exchangeResult.output.output;
+
+
 
         if (!tokens.id_token) {
           throw new Error("Missing id_token in response");
@@ -348,6 +356,7 @@ export function AuthCallback() {
 
         setTimeout(() => {
           if (mounted) {
+            // router.push("/dashboard")
             window.location.href = "/dashboard"; // Navigate to /dashboard and reload as if the user hit Enter in the browser
           }
         }, 0);

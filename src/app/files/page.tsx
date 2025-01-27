@@ -11,6 +11,7 @@ import FileManager from './file-manager';
 import { useFiles } from '@/hooks/files-hooks';
 import FileUploadModal from '@/components/upload-files/file-upload-modal';
 import { useFilesContext } from '@/contexts/files-context';
+import ReportStateHandler from '@/components/report-state-handler';
 
 const Page = () => {
     const { files, isLoading, error } = useFilesContext();
@@ -131,78 +132,80 @@ const Page = () => {
     const handleCloseModal = () => setIsModalVisible(false);
 
     return (
-        <div>
+        <ReportStateHandler expectReports={false} loading={false} reports={[]} error={error}>
 
-            <div className="flex justify-between items-center">
-                <div>
-                    <Typography textSize="h4">Files</Typography>
+            <div>
+                <div className="flex justify-between items-center">
+                    <div>
+                        <Typography textSize="h4">Files</Typography>
+                    </div>
+                    <Button
+                        type="primary"
+                        icon={<UploadOutlined />}
+                        onClick={handleOpenModal}
+                    >
+                        Upload
+                    </Button>
                 </div>
-                <Button
-                    type="primary"
-                    icon={<UploadOutlined />}
-                    onClick={handleOpenModal}
-                >
-                    Upload
-                </Button>
+                <Divider className="border-thin mt-2 mb-2" />
+
+                {error ? (
+                    <Typography color="secondary">{error}</Typography>
+                ) : (
+                    <FileManager files={files} />
+
+                    // <List
+                    //     dataSource={files}
+                    //     renderItem={(file) => (
+                    //         <List.Item>
+                    //             <div className="w-full flex justify-between items-center">
+                    //                 <div className="flex gap-8">
+                    //                     <Typography>
+                    //                         {file.title || file.path || file.id}
+                    //                     </Typography>
+
+                    //                     <Typography color="secondary" textSize="small">
+                    //                         {new Date(file.created_date).toLocaleDateString() || 'N/A'}
+                    //                     </Typography>
+                    //                 </div>
+                    //                 <div className="flex gap-4">
+                    //                     <Button
+                    //                         size="small"
+                    //                         loading={viewLoading[file.id]}
+                    //                         onClick={() => viewFile(file.id)}
+                    //                         disabled={viewLoading[file.id]}
+                    //                     >
+                    //                         View
+                    //                     </Button>
+                    //                     <Button
+                    //                         size="small"
+                    //                         loading={downloadLoading[file.id]}
+                    //                         onClick={() => downloadFile(file.id, file.title || file.path || file.id, "application/pdf")}
+                    //                         disabled={downloadLoading[file.id]}
+                    //                     >
+                    //                         Download
+                    //                     </Button>
+                    //                     <Button
+                    //                         type="default"
+                    //                         size="small"
+                    //                         danger
+                    //                         onClick={() => handleDelete(file.id)}
+                    //                     >
+                    //                         Delete
+                    //                     </Button>
+                    //                 </div>
+                    //             </div>
+                    //         </List.Item>
+                    //     )}
+                    // />
+                )}
+                <FileUploadModal
+                    visible={isModalVisible}
+                    onClose={handleCloseModal}
+                    onUploadComplete={handleUploadComplete}
+                />
             </div>
-            <Divider className="border-thin mt-2 mb-2" />
-
-            {error ? (
-                <Typography color="secondary">{error}</Typography>
-            ) : (
-                <FileManager files={files} />
-
-                // <List
-                //     dataSource={files}
-                //     renderItem={(file) => (
-                //         <List.Item>
-                //             <div className="w-full flex justify-between items-center">
-                //                 <div className="flex gap-8">
-                //                     <Typography>
-                //                         {file.title || file.path || file.id}
-                //                     </Typography>
-
-                //                     <Typography color="secondary" textSize="small">
-                //                         {new Date(file.created_date).toLocaleDateString() || 'N/A'}
-                //                     </Typography>
-                //                 </div>
-                //                 <div className="flex gap-4">
-                //                     <Button
-                //                         size="small"
-                //                         loading={viewLoading[file.id]}
-                //                         onClick={() => viewFile(file.id)}
-                //                         disabled={viewLoading[file.id]}
-                //                     >
-                //                         View
-                //                     </Button>
-                //                     <Button
-                //                         size="small"
-                //                         loading={downloadLoading[file.id]}
-                //                         onClick={() => downloadFile(file.id, file.title || file.path || file.id, "application/pdf")}
-                //                         disabled={downloadLoading[file.id]}
-                //                     >
-                //                         Download
-                //                     </Button>
-                //                     <Button
-                //                         type="default"
-                //                         size="small"
-                //                         danger
-                //                         onClick={() => handleDelete(file.id)}
-                //                     >
-                //                         Delete
-                //                     </Button>
-                //                 </div>
-                //             </div>
-                //         </List.Item>
-                //     )}
-                // />
-            )}
-            <FileUploadModal
-                visible={isModalVisible}
-                onClose={handleCloseModal}
-                onUploadComplete={handleUploadComplete}
-            />
-        </div>
+        </ReportStateHandler>
     );
 };
 

@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import type { ReactNode } from "react";
 import { AuthProvider } from "@/components/Auth0";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
@@ -18,6 +19,9 @@ import { FilesProvider } from '@/contexts/files-context';
 import { UserProvider } from "@/contexts/user-context";
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
+import { useAuth } from "@/components/Auth0";
+import useLoadingStore from "@/stores/global-loading-unification";
+
 
 const { Content } = Layout;
 
@@ -25,39 +29,43 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 
 
 function LayoutWithWasm({ children }: { children: ReactNode }) {
   const { isLoading: wasmLoading } = useWasm(); // Now inside the provider context
-  const isDocumentationPage = typeof window !== "undefined" && window.location.pathname === "/documentation";
+  const { isLoading: AuthLoading } = useAuth()
+  const isLoading = useLoadingStore((state) => state.isLoading)
 
-  if (wasmLoading) {
+  const allLoading = isLoading() || wasmLoading || AuthLoading
+
+  const noLayout = typeof window !== "undefined" && (window.location.pathname === "/documentation" || window.location.pathname === "/logout" || window.location.pathname === "/callback");
+
+  if (wasmLoading || AuthLoading) {
     return <LoadingLogoScreen />;
   }
 
   return (
-    <AuthProvider>
-      <AntdRegistry>
-        <Elements stripe={stripePromise}>
-          <ConfigProvider theme={antdconfig}>
-            <Layout className="h-full" style={{ minWidth: 1200 }}>
-              {!isDocumentationPage ? <AppSider /> : ""}
-              <Layout className="h-full">
-                <AllReportsProvider>
-                  <RegulatoryFrameworksProvider>
-                    <FilesProvider>
-                      <UserProvider>
-                        <Content className="pt-8 pb-8 px-4 sm:px-8 container h-full">
-                          <div className="bg-white p-6 rounded shadow-sm h-full overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-                            {children}
-                          </div>
-                        </Content>
-                      </UserProvider>
-                    </FilesProvider>
-                  </RegulatoryFrameworksProvider>
-                </AllReportsProvider>
-              </Layout>
+    <AntdRegistry>
+      <Elements stripe={stripePromise}>
+        <ConfigProvider theme={antdconfig}>
+          <Layout className="h-full" style={{ minWidth: 1200 }}>
+            {!noLayout ? <AppSider /> : ""}
+            <Layout className="h-full">
+              <AllReportsProvider>
+                <RegulatoryFrameworksProvider>
+                  <FilesProvider>
+                    <UserProvider>
+                      <Content className="pt-8 pb-8 px-4 sm:px-8 container h-full">
+                        <div className="bg-white p-6 rounded shadow-sm h-full overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                          {children}
+                        </div>
+                      </Content>
+                    </UserProvider>
+                  </FilesProvider>
+                </RegulatoryFrameworksProvider>
+              </AllReportsProvider>
             </Layout>
-          </ConfigProvider>
-        </Elements>
-      </AntdRegistry>
-    </AuthProvider>
+          </Layout>
+        </ConfigProvider>
+      </Elements>
+    </AntdRegistry>
+
   );
 }
 
@@ -70,7 +78,9 @@ export default function RootLayout({
     <html lang="en" className="h-full">
       <body className="h-full">
         <WasmProviderComponent>
-          <LayoutWithWasm>{children}</LayoutWithWasm>
+          <AuthProvider>
+            <LayoutWithWasm>{children}</LayoutWithWasm>
+          </AuthProvider>
         </WasmProviderComponent>
       </body>
     </html>
