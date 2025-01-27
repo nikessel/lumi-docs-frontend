@@ -151,6 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [wasmModule]);
 
   const checkSession = useCallback(async () => {
+
     if (!wasmModule || !idToken) {
       setIsLoading(false);
       return;
@@ -160,6 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const claimsResult = await wasmModule.token_to_claims({
         token: idToken,
       });
+
 
       if (claimsResult.error) {
         if (claimsResult.error.kind === "EmailNotVerified") {
@@ -346,9 +348,10 @@ export function AuthCallback() {
 
         setTimeout(() => {
           if (mounted) {
-            router.push("/");
+            window.location.href = "/dashboard"; // Navigate to /dashboard and reload as if the user hit Enter in the browser
           }
         }, 0);
+
       } catch (err) {
         if (!mounted) return;
         console.error("Authentication error:", err);

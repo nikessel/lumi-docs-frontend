@@ -13,6 +13,9 @@ interface GlobalActionsState {
 
     removeArchivingId: (id: string) => void;
     removeRestoringId: (id: string) => void;
+
+    resetState: () => void
+
 }
 
 export const useGlobalActionsStore = create<GlobalActionsState>()(
@@ -51,6 +54,10 @@ export const useGlobalActionsStore = create<GlobalActionsState>()(
                 set((state) => ({
                     restoring_ids: state.restoring_ids.filter((restoringId) => restoringId !== id),
                 })),
+
+            resetState: () => set(() => ({ archiving_ids: [], restoring_ids: [], })),
+
+
         }),
         {
             name: "global-actions-store", // Key for localStorage

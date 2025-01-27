@@ -63,7 +63,6 @@ export default function PaymentChecker() {
 
     useEffect(() => {
         if (!sessionId || !wasmModule || creatingReport) return;
-        console.log("RUNNINGGGG EFFECT TO CREATE REPORT", sessionId, wasmModule, creatingReport)
         // Show "Checking payment..." loading notification
         setCreatingReport(true)
         const key = "payment-check";
@@ -85,7 +84,6 @@ export default function PaymentChecker() {
                     api.error("Payment Check Failed");
                     return;
                 }
-                console.log("!!!!!data", data)
 
                 const currentTime = Math.floor(Date.now() / 1000);
                 const sessionCreationTime = data.created
@@ -93,19 +91,13 @@ export default function PaymentChecker() {
                 // Verify if the session was created within the last 10 minutes
                 const isWithinTenMinutes = currentTime - sessionCreationTime <= 600;
 
-                console.log("!!!!!data", isWithinTenMinutes, currentTime, sessionCreationTime)
-
                 if (data.payment_status === "paid" && isWithinTenMinutes) {
 
                     const valRep = validateReportInput()
-                    console.log("!!!!!data valRep", valRep)
-
 
                     const createReportInput = !valRep.error ? valRep.input : undefined
 
                     const { resetState, selectedSections } = useCreateReportStore.getState();
-
-                    console.log("!!!!!data input", createReportInput)
 
                     resetState()
 

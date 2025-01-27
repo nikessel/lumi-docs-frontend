@@ -26,11 +26,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ChevronRight, AlertCircle, CheckCircle2, XCircle, Info, CheckCircle, Clock } from 'lucide-react';
-import type { 
-  Report, 
+import type {
+  Report,
   Section,
-  ReportStatus, 
-  RequirementAssessment, 
+  ReportStatus,
+  RequirementAssessment,
   RequirementGroupAssessment,
   Requirement,
   RequirementGroup,
@@ -141,7 +141,7 @@ const QuoteDisplay: React.FC<{
   quote: AssessmentQuote;
 }> = ({ quote }) => {
   const relevancy = Math.round(quote.relevancy_rating);
-  
+
   return (
     <div className="border rounded-lg bg-white shadow-sm overflow-hidden my-4">
       {/* Quote content section */}
@@ -150,10 +150,10 @@ const QuoteDisplay: React.FC<{
         <div className="absolute top-0 left-0 text-gray-100 p-4">
           <QuoteIcon className="h-8 w-8" />
         </div>
-        
+
         <div className="relative bg-gray-50 rounded-lg p-6 italic">
           <div className="prose prose-sm max-w-none prose-p:my-2 prose-p:leading-relaxed prose-headings:mb-3">
-            <ReactMarkdown 
+            <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               className="text-gray-700"
             >
@@ -162,7 +162,7 @@ const QuoteDisplay: React.FC<{
           </div>
         </div>
       </div>
-      
+
       {/* Metadata footer */}
       <div className="border-t bg-gray-50 px-4 py-3">
         <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
@@ -170,14 +170,14 @@ const QuoteDisplay: React.FC<{
             <FileText className="h-4 w-4" />
             <span className="font-medium">{quote.raw.document_title}</span>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
               <span>Page {quote.raw.page}</span>
               <span className="text-gray-400">•</span>
               <span>Lines {quote.raw.start_line}-{quote.raw.end_line}/{quote.raw.total_lines_on_page}</span>
             </div>
-            
+
             <div className="flex items-center gap-2">
               <Bookmark className="h-4 w-4 text-blue-500" />
               <span className={`font-medium ${relevancy >= 80 ? 'text-green-600' : relevancy >= 60 ? 'text-blue-600' : 'text-gray-600'}`}>
@@ -198,7 +198,7 @@ const isRequirementAssessment = (
   return 'objective_research_summary' in assessment.content;
 };
 
-const ThreadViewButton: React.FC<{ 
+const ThreadViewButton: React.FC<{
   reportId: string;
 }> = ({ reportId }) => {
   const router = useRouter();
@@ -314,7 +314,7 @@ const TaskDisplay: React.FC<TaskDisplayProps> = ({ task }) => {
             <h3 className="text-sm font-semibold text-gray-500 mb-1">Description</h3>
             <p className="text-sm text-gray-700">{task.description}</p>
           </div>
-          
+
           <div>
             <h3 className="text-sm font-semibold text-gray-500 mb-1">Task Details</h3>
             <p className="text-sm text-gray-700">{task.task}</p>
@@ -325,7 +325,7 @@ const TaskDisplay: React.FC<TaskDisplayProps> = ({ task }) => {
               <h3 className="text-sm font-semibold text-gray-500 mb-1">Suggestion</h3>
               <div className="bg-blue-50 p-3 rounded-md">
                 <p className="text-sm font-medium text-blue-900 mb-1">
-                  {task.suggestion.kind.split('_').map((word: string) => 
+                  {task.suggestion.kind.split('_').map((word: string) =>
                     word.charAt(0).toUpperCase() + word.slice(1)
                   ).join(' ')}
                 </p>
@@ -367,13 +367,13 @@ const TaskList: React.FC<TaskListProps> = ({ reportId, requirementId }) => {
   React.useEffect(() => {
     const fetchTasks = async () => {
       if (!wasmModule) return;
-      
+
       try {
         const response = await wasmModule.get_tasks_by_report_and_requirement({
           report_id: reportId,
           requirement_id: requirementId
         });
-        
+
         if (response.output) {
           setTasks(response.output.output);
         }
@@ -402,7 +402,7 @@ const TaskList: React.FC<TaskListProps> = ({ reportId, requirementId }) => {
   );
 };
 
-const RequirementCard: React.FC<{ 
+const RequirementCard: React.FC<{
   req: RequirementWrapper;
   reportId: string;
   index: number;
@@ -413,7 +413,7 @@ const RequirementCard: React.FC<{
   React.useEffect(() => {
     const fetchRequirement = async () => {
       if (!wasmModule || !req.id) return;
-      
+
       try {
         const response = await wasmModule.get_requirement({ input: req.id });
         if (response.output) {
@@ -430,12 +430,12 @@ const RequirementCard: React.FC<{
   }, [wasmModule, req.id, reqDetails]);
 
   return (
-<AccordionItem value={`req-${index}`} className="border rounded-lg bg-white">
+    <AccordionItem value={`req-${index}`} className="border rounded-lg bg-white">
       <AccordionTrigger className="px-4 py-2 hover:no-underline w-full">
         <div className="flex justify-between items-center w-full gap-4">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <span className="truncate">{reqDetails?.name || `Requirement ${index + 1}`}</span>
-            <InfoTooltip 
+            <InfoTooltip
               name={reqDetails?.name}
               description={reqDetails?.description}
               reference={reqDetails?.reference}
@@ -484,7 +484,7 @@ const RequirementCard: React.FC<{
           {req.content.sources?.length > 0 && (
             <FileSourceList sourceNumbers={req.content.sources} />
           )}
-          <TaskList 
+          <TaskList
             reportId={reportId}
             requirementId={req.id}
           />
@@ -501,9 +501,9 @@ interface RequirementGroupCardProps {
 }
 
 
-const RequirementGroupCard: React.FC<RequirementGroupCardProps> = ({ 
-  group, 
-  reportId, 
+const RequirementGroupCard: React.FC<RequirementGroupCardProps> = ({
+  group,
+  reportId,
   index,
 }) => {
   const { wasmModule } = useWasm();
@@ -512,7 +512,7 @@ const RequirementGroupCard: React.FC<RequirementGroupCardProps> = ({
   React.useEffect(() => {
     const fetchRequirementGroup = async () => {
       if (!wasmModule || !group.id) return;
-      
+
       try {
         const response = await wasmModule.get_requirement_group({ input: group.id });
         if (response.output) {
@@ -530,19 +530,16 @@ const RequirementGroupCard: React.FC<RequirementGroupCardProps> = ({
 
   const renderNestedAssessments = () => {
     if (!group.content.assessments) {
-      console.log('No assessments found for group:', group.id);
       return null;
     }
 
-    console.log('Group assessments:', Array.from(group.content.assessments.entries()));
-    
     return (
       <div className="mt-6 space-y-4">
         <h4 className="font-medium">Requirements</h4>
-<Accordion 
-  type="multiple" 
-  className="space-y-4"
->
+        <Accordion
+          type="multiple"
+          className="space-y-4"
+        >
           {Array.from(group.content.assessments.entries() as IterableIterator<[string, RequirementOrRequirementGroupAssessment]>)
             .map(([key, assessment], i) => {
               console.log('Processing nested assessment:', { key, assessment });
@@ -550,21 +547,21 @@ const RequirementGroupCard: React.FC<RequirementGroupCardProps> = ({
               return (
                 <div key={key}>
                   {isRequirementAssessment(wrapper) ? (
-                    <RequirementCard 
+                    <RequirementCard
                       req={wrapper}
                       reportId={reportId}
-                      index={i} 
+                      index={i}
                     />
                   ) : (
-                    <RequirementGroupCard 
+                    <RequirementGroupCard
                       group={wrapper}
                       reportId={reportId}
-                      index={i} 
+                      index={i}
                     />
                   )}
                 </div>
               );
-          })}
+            })}
         </Accordion>
       </div>
     );
@@ -578,7 +575,7 @@ const RequirementGroupCard: React.FC<RequirementGroupCardProps> = ({
             <span className="truncate">
               {groupDetails?.name || `Requirement Group ${index + 1}`}
             </span>
-            <InfoTooltip 
+            <InfoTooltip
               name={groupDetails?.name}
               description={groupDetails?.description}
               reference={groupDetails?.reference}
@@ -612,7 +609,7 @@ const RequirementGroupCard: React.FC<RequirementGroupCardProps> = ({
 const ComplianceIndicator: React.FC<{ rating: number }> = ({ rating }) => {
   let Icon = XCircle;
   let color = "text-red-500";
-  
+
   if (rating >= 80) {
     Icon = CheckCircle2;
     color = "text-green-500";
@@ -641,7 +638,7 @@ const SectionHeader: React.FC<{
   React.useEffect(() => {
     const fetchSection = async () => {
       if (!wasmModule || !sectionId) return;
-      
+
       try {
         const response = await wasmModule.get_sections({ input: [sectionId] });
         if (response.output && response.output.output.length > 0) {
@@ -662,7 +659,7 @@ const SectionHeader: React.FC<{
       <div className="flex items-center gap-2">
         <ChevronRight className="h-4 w-4" />
         <span className="truncate">{sectionDetails?.name || `Section ${index + 1}`}</span>
-        <InfoTooltip 
+        <InfoTooltip
           name={sectionDetails?.name}
           description={sectionDetails?.description}
           id={sectionDetails?.id}
@@ -700,9 +697,9 @@ const ReportViewer = () => {
   const [error, setError] = React.useState<string | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [retryCount, setRetryCount] = React.useState(0);
-const [expandedSections, setExpandedSections] = useState<string[]>([]);
+  const [expandedSections, setExpandedSections] = useState<string[]>([]);
 
-  
+
   useEffect(() => {
     const fetchReport = async () => {
       if (!wasmModule) {
@@ -756,25 +753,25 @@ const [expandedSections, setExpandedSections] = useState<string[]>([]);
         <AccordionContent className="px-4 py-2">
           <div className="space-y-4">
             <p className="text-gray-700">{section.abstract_text}</p>
-            
-{section.requirement_assessments && Array.from(section.requirement_assessments.entries()).map(([reqId, req], reqIndex) => {
-  const wrapper = createAssessmentWrapper(req, reqId);
-  return isRequirementAssessment(wrapper) ? (
-    <RequirementCard
-      key={reqId}
-      req={wrapper}
-      index={reqIndex}
-      reportId={reportId}
-    />
-  ) : (
-    <RequirementGroupCard
-      key={reqId}
-      group={wrapper}
-      reportId={reportId}
-      index={reqIndex}
-    />
-  );
-})}
+
+            {section.requirement_assessments && Array.from(section.requirement_assessments.entries()).map(([reqId, req], reqIndex) => {
+              const wrapper = createAssessmentWrapper(req, reqId);
+              return isRequirementAssessment(wrapper) ? (
+                <RequirementCard
+                  key={reqId}
+                  req={wrapper}
+                  index={reqIndex}
+                  reportId={reportId}
+                />
+              ) : (
+                <RequirementGroupCard
+                  key={reqId}
+                  group={wrapper}
+                  reportId={reportId}
+                  index={reqIndex}
+                />
+              );
+            })}
           </div>
         </AccordionContent>
       </AccordionItem>
@@ -794,7 +791,7 @@ const [expandedSections, setExpandedSections] = useState<string[]>([]);
   }
 
   return (
-  <div id="report-content" className="max-w-4xl mx-auto p-4 space-y-6">
+    <div id="report-content" className="max-w-4xl mx-auto p-4 space-y-6">
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -821,8 +818,8 @@ const [expandedSections, setExpandedSections] = useState<string[]>([]);
         </CardContent>
       </Card>
 
-      <Accordion 
-        type="multiple" 
+      <Accordion
+        type="multiple"
         className="space-y-4"
         value={expandedSections}
         onValueChange={setExpandedSections}

@@ -71,7 +71,6 @@ export const validateReportInput = (): { error: true; messages: string[] } | { e
  * @param input - Validated input for creating the report.
  */
 export const createReport = async (wasmModule: typeof WasmModule | null, input: CreateReportInput) => {
-    console.log("!!!!!data createRerport called", input, wasmModule)
 
     if (!wasmModule) {
         throw new Error("WASM module is not loaded. Please try again.");
@@ -80,7 +79,6 @@ export const createReport = async (wasmModule: typeof WasmModule | null, input: 
     // Call the WASM module's create report function
     const response = await wasmModule.create_report(input);
     const newReportId = response.output?.output
-    console.log("create1asdasdasd new report id", newReportId)
     const cacheStore = useCacheInvalidationStore.getState();
     const createReportStore = useCreateReportStore.getState()
     newReportId && cacheStore.addStaleReportId(newReportId);

@@ -12,7 +12,7 @@ interface CacheInvalidationState {
     triggerUpdate: (storeName: string) => void;
     beingRefetched: Record<string, boolean>;
     setBeingRefetched: (storeName: string, status: boolean) => void;
-
+    resetState: () => void
 }
 
 const useCacheInvalidationStore = create<CacheInvalidationState>()(
@@ -56,6 +56,7 @@ const useCacheInvalidationStore = create<CacheInvalidationState>()(
 
             // Refetch status tracking
             beingRefetched: {}, // Tracks if a specific store is being refetched
+
             setBeingRefetched: (storeName: string, status: boolean) =>
                 set((state) => ({
                     beingRefetched: {
@@ -63,6 +64,8 @@ const useCacheInvalidationStore = create<CacheInvalidationState>()(
                         [storeName]: status,
                     },
                 })),
+
+            resetState: () => set(() => ({ staleIds: [], staleReportIds: [], lastUpdated: {}, beingRefetched: {}, })),
         }),
         {
             name: 'cache-invalidation-store', // Key for storage

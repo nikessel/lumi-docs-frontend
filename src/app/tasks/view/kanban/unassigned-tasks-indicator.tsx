@@ -142,8 +142,6 @@ const UnassignedTasksIndicator: React.FC<UnassignedTasksIndicatorProps> = ({ tas
         },
     ];
 
-    console.log("dafyuq", taskColumnMapping)
-
     return (
         <div style={{ margin: "16px" }}>
             {/* Button at the top */}

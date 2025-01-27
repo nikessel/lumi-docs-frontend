@@ -3,24 +3,35 @@ export const dbName = "lumi-docs"
 
 const REQUIRED_STORE_NAMES = ["files", "reports", "sections", "requirement_groups", "requirements", "meta", "user", "tasks"];
 
+const openConnections: IDBDatabase[] = [];
+
 export async function openDatabase(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open(dbName, dbVersion);
 
         request.onupgradeneeded = (event) => {
             const db = request.result;
-            console.log("Upgrading database...");
 
             REQUIRED_STORE_NAMES.forEach((storeName) => {
                 if (!db.objectStoreNames.contains(storeName)) {
                     const keyPath = storeName === "meta" ? "key" : "id";
                     db.createObjectStore(storeName, { keyPath });
-                    console.log(`Created object store: ${storeName}`);
                 }
             });
         };
 
-        request.onsuccess = () => resolve(request.result);
+        request.onsuccess = () => {
+            const db = request.result;
+            openConnections.push(db); // Track the connection
+            db.onclose = () => {
+                // Remove connection from the list when it's closed
+                const index = openConnections.indexOf(db);
+                if (index > -1) {
+                    openConnections.splice(index, 1);
+                }
+            };
+            resolve(db);
+        };
         request.onerror = () => reject(request.error);
     });
 }
@@ -34,25 +45,19 @@ export async function saveData<T>(
 ): Promise<void> {
     const db = await openDatabase();
 
-    console.log("userrr !!!! saveData", data, dbName, storeName)
-
-
     const transaction = db.transaction(storeName, "readwrite");
     const store = transaction.objectStore(storeName);
 
     if (clearStore) {
-        console.log(`Clearing store: ${storeName}`);
         store.clear();
     }
 
     data.forEach((item) => {
-        console.log("Saving item:", item);
         store.put(item);
     });
 
     await new Promise<void>((resolve, reject) => {
         transaction.oncomplete = () => {
-            console.log("Transaction completed.");
             resolve();
         };
         transaction.onerror = (event) => {
@@ -71,11 +76,7 @@ export async function getData<T>(
 
     const db = await openDatabase();
 
-    console.log("Before transaction", dbName, storeName, dbVersion)
-
     const transaction = db.transaction(storeName, "readonly");
-
-    console.log("After transaction", transaction, dbName, storeName, dbVersion)
 
     const store = transaction.objectStore(storeName);
 
@@ -114,7 +115,6 @@ export async function getMetadata(
 
         request.onsuccess = () => {
             const result = request.result ? request.result.value : null;
-            console.log(`Metadata retrieved for key "${key}":`, result);
             resolve(result);
         };
         request.onerror = () => {
@@ -131,14 +131,10 @@ export async function saveMetadata(
     value: any,
     dbVersion: number
 ): Promise<void> {
-    console.log("saveMetadata started")
     const db = await openDatabase();
 
     const transaction = db.transaction("meta", "readwrite");
-    console.log("transaction", transaction)
     const store = transaction.objectStore("meta");
-    console.log("store", store)
-    console.log(`Saving metadata: { key: ${key}, value:`, value, "}");
 
     // Perform the put operation
     store.put({ key, value });
@@ -146,7 +142,6 @@ export async function saveMetadata(
     // Ensure transaction completion is logged
     await new Promise<void>((resolve, reject) => {
         transaction.oncomplete = () => {
-            console.log(`Metadata successfully saved: { key: ${key}, value:`, value, "}");
             resolve();
         };
         transaction.onerror = (event) => {
@@ -172,7 +167,6 @@ export async function deleteData(
             // Delete a specific record by key
             const request = store.delete(key);
             request.onsuccess = () => {
-                console.log(`Record with key "${key}" successfully deleted from store "${storeName}".`);
                 resolve();
             };
             request.onerror = (event) => {
@@ -183,7 +177,6 @@ export async function deleteData(
             // Clear all records in the store
             const request = store.clear();
             request.onsuccess = () => {
-                console.log(`All data cleared from store "${storeName}".`);
                 resolve();
             };
             request.onerror = (event) => {
@@ -194,6 +187,33 @@ export async function deleteData(
     });
 }
 
+export async function deleteDatabase(): Promise<void> {
+    // Close all open connections before deleting
+    openConnections.forEach((db) => {
+        db.close(); // Close the connection
+    });
+    openConnections.length = 0; // Clear the connections array
+
+    return new Promise((resolve, reject) => {
+        const deleteRequest = indexedDB.deleteDatabase(dbName);
+
+        deleteRequest.onsuccess = () => {
+            console.log(`Database "${dbName}" deleted successfully.`);
+            resolve();
+        };
+
+        deleteRequest.onerror = (event) => {
+            console.error(`Failed to delete database "${dbName}".`, event);
+            reject(deleteRequest.error);
+        };
+
+        deleteRequest.onblocked = () => {
+            console.warn(
+                `Deletion of database "${dbName}" is blocked. Ensure all connections are closed.`
+            );
+        };
+    });
+}
 
 
 

@@ -13,7 +13,6 @@ const TreeView: React.FC<TreeViewProps> = ({ reports }) => {
 
     useEffect(() => {
         const res = generateWaffleDataFromReports(reports)
-        console.log("TREEVIEW!!!", res)
     }, [reports])
 
 

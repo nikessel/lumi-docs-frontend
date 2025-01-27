@@ -8,8 +8,6 @@ import TaskCommentList from '@/components/latest-comments/task-comment-list';
 const Page: React.FC = () => {
     const { tasks, loading, error } = useSelectedFilteredReportsTasksContext()
 
-    console.log("tasks!!!!", tasks)
-
     return (
         <div className="flex gap-x-12" style={{ height: "70vh" }}>
             <div style={{ width: "30%" }}>

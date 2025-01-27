@@ -31,8 +31,6 @@ const CustomCard: React.FC<CustomCardProps> = ({ task }) => {
     const truncatedDescription = (text: string, isFull: boolean) =>
         isFull || text.length <= max_char ? text : `${text.substring(0, max_char)}...`;
 
-    console.log("asaasasas", task)
-
     return (
         <>
             <Card

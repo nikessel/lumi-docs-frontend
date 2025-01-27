@@ -85,7 +85,7 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
             const res = await restoreReport(wasmModule, report.id);
             addRestoringId(report.id)
             addStaleReportId(report.id)
-            triggerUpdate("reports")
+            // triggerUpdate("reports")
         } catch (error) {
             console.error("Error archiving report:", error);
         }

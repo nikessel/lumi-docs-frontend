@@ -20,15 +20,11 @@ const WaffleChart: React.FC = () => {
 
     // Map data with colors based on the midpoint of the compliance interval
     const coloredWaffleData = waffleData.map((datum) => {
-        console.log("????", datum);
         const [start, end] = datum.id.split('-').map((num) => parseInt(num, 10)); // Extract start and end of the range
         const rangeMidpoint = (start + end) / 2; // Calculate the midpoint
-        console.log("????", rangeMidpoint);
         const color = getComplianceColorCode(rangeMidpoint); // Get the color for the midpoint
         return { ...datum, color };
     });
-
-    console.log("asdasdasd", calculateTotalNodes(waffleData))
 
     return (
         <div style={{ minHeight: 300, height: "100%" }}>

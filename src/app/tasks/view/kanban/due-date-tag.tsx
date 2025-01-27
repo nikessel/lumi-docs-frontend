@@ -21,8 +21,6 @@ const DueDateTag: React.FC<DueDateTagProps> = ({ task_id }) => {
         setLocalStateDueDate(null)
     }, [task?.due_date])
 
-    console.log(task)
-
     if (!task) return null
 
 

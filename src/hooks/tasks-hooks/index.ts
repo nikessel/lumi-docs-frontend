@@ -28,7 +28,6 @@ export const useAllReportsTasks = (reports: Report[]): UseAllReportsTasks => {
                 if (isInitialLoad) {
                     setLoading(true); // Set loading for the initial fetch
                 } else {
-                    console.log("isRefetchingTasks from hook");
                     setBeingRefetched("tasks", true); // Set refetching for subsequent fetches
                 }
 
@@ -76,7 +75,6 @@ export const useSelectedFilteredReportsTasks = (): UseSelectedFilteredReportsTas
                 if (isInitialLoad) {
                     setLoading(true); // Set loading for the initial fetch
                 } else {
-                    console.log("isRefetchingFilteredTasks from hook");
                     setBeingRefetched("filteredTasks", true); // Set refetching for subsequent fetches
                 }
 

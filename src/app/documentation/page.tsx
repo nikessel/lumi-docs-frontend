@@ -73,7 +73,6 @@ const RenderChapter: React.FC<{ chapter: Chapter }> = ({ chapter }) => {
 
 const Page: React.FC = () => {
     const { title, chapters } = documentationData as DocumentationData;
-    console.log("TITLE", chapters)
 
     const generateAnchorItems = (chapters: Chapter[]) => {
         return chapters.map((chapter) => {

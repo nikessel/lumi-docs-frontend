@@ -44,8 +44,6 @@ const FileManager: React.FC<{ files: File[] }> = ({ files }) => {
             );
     }, [fileList, searchTerm, currentPath]);
 
-    console.log("currentttt", currentPath)
-
     useEffect(() => {
         setIsLoading(true);
         const timeout = setTimeout(() => setIsLoading(false), 300);
@@ -154,7 +152,6 @@ const FileManager: React.FC<{ files: File[] }> = ({ files }) => {
     };
 
     const confirmModalAction = () => {
-        console.log(modalAction)
         if (modalAction === 'move') {
             if (newFolderName) {
                 setFileList(prev =>
@@ -199,8 +196,6 @@ const FileManager: React.FC<{ files: File[] }> = ({ files }) => {
             prev.includes(record.id) ? prev.filter(id => id !== record.id) : [...prev, record.id]
         );
     };
-
-    console.log(fileList)
 
     return (
         <div>

@@ -38,7 +38,6 @@ export const addKanbanColumn = async (
         const cacheStore = useCacheInvalidationStore.getState();
         cacheStore.addStaleId(user.id);
         cacheStore.triggerUpdate("user");
-        console.log("Kanban column added:", newColumn);
     } catch (err) {
         console.error("Error updating user:", err);
         return null;
@@ -83,8 +82,6 @@ export const removeKanbanColumn = async (
         const cacheStore = useCacheInvalidationStore.getState();
         cacheStore.addStaleId(user.id);
         cacheStore.triggerUpdate("user");
-
-        console.log("Kanban column removed:", columnName);
     } catch (err) {
         console.error("Error updating user:", err);
         return null;
@@ -160,8 +157,6 @@ export async function moveTasksToColumns(
         const cacheStore = useCacheInvalidationStore.getState();
         cacheStore.addStaleId(user.id);
         cacheStore.triggerUpdate("user");
-
-        console.log("Tasks successfully moved and updated in the backend.");
         return true;
     } catch (error) {
         console.error("Failed to move tasks to columns:", error);

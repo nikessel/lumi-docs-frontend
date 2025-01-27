@@ -36,7 +36,6 @@ const CommentRenderAndAdder: React.FC<CommentRenderAndAdderProps> = ({ task_id }
 
     useEffect(() => {
         if ((task?.comments?.length || task?.comments?.length === 0) && (prevCommentsLength || prevCommentsLength === 0)) {
-            console.log("???????", task?.comments?.length, prevCommentsLength)
             task?.comments?.length > prevCommentsLength && messageApi.success("Comment added successfully.");
             task?.comments?.length < prevCommentsLength && messageApi.success("Comment deleted successfully.");
             setAddingComment(false);

@@ -25,7 +25,6 @@ const FileUploadModal: React.FC<{
     const [api, contextHolder] = notification.useNotification();
 
     useEffect(() => {
-        console.log("!ASDASDASDASD", uploadManager)
         if (!uploadManager.isUploading && (uploadManager.uploadedFiles > 0 || uploadManager.failedFiles || uploadManager.filesAlreadyExisted)) {
             if (uploadManager.failedFiles.length > 0) {
                 api.error({
@@ -69,8 +68,6 @@ const FileUploadModal: React.FC<{
             return ext && SUPPORTED_EXTENSIONS.includes(ext) && !shouldIgnoreFile(file);
         });
 
-        console.log("!!!!!", files)
-
         const fileMap = new Map<string, UploadFile>();
 
         validFiles.forEach((file) => {
@@ -89,14 +86,11 @@ const FileUploadModal: React.FC<{
     }, []);
 
     const handleFileChange = useCallback(({ fileList }: any) => {
-        console.log("Raw fileList:", fileList);
 
         const files = fileList.map((item: any) => ({
             ...item,
             originFileObj: item.originFileObj || item, // Ensure originFileObj fallback
         }));
-
-        console.log("Processed files:", files);
 
         processFiles(files as UploadFile[]);
     }, [processFiles]);
@@ -109,8 +103,6 @@ const FileUploadModal: React.FC<{
 
         try {
             const nativeFiles = selectedFiles.map((file) => file.originFileObj as File);
-
-            console.log("uploadManager native files", selectedFiles, nativeFiles)
 
             uploadManager.uploadFiles(nativeFiles);
 
@@ -147,8 +139,6 @@ const FileUploadModal: React.FC<{
             message.error(error instanceof Error ? error.message : "Failed to upload files");
         }
     };
-
-    console.log("uploadManager", uploadManager)
 
     const handleRemoveSelectedFile = (uid: string) => {
         setSelectedFiles((prevFiles) => prevFiles.filter((file) => file.uid !== uid));

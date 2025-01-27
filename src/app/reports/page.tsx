@@ -62,10 +62,9 @@ const Page = () => {
                 remove_restoring_id(report.id);
             }
         });
-        // if (archiving_ids.length > 0 || restoring_ids.length > 0) {
-        //     console.log("TRIGGERIGN !!!")
-        //     triggerUpdate("reports")
-        // }
+        if (archiving_ids.length > 0 || restoring_ids.length > 0) {
+            triggerUpdate("reports")
+        }
     }, [reports, archiving_ids, restoring_ids]);
 
     useEffect(() => {
@@ -85,7 +84,7 @@ const Page = () => {
             messageApi.loading({
                 content: `Restoring ${restoring_ids.length} report(s)...`,
                 key,
-                duration: 0, // Make the message persist until explicitly dismissed
+                duration: 0,
             });
         } else {
             messageApi.destroy("restoringMessage"); // Dismiss the restoring message

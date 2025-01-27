@@ -39,8 +39,6 @@ const Page = () => {
         }
     }, [reports]);
 
-    console.log(allAssessmentsSorted)
-
     // Handle View Details click
     const handleViewDetails = (record: RequirementAssessmentWithId) => {
         const requirement = requirements.find((req) => req.id === record.id);

@@ -31,7 +31,6 @@ const Page = () => {
 
     const analyzedTasks = analyzeTasks(tasks);
 
-    console.log("tasksss", tasks)
     return (
         <div className="flex flex-col gap-4" style={{ height: "70vh" }} >
             <div className="flex items-stretch gap-2 h-auto w-full">

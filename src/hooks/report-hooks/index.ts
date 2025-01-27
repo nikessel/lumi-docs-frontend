@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useWasm } from '@/components/WasmProvider';
 import { getSelectedFilteredReports } from '@/utils/report-utils'; // Adjust the path if necessary
 import { Report } from '@wasm';
@@ -8,6 +8,7 @@ import useCacheInvalidationStore from '@/stores/cache-validation-store';
 import { fetchReportsByIds } from "@/utils/report-utils";
 import { useCreateReportStore } from '@/stores/create-report-store';
 import { report } from 'process';
+import { useAuth } from '@/components/Auth0';
 
 interface UseSelectedFilteredReports {
     reports: Report[];
@@ -72,7 +73,7 @@ export const useAllReports = (): UseAllReports => {
             // Trigger update after 3 seconds
             const timeout = setTimeout(() => {
                 triggerUpdate("reports");
-            }, 3000);
+            }, 5 * 60 * 1000);
 
             // Cleanup timeout on unmount or when reports change
             return () => clearTimeout(timeout);
@@ -81,7 +82,9 @@ export const useAllReports = (): UseAllReports => {
 
     useEffect(() => {
         const fetchAllReports = async (isInitialLoad = false) => {
-            if (!wasmModule) return;
+            if (!wasmModule) {
+                return
+            }
 
             try {
                 if (isInitialLoad) {
@@ -91,6 +94,7 @@ export const useAllReports = (): UseAllReports => {
                 }
 
                 const { reports: fetchedReports, error } = await fetchReports(wasmModule);
+
                 const rep = fetchedReports.find((report) => report.id === newReportCreated.id)
 
                 if (rep) {

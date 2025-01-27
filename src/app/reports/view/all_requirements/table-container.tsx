@@ -47,7 +47,6 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
     const currentView = breadcrumb[breadcrumb.length - 1];
 
     const handleRowClick = (record: TableRow) => {
-        console.log(record);
         // Handle RequirementGroupAssessment with `assessments`
         if ('assessments' in record && record.assessments) {
             const children: TableRow[] = Array.from(record.assessments.entries()).map(([key, value]) => {
@@ -103,7 +102,6 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
             }
         } else {
             const { id, ...assessment } = record;
-            console.log("!!!!!1", record)
             setOpenModal(true)
             setSelectedRequirement({ requirement: requirements.find((req) => req.id === record.id), requirementAssessment: assessment as RequirementAssessment })
         }

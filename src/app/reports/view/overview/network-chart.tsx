@@ -9,7 +9,6 @@ type NetworkChartProps = {
 
 const NetworkChart: React.FC<NetworkChartProps> = ({ reports }) => {
     const networkData = generateNetworkDataFromReports(reports);
-    console.log("networkData", networkData)
     return (
         <div style={{ height: 400, width: '100%' }}>
             <ResponsiveNetworkCanvas

@@ -44,8 +44,6 @@ const SelectSections: React.FC<SelectSectionsProps> = ({ sections }) => {
         setShowSections((prev) => !prev);
     };
 
-    console.log("SECTIONS", sections);
-
     return (
         <div className="space-y-4">
             {/* All Sections Checkbox with Show Sections Button */}

@@ -24,7 +24,6 @@ export async function fetchUser(wasmModule: typeof WasmModule | null): Promise<U
     const isStale = staleIds.indexOf(cachedUser[0]?.id) > -1;
 
     if (cachedUser && cachedUser.length > 0 && Date.now() - cachedUser[0].timestamp < USER_CACHE_TTL && !isStale) {
-        console.log("Using cached user data");
         return cachedUser[0];
     }
 

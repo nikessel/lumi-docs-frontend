@@ -43,8 +43,7 @@ export async function fetchReports(
     const cachedReports = await getData<CachedReport>(DB_NAME, STORE_NAME, DB_VERSION);
     const isFullFetch = await getMetadata(DB_NAME, "fullFetch", DB_VERSION);
 
-    if (!isFullFetch) {
-        console.log("Performing a full fetch due to missing metadata or initial fetch");
+    if (staleReportIds.length < 1) {
         if (!wasmModule) {
             result.error = "WASM module not loaded";
             return result;
@@ -52,8 +51,6 @@ export async function fetchReports(
 
         try {
             const response = await wasmModule.get_all_reports();
-            console.log("WASM full fetch response:", response);
-
             if (response.output) {
                 const reportsData = response.output.output;
 
@@ -122,7 +119,6 @@ export async function fetchReports(
         // }
 
         if (staleReportIdsToFetch.length > 0) {
-            console.log(`Fetching stale or missing reports for IDs: ${staleReportIdsToFetch.join(", ")}`);
 
             let fetchResults: { reports: Report[]; errors: { [id: string]: string } } = {
                 reports: [],
@@ -136,9 +132,6 @@ export async function fetchReports(
             while (attempts < maxAttempts) {
                 try {
                     fetchResults = await fetchReportsByIds(wasmModule, staleReportIdsToFetch);
-                    console.log("asaasasdasdasd CALLIING FETCH WITH ", fetchResults)
-
-                    console.log(`Fetch results after attempt ${attempts + 1}:`, fetchResults);
 
                     // If there are no errors, break out of the retry loop
                     if (Object.keys(fetchResults.errors).length === 0) {
@@ -150,7 +143,6 @@ export async function fetchReports(
 
                 attempts++;
                 if (attempts < maxAttempts) {
-                    console.log(`Retrying fetch (${attempts}/${maxAttempts})...`);
                     await new Promise((resolve) => setTimeout(resolve, retryDelay));
                 }
             }
@@ -209,7 +201,6 @@ export async function fetchReportsByIds(
             : true;
 
         if (cachedReport && !isExpired && !isStale) {
-            console.log(`Using cached report for ID: ${reportId}`);
             validCachedReports.push(cachedReport);
         } else {
             reportsToFetch.push(reportId);
@@ -227,8 +218,6 @@ export async function fetchReportsByIds(
             });
             return results;
         }
-
-        console.log(`Fetching fresh reports for IDs: ${reportsToFetch.join(", ")}`);
 
         const fetchPromises = reportsToFetch.map(async (reportId) => {
             try {

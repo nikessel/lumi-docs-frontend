@@ -74,8 +74,6 @@ async function processAndUploadFile(
         // Use `create_file` to finalize file creation asynchronously
         const createResponse = await create_file({ input: newFile });
 
-        console.log("ERRRORAASDADS", createResponse)
-
         if (createResponse.error) {
             if (createResponse.error.kind === "AlreadyExists") {
                 set((state) => ({ filesAlreadyExisted: state.filesAlreadyExisted + 1 }));
