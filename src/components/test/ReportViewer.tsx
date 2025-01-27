@@ -192,10 +192,10 @@ const QuoteDisplay: React.FC<{
 };
 
 const isRequirementAssessment = (
-  assessment: AssessmentWrapper
-): assessment is RequirementWrapper => {
+  sub_assessment: AssessmentWrapper
+): sub_assessment is RequirementWrapper => {
   // Check if it's a requirement wrapper by checking if it has Requirement assessment type properties
-  return 'objective_research_summary' in assessment.content;
+  return 'objective_research_summary' in sub_assessment.content;
 };
 
 const ThreadViewButton: React.FC<{ 
