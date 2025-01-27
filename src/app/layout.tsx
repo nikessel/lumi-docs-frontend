@@ -21,7 +21,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { useAuth } from "@/components/Auth0";
 import useLoadingStore from "@/stores/global-loading-unification";
-
+import { useAllReports } from "@/hooks/report-hooks";
 
 const { Content } = Layout;
 
@@ -30,14 +30,19 @@ const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY 
 function LayoutWithWasm({ children }: { children: ReactNode }) {
   const { isLoading: wasmLoading } = useWasm(); // Now inside the provider context
   const { isLoading: AuthLoading } = useAuth()
-  const isLoading = useLoadingStore((state) => state.isLoading)
+  const { loading: reportsLoading } = useAllReports()
+  const loadingComponents = useLoadingStore((state) => state.loadingComponents)
 
-  const allLoading = isLoading() || wasmLoading || AuthLoading
+  const allLoading = loadingComponents.indexOf("wasmprovider") > -1 || wasmLoading || AuthLoading || reportsLoading
 
-  const noLayout = typeof window !== "undefined" && (window.location.pathname === "/documentation" || window.location.pathname === "/logout" || window.location.pathname === "/callback");
+  const noLayout = typeof window !== "undefined" && (window.location.pathname === "/documentation" || window.location.pathname === "/logout");
 
-  if (wasmLoading || AuthLoading) {
-    return <LoadingLogoScreen />;
+  // if (window.location.pathname === "/callback") {
+  //   return <div>{children}</div>
+  // }
+
+  if (allLoading || window.location.pathname === "/callback") {
+    return <LoadingLogoScreen>{window.location.pathname === "/callback" ? children : ""}</LoadingLogoScreen>;
   }
 
   return (

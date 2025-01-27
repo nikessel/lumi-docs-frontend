@@ -13,6 +13,7 @@ import type { StorageKey, Claims } from "@wasm";
 import { useRouter } from "next/navigation";
 import { useWasm } from "@/components/WasmProvider";
 import { storage, useStorage } from "@/storage";
+import useLoadingStore from "@/stores/global-loading-unification";
 import LoadingLogoScreen from "./loading-screen";
 
 const SK = {
@@ -250,7 +251,16 @@ export function AuthCallback() {
   const { setUser, setError, setIsAuthenticated } = context;
   const [processing, setProcessing] = useState(true);
   const { wasmModule, isLoading: isWasmLoading } = useWasm();
+  const addLoadingComponent = useLoadingStore((state) => state.addLoadingComponent)
+  const removeLoadingComponent = useLoadingStore((state) => state.removeLoadingComponent)
 
+  useEffect(() => {
+    if (processing) {
+      addLoadingComponent("authcallback")
+    } else {
+      removeLoadingComponent("authcallback")
+    }
+  }, [processing])
 
   const handleEmailVerification = useCallback(
     async (email: string) => {
@@ -305,7 +315,6 @@ export function AuthCallback() {
           }
           throw new Error(exchangeResult.error.message);
         }
-        console.log("CALLBACKCOMPONENT", wasmModule)
 
 
         if (!exchangeResult.output?.output) {
@@ -354,6 +363,7 @@ export function AuthCallback() {
         setIsAuthenticated(true);
         localStorage.removeItem("auth_state");
 
+        setProcessing(false)
         setTimeout(() => {
           if (mounted) {
             // router.push("/dashboard")
@@ -393,12 +403,7 @@ export function AuthCallback() {
   ]);
 
   if (processing) {
-    return (
-      <div className="flex flex-col items-center justify-center space-y-4">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-gray-600">Processing login...</p>
-      </div>
-    );
+    return null
   }
 
   return null;

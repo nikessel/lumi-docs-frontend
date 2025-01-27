@@ -1,13 +1,16 @@
-'use client'
+'use client';
 import React from 'react';
 import Image from "next/image";
 import Logo from "@/assets/logo-text.svg";
-import "@/styles/globals.css"
+import "@/styles/globals.css";
 
-const LoadingLogoScreen = () => {
+interface LoadingLogoScreenProps {
+    children?: React.ReactNode;
+}
 
+const LoadingLogoScreen: React.FC<LoadingLogoScreenProps> = ({ children }) => {
     return (
-        <div className="text-center p-12 ">
+        <div className="text-center p-12">
             <div className="flex justify-center mt-10">
                 <Image
                     src={Logo}
@@ -21,6 +24,9 @@ const LoadingLogoScreen = () => {
                     <div className="blue-line"></div>
                 </div>
             </div>
+
+            {/* Render children below the loading screen */}
+            {children && <div className="mt-8">{children}</div>}
         </div>
     );
 };

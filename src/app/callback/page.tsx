@@ -2,13 +2,13 @@
 import dynamic from "next/dynamic";
 import { useEffect } from "react";
 import { AuthCallback, AuthProvider } from "@/components/Auth0";
-import useLoadingStore from "@/stores/global-loading-unification";
+import WasmProviderComponent from "@/components/WasmProvider";
+import LoadingLogoScreen from "@/components/loading-screen";
 
-
-const WasmProvider = dynamic(() => import("@/components/WasmProvider"), {
-  ssr: false,
-  loading: () => <div>WASM PROVIDER LOADINGasd asd asd asd asd </div>,
-});
+// const WasmProvider = dynamic(() => import("@/components/WasmProvider"), {
+//   ssr: false,
+//   // loading: () => <div>WASM PROVIDER LOADINGasd asd asd asd asd </div>,
+// });
 
 export default function CallbackPage() {
   // const addLoadingComponent = useLoadingStore((state) => state.addLoadingComponent);
@@ -24,10 +24,10 @@ export default function CallbackPage() {
   // }, [addLoadingComponent, removeLoadingComponent]);
 
   return (
-    // <WasmProvider>
-    <div className="min-h-screen flex items-center justify-center">
-      <AuthCallback />
-    </div>
-    // </WasmProvider>
+    <WasmProviderComponent>
+      <div className="flex items-center justify-center">
+        <AuthCallback />
+      </div>
+    </WasmProviderComponent>
   );
 }

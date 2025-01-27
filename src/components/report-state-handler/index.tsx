@@ -28,9 +28,9 @@ const ReportStateHandler: React.FC<ReportStateHandlerProps> = ({
     const { login } = useAuth()
     console.log("ERROROROROROR", error)
 
-    if (loading) {
-        return <div className="w-full h-full flex  justify-center"><LoadingLogoScreen /></div>;
-    }
+    // if (loading) {
+    //     return <div className="w-full h-full flex  justify-center"><LoadingLogoScreen /></div>;
+    // }
 
     if (error) {
         if (error === "Missing Authorization header") {
