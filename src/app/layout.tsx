@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { AuthProvider } from "@/components/Auth0";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
@@ -28,20 +29,23 @@ const { Content } = Layout;
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
 
 function LayoutWithWasm({ children }: { children: ReactNode }) {
+  const [globalLoading, setGlobalLoading] = useState(true)
+  const [initialLoadCompleted, setInitialLoadCompleted] = useState(false)
   const { isLoading: wasmLoading } = useWasm(); // Now inside the provider context
   const { isLoading: AuthLoading } = useAuth()
   const { loading: reportsLoading } = useAllReports()
   const loadingComponents = useLoadingStore((state) => state.loadingComponents)
 
-  const allLoading = loadingComponents.indexOf("wasmprovider") > -1 || wasmLoading || AuthLoading || reportsLoading
-
   const noLayout = typeof window !== "undefined" && (window.location.pathname === "/documentation" || window.location.pathname === "/logout");
 
-  // if (window.location.pathname === "/callback") {
-  //   return <div>{children}</div>
-  // }
+  useEffect(() => {
+    if (!wasmLoading && !AuthLoading && !reportsLoading && window.location.pathname !== "/callback" && loadingComponents.indexOf("wasmprovider") < 0 && !initialLoadCompleted) {
+      setGlobalLoading(false)
+      setInitialLoadCompleted(true)
+    }
+  }, [wasmLoading, AuthLoading, reportsLoading, window.location.pathname, loadingComponents.length])
 
-  if (allLoading || window.location.pathname === "/callback") {
+  if (globalLoading) {
     return <LoadingLogoScreen>{window.location.pathname === "/callback" ? children : ""}</LoadingLogoScreen>;
   }
 
