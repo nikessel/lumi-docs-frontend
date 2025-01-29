@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Table, Input, Button, Modal, Breadcrumb, message } from 'antd';
-import { SearchOutlined, FolderAddOutlined, DeleteOutlined, EditOutlined, FolderOpenOutlined } from '@ant-design/icons';
+import { SearchOutlined, FolderAddOutlined, DeleteOutlined, ExportOutlined, DownloadOutlined, FolderOpenOutlined } from '@ant-design/icons';
 import pdfIcon from '@/assets/pdf-icon.svg';
 import folderIcon from '@/assets/folder-icon.svg';
 import dayjs from 'dayjs';
@@ -10,13 +10,26 @@ import Image from 'next/image';
 import FileContextMenu from './file-context-menu';
 import { Select } from 'antd';
 import { File } from "@wasm";
+import { moveFile, createDirectory } from '@/utils/files-utils';
+import { useWasm } from '@/components/WasmProvider';
 
-const FileManager: React.FC<{ files: File[] }> = ({ files }) => {
+const FileManager: React.FC<{
+    files: File[],
+    downloadFile: (fileId: string, fileName: string, mimeType: string) => Promise<void>,
+    viewFile: (fileId: string) => void,
+    downloadLoading: {
+        [id: string]: boolean;
+    },
+    viewLoading: {
+        [id: string]: boolean;
+    }
+}> = ({ files, viewFile, downloadFile, downloadLoading, viewLoading }) => {
+    const { wasmModule } = useWasm()
     const [fileList, setFileList] = useState(files);
     const [searchTerm, setSearchTerm] = useState<string>('');
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const [currentPath, setCurrentPath] = useState<string>('');
-    const [breadcrumb, setBreadcrumb] = useState<string[]>(['Root']);
+    const [breadcrumb, setBreadcrumb] = useState<string[]>(['./']);
     const [isLoading, setIsLoading] = useState(false);
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; record: any } | null>(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -24,6 +37,9 @@ const FileManager: React.FC<{ files: File[] }> = ({ files }) => {
     const [newFolderName, setNewFolderName] = useState('');
     const [foldersForMove, setFoldersForMove] = useState<any[]>([]);
     const [fileToRename, setFileToRename] = useState<any | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+
+    console.log("downloadLoading", downloadLoading)
 
     // Filter files based on the search term and current path
     const filteredFiles = useMemo(() => {
@@ -97,6 +113,13 @@ const FileManager: React.FC<{ files: File[] }> = ({ files }) => {
                 dayjs(a.created_date).unix() - dayjs(b.created_date).unix(),
             render: (date: string) => dayjs(date).format('DD/MM/YYYY HH:mm'),
         },
+        {
+            render: (record: any) => (
+                <div className="flex gap-x-2 justify-end">
+                    <Button loading={viewLoading[record.id]} disabled={viewLoading[record.id]} icon={<ExportOutlined />} type="default" size="small" onClick={() => viewFile(record.id)}></Button>
+                    <Button loading={downloadLoading[record.id]} disabled={downloadLoading[record.id]} icon={<DownloadOutlined />} type="default" size="small" onClick={() => downloadFile(record.id, record.title || record.path || record.id, "application/pdf")}></Button>
+                </div>),
+        },
     ];
 
     const handleBreadcrumbClick = (index: number) => {
@@ -105,34 +128,10 @@ const FileManager: React.FC<{ files: File[] }> = ({ files }) => {
         setCurrentPath(index === 0 ? '' : newPath);
     };
 
-    const handleFolderClick = (record: any) => {
-        if (!record.extension) {
-            setCurrentPath(`${currentPath}/${record.title}`.replace('//', '/'));
-            setBreadcrumb(prev => [...prev, record.title]);
-        }
-    };
-
-    const handleContextMenu = (e: React.MouseEvent, record: any) => {
-        e.preventDefault();
-        // Select the file on right-click
-        if (!selectedFiles.includes(record.id)) {
-            setSelectedFiles([record.id]);
-        }
-        setContextMenu({ x: e.clientX, y: e.clientY, record });
-    };
-
     const handleCreateFolder = () => {
         setModalAction('create');
         setIsModalVisible(true);
         setContextMenu(null);
-    };
-
-    const handleRenameFile = (file: any) => {
-        setModalAction('rename');
-        setNewFolderName(file.title); // Populate with the current title
-        setFileToRename(file); // Set the file being renamed
-        setIsModalVisible(true);
-        setContextMenu(null); // Close the context menu immediately
     };
 
     const handleMoveFiles = () => {
@@ -144,14 +143,7 @@ const FileManager: React.FC<{ files: File[] }> = ({ files }) => {
         setContextMenu(null); // Close context menu
     };
 
-    const handleDeleteFile = (file: any) => {
-        setFileList(prev => prev.filter(f => f.id !== file.id));
-        setSelectedFiles(prev => prev.filter(id => id !== file.id)); // Remove from selection if selected
-        message.success(`${file.title} deleted successfully`);
-        setContextMenu(null);
-    };
-
-    const confirmModalAction = () => {
+    const confirmModalAction = async () => {
         if (modalAction === 'move') {
             if (newFolderName) {
                 setFileList(prev =>
@@ -167,34 +159,11 @@ const FileManager: React.FC<{ files: File[] }> = ({ files }) => {
                 message.error('Please select a destination folder.');
             }
         } else if (modalAction === 'create') {
-            const newFolder = {
-                id: `folder-${Date.now()}`,
-                title: newFolderName,
-                extension: null,
-                created_date: new Date().toISOString(),
-                size: 0,
-                path: currentPath,
-            };
-            //setFileList(prev => [newFolder, ...prev]);
-        } else if (modalAction === 'rename' && fileToRename) {
-            setFileList(prev =>
-                prev.map(file =>
-                    file.id === fileToRename.id
-                        ? { ...file, title: newFolderName } // Update the title
-                        : file
-                )
-            );
-            message.success(`Renamed to "${newFolderName}" successfully!`);
-            setFileToRename(null); // Clear the renamed file state
+            const res = await createDirectory(wasmModule, newFolderName, currentPath)
+            console.log("ressssss")
         }
         setIsModalVisible(false);
         setNewFolderName('');
-    };
-
-    const handleRowClick = (record: any) => {
-        setSelectedFiles(prev =>
-            prev.includes(record.id) ? prev.filter(id => id !== record.id) : [...prev, record.id]
-        );
     };
 
     return (
@@ -210,27 +179,15 @@ const FileManager: React.FC<{ files: File[] }> = ({ files }) => {
                     </Breadcrumb.Item>
                 ))}
             </Breadcrumb>
-            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
+            <div className="gap-x-4" style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
                 <Input
                     placeholder="Search files..."
                     prefix={<SearchOutlined />}
                     onChange={e => setSearchTerm(e.target.value)}
                 />
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div className="gap-x-4" style={{ display: 'flex' }}>
                     <Button icon={<FolderAddOutlined />} onClick={handleCreateFolder} type="primary">
                         Create Folder
-                    </Button>
-                    <Button
-                        icon={<DeleteOutlined />}
-                        onClick={() => {
-                            setFileList(prev => prev.filter(file => !selectedFiles.includes(file.id)));
-                            setSelectedFiles([]);
-                        }}
-                        type="primary"
-                        danger
-                        disabled={selectedFiles.length === 0}
-                    >
-                        Delete Selected
                     </Button>
                     <Button
                         icon={<FolderOpenOutlined />}
@@ -253,6 +210,13 @@ const FileManager: React.FC<{ files: File[] }> = ({ files }) => {
                 columns={columns}
                 dataSource={isLoading ? [] : filteredFiles}
                 rowKey="id"
+                pagination={{
+                    current: currentPage,
+                    pageSize: 100,
+                    total: filteredFiles.length,
+                    onChange: (page) => setCurrentPage(page),
+                    showSizeChanger: false,
+                }}
                 onRow={(record, index) => ({
                     onClick: (e) => {
                         if (!record.extension) {
@@ -320,15 +284,12 @@ const FileManager: React.FC<{ files: File[] }> = ({ files }) => {
                 rowClassName="file-row" // Apply the class here
 
                 loading={isLoading}
-                pagination={false}
             />
             {contextMenu && (
                 <FileContextMenu
                     x={contextMenu.x}
                     y={contextMenu.y}
                     onCreateFolder={handleCreateFolder}
-                    onRename={() => handleRenameFile(contextMenu.record)}
-                    onDelete={() => handleDeleteFile(contextMenu.record)}
                     onMove={handleMoveFiles}
                     onClose={() => setContextMenu(null)}
                 />

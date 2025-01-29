@@ -45,21 +45,28 @@ const KanbanBoard: React.FC = () => {
         if (user?.task_management?.kanban?.columns && user.task_management.kanban.columns.length > 0) {
             // Map user kanban columns to board state
             setSettingUpBoard(true)
+            const existingTaskIds = new Set(tasks.map(task => task.id));
+
             const mappedColumns = user.task_management.kanban.columns.map((column) => ({
                 id: column.column_name,
                 title: column.column_name,
-                cards: column.tasks.map((taskId) => ({
-                    id: taskId,
-                    title: `Task ${taskId}`, // Replace with actual task details when available
-                    description: `Details for task ${taskId}`, // Replace with actual task details
-                })),
+                cards: column.tasks
+                    .filter(taskId => existingTaskIds.has(taskId)) // Only keep existing tasks
+                    .map(taskId => {
+                        const task = tasks.find(t => t.id === taskId);
+                        return {
+                            id: taskId,
+                            title: task?.title || `Task ${taskId}`,
+                            description: task?.description || `Details for task ${taskId}`,
+                        };
+                    }),
             }));
             setBoard({ columns: mappedColumns });
             setSettingUpBoard(false)
         } else {
             setShowDefaultSetup(true)
         }
-    }, [user]);
+    }, [user, tasks]);
 
     const handleDefaultSetup = async () => {
         if (!wasmModule) return;

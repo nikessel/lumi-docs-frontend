@@ -14,21 +14,15 @@ import { isArchived } from "@/utils/report-utils";
 import { useAllReportsContext } from "@/contexts/reports-context/all-reports-context";
 import PaymentChecker from "@/components/payment/payment-checker";
 // import { ReportsByIdsProvider } from "@/contexts/reports-context/reports-by-id";
-import useCacheInvalidationStore from "@/stores/cache-validation-store";
+// import useCacheInvalidationStore from "@/stores/cache-validation-store";
 // import { fetchReportsByIds } from "@/utils/report-utils";
-import { useGlobalActionsStore } from "@/stores/global-actions-store";
 import { message } from "antd";
 import ReportStateHandler from "@/components/report-state-handler";
 
 const Page = () => {
-    const { reports, loading, error } = useAllReportsContext();
+    const { reports, loading, error, forceUpdate } = useAllReportsContext();
     const { selectedReports, selectedCount } = useUrlSelectedReports();
     const { wasmModule, isLoading } = useWasm();
-    const archiving_ids = useGlobalActionsStore((state) => state.archiving_ids)
-    const restoring_ids = useGlobalActionsStore((state) => state.restoring_ids)
-    const remove_archiving_id = useGlobalActionsStore((state) => state.removeArchivingId)
-    const remove_restoring_id = useGlobalActionsStore((state) => state.removeRestoringId)
-    const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate)
     const [searchQuery, setSearchQuery] = useState("");
     const router = useRouter();
 
@@ -36,6 +30,7 @@ const Page = () => {
 
     const archivedReports = reports.filter((report) => isArchived(report.status));
     const archivedCount = archivedReports.length;
+    const [actionLoading, setActionLoading] = useState(false)
 
     const [messageApi, contextHolder] = message.useMessage()
 
@@ -53,44 +48,6 @@ const Page = () => {
         }
         return 0; // Maintain the original order otherwise
     });
-
-    useEffect(() => {
-        reports.forEach((report) => {
-            if (archiving_ids.includes(report.id) && isArchived(report.status)) {
-                remove_archiving_id(report.id);
-            }
-            if (restoring_ids.includes(report.id) && !isArchived(report.status)) {
-                remove_restoring_id(report.id);
-            }
-        });
-        if (archiving_ids.length > 0 || restoring_ids.length > 0) {
-            triggerUpdate("reports")
-        }
-    }, [reports, archiving_ids, restoring_ids]);
-
-    useEffect(() => {
-        if (archiving_ids.length > 0) {
-            const key = "archivingMessage";
-            messageApi.loading({
-                content: `Archiving ${archiving_ids.length} report(s)...`,
-                key,
-                duration: 0, // Make the message persist until explicitly dismissed
-            });
-        } else {
-            messageApi.destroy("archivingMessage"); // Dismiss the archiving message
-        }
-
-        if (restoring_ids.length > 0) {
-            const key = "restoringMessage";
-            messageApi.loading({
-                content: `Restoring ${restoring_ids.length} report(s)...`,
-                key,
-                duration: 0,
-            });
-        } else {
-            messageApi.destroy("restoringMessage"); // Dismiss the restoring message
-        }
-    }, [archiving_ids, restoring_ids]);
 
     // Render loading placeholders
     if (loading || isLoading) {
@@ -115,7 +72,7 @@ const Page = () => {
                 </Typography>
                 <div className="flex flex-col mt-4">
                     {Array.from({ length: 20 }, (_, index) => (
-                        <ReportMetaView key={index} report={null} loading={true} openRedirectPath="/reports/view/overview" wasmModule={wasmModule} />
+                        <ReportMetaView key={index} report={null} loading={true} openRedirectPath="/reports/view/overview" wasmModule={wasmModule} forceUpdate={forceUpdate} setActionLoading={setActionLoading} actionLoading={actionLoading} />
                     ))}
                 </div>
             </div>
@@ -182,7 +139,9 @@ const Page = () => {
                             key={report.id}
                             openRedirectPath="/reports/view/overview"
                             wasmModule={wasmModule}
-
+                            forceUpdate={forceUpdate}
+                            setActionLoading={setActionLoading}
+                            actionLoading={actionLoading}
                         />
                     ))}
                 </div>
@@ -206,7 +165,9 @@ const Page = () => {
                                 key={report.id}
                                 openRedirectPath="/reports/view/overview"
                                 wasmModule={wasmModule}
-
+                                forceUpdate={forceUpdate}
+                                setActionLoading={setActionLoading}
+                                actionLoading={actionLoading}
                             />
                         ))}
                     </>

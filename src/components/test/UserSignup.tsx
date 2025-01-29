@@ -71,6 +71,8 @@ const UserSignup = ({ onProfileUpdate }: UserSignupProps) => {
 
     try {
       const response = await wasmModule.create_user({ input: formData });
+      console.log("SUBMITTING", response)
+
       if (response.output) {
         setSuccess(true);
         setUserExists(true);

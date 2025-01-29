@@ -1,31 +1,30 @@
 'use client';
 import React, { useState, useEffect } from "react";
 import { Button, Progress, Tooltip, Dropdown, Menu, Skeleton, Tag } from "antd";
-import { MoreOutlined, DeleteOutlined, ShareAltOutlined, FolderOutlined, ReloadOutlined } from "@ant-design/icons";
+import { MoreOutlined, FolderOutlined, ReloadOutlined } from "@ant-design/icons";
 import Typography from "../typography";
 import "@/styles/globals.css";
 import { useRouter } from "next/navigation";
 import Checked from "@/assets/checked.svg"
 import Unchecked from "@/assets/unchecked.svg";
 import Image from "next/image";
-import { useSearchParams } from 'next/navigation';
 import RegulatoryFrameworkTag from "../regulatory-framework-tag";
 import { Report } from '@wasm';
-import { formatStatus } from "@/utils/styling-utils";
 import { archiveReport, isArchived, restoreReport } from "@/utils/report-utils";
 import { message as antdMessage } from "antd";
 import type * as WasmModule from "@wasm";
-import { LoadingOutlined } from "@ant-design/icons";
-import { Spin } from "antd";
 import ReportStatusTag from "../report-status-tag";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
-import { useGlobalActionsStore } from "@/stores/global-actions-store";
+import { useSearchParamsState } from "@/contexts/search-params-context";
 
 interface ReportMetaViewProps {
     openRedirectPath: string,
     report: Report | null,
-    loading?: boolean
     wasmModule: typeof WasmModule | null;
+    forceUpdate: () => Promise<string>,
+    setActionLoading: (input: boolean) => void;
+    actionLoading: boolean;
+    loading?: boolean
 }
 
 const ReportMetaView: React.FC<ReportMetaViewProps> = ({
@@ -33,17 +32,15 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
     openRedirectPath,
     loading,
     wasmModule,
+    forceUpdate,
+    setActionLoading,
+    actionLoading
 }) => {
     const router = useRouter();
-    const searchParams = useSearchParams();
-    const selectedReports = searchParams.get('selectedReports')?.split(",") || [];
+    const { selectedReports, toggleSelectedReport } = useSearchParamsState();
     const [isSelected, setIsSelected] = useState(selectedReports.includes(report?.id || ""));
-    const [actionLoading, setActionLoading] = useState("");
     const [messageApi, contextHolder] = antdMessage.useMessage();
     const addStaleReportId = useCacheInvalidationStore((state) => state.addStaleReportId)
-    const addRestoringId = useGlobalActionsStore((state) => state.addRestoringId)
-    const addArchivingId = useGlobalActionsStore((state) => state.addArchivingId)
-    const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate)
 
     useEffect(() => {
         setIsSelected(selectedReports.includes(report?.id || ""));
@@ -51,44 +48,71 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
 
 
     const toggleSelection = () => {
-        const updatedReports = isSelected
-            ? selectedReports.filter((reportId) => reportId !== report?.id)
-            : [...selectedReports, report?.id];
-        const newSearchParams = new URLSearchParams(searchParams.toString());
-        newSearchParams.set('selectedReports', updatedReports.join(","));
-        window.history.replaceState(null, '', `${window.location.pathname}?${newSearchParams.toString()}`);
+        if (!report?.id) return
+        toggleSelectedReport(report.id)
     };
 
-    const handleArchiveReport = async (e: React.MouseEvent, action: string) => {
+    const handleArchiveReport = async (e: React.MouseEvent, id: string | undefined) => {
+        setActionLoading(true)
         e.stopPropagation();
-        if (!report?.id) return;
-
-        setActionLoading(action);
+        if (!id) {
+            setActionLoading(false)
+            return
+        }
+        const messageKey = `${Date.now()}`
 
         try {
-            const res = await archiveReport(wasmModule, report.id);
-            addArchivingId(report.id)
-            addStaleReportId(report.id)
-            triggerUpdate("reports")
+            messageApi.open({
+                key: messageKey,
+                type: 'loading',
+                content: 'Archiving report...',
+                duration: 0, // Keeps the message visible until updated
+            });
+            await archiveReport(wasmModule, id);
+            addStaleReportId(id)
+            await forceUpdate()
+
         } catch (error) {
+            messageApi.open({
+                key: messageKey,
+                type: 'error',
+                content: 'Could not archive report',
+                duration: 0, // Keeps the message visible until updated
+            });
             console.error("Error archiving report:", error);
         }
+        setActionLoading(false)
+
     };
 
-    const handleRestoreReport = async (e: React.MouseEvent, action: string) => {
+    const handleRestoreReport = async (e: React.MouseEvent, id: string | undefined) => {
+        setActionLoading(true)
         e.stopPropagation();
-        if (!report?.id) return;
-
-        setActionLoading(action);
-
+        if (!id) {
+            setActionLoading(false)
+            return
+        }
+        const messageKey = `${Date.now()}`
         try {
-            const res = await restoreReport(wasmModule, report.id);
-            addRestoringId(report.id)
-            addStaleReportId(report.id)
-            // triggerUpdate("reports")
+            messageApi.open({
+                key: messageKey,
+                type: 'loading',
+                content: 'Restoring report...',
+                duration: 0, // Keeps the message visible until updated
+            });
+            await restoreReport(wasmModule, id);
+            addStaleReportId(id)
+            await forceUpdate()
         } catch (error) {
+            messageApi.open({
+                key: messageKey,
+                type: 'error',
+                content: 'Could not restore report',
+                duration: 2, // Message disappears after 2 seconds
+            });
             console.error("Error archiving report:", error);
         }
+        setActionLoading(false)
     };
 
 
@@ -97,15 +121,17 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
             {!isArchived(report?.status) ?
                 <Menu.Item
                     key="archive"
-                    onClick={(info) => handleArchiveReport(info.domEvent as React.MouseEvent, "archive")}
+                    onClick={(info) => handleArchiveReport(info.domEvent as React.MouseEvent, report?.id)}
                     icon={<FolderOutlined />}
+                    disabled={actionLoading}
                 >
                     Archive
                 </Menu.Item> :
                 <Menu.Item
                     key="restore"
-                    onClick={(info) => handleRestoreReport(info.domEvent as React.MouseEvent, "restore")}
+                    onClick={(info) => handleRestoreReport(info.domEvent as React.MouseEvent, report?.id)}
                     icon={<ReloadOutlined />}
+                    disabled={actionLoading}
                 >
                     Restore
                 </Menu.Item>

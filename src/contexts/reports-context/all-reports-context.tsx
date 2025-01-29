@@ -6,15 +6,16 @@ interface AllReportsContextType {
     reports: Report[];
     loading: boolean;
     error: string | null;
+    forceUpdate: () => Promise<string>
 }
 
 const AllReportsContext = createContext<AllReportsContextType | undefined>(undefined);
 
 export const AllReportsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { reports, loading, error } = useAllReports();
+    const { reports, loading, error, forceUpdate } = useAllReports();
 
     return (
-        <AllReportsContext.Provider value={{ reports, loading, error }}>
+        <AllReportsContext.Provider value={{ reports, loading, error, forceUpdate }}>
             {children}
         </AllReportsContext.Provider>
     );

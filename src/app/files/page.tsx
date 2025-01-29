@@ -8,7 +8,7 @@ import { fetchFiles } from "@/utils/files-utils";
 import { useWasm } from "@/components/WasmProvider";
 import type { File } from "@wasm";
 import FileManager from './file-manager';
-import { useFiles } from '@/hooks/files-hooks';
+// import { useFiles } from '@/hooks/files-hooks';
 import FileUploadModal from '@/components/upload-files/file-upload-modal';
 import { useFilesContext } from '@/contexts/files-context';
 import ReportStateHandler from '@/components/report-state-handler';
@@ -94,6 +94,8 @@ const Page = () => {
         }
     }, [fetchFileData]);
 
+    console.log("files", files)
+
 
     if (isLoading || wasmLoading) {
         return (
@@ -118,14 +120,8 @@ const Page = () => {
         );
     }
 
-    const handleDelete = (id: string) => {
-        console.log(`Delete file with id: ${id}`);
-    };
-
     const handleUploadComplete = (uploadedFiles: File[]) => {
-        // Perform any additional actions after upload, e.g., refresh the file list
         console.log("Uploaded files:", uploadedFiles);
-        // Optionally, trigger a re-fetch of files here
     };
 
     const handleOpenModal = () => setIsModalVisible(true);
@@ -152,7 +148,7 @@ const Page = () => {
                 {error ? (
                     <Typography color="secondary">{error}</Typography>
                 ) : (
-                    <FileManager files={files} />
+                    <FileManager files={files} downloadFile={downloadFile} viewFile={viewFile} viewLoading={viewLoading} downloadLoading={downloadLoading} />
 
                     // <List
                     //     dataSource={files}

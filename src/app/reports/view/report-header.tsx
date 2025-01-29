@@ -5,15 +5,16 @@ import { Report } from "@wasm"
 
 interface ReportsHeaderProps {
     reports: Report[]; // Replace with your report type if needed
+    header?: string
 }
 
-const ReportsHeader: React.FC<ReportsHeaderProps> = ({ reports }) => {
+const ReportsHeader: React.FC<ReportsHeaderProps> = ({ reports, header }) => {
     const reportCount = reports.length;
 
     return (
         <div className="flex items-center ">
             <div className="flex items-center text-h4_custom mr-4" >
-                Reports
+                {header ? header : "Reports"}
             </div>
             {reportCount > 1 && (
                 <Tooltip

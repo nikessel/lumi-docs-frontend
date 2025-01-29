@@ -140,4 +140,44 @@ export const useRequirementsForGroupIds = (
     return { requirements, loading, error };
 };
 
+interface UseAllRequirements {
+    requirements: Requirement[];
+    loading: boolean;
+    error: string | null;
+}
 
+export const useAllRequirements = (): UseAllRequirements => {
+    const { wasmModule } = useWasm();
+    const [requirements, setRequirements] = useState<Requirement[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchAllRequirements = async () => {
+            if (!wasmModule) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                setLoading(true);
+                const response = await wasmModule.get_all_requirements();
+
+                if (response.error) {
+                    throw new Error(response.error.message);
+                }
+
+                setRequirements(response.output?.output || []);
+            } catch (err: any) {
+                console.error("Error fetching all requirements:", err);
+                setError(err.message || "Failed to fetch requirements.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAllRequirements();
+    }, [wasmModule]);
+
+    return { requirements, loading, error };
+};

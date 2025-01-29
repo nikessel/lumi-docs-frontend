@@ -14,12 +14,13 @@ import { useAllReportsContext } from "@/contexts/reports-context/all-reports-con
 import ReportStateHandler from "@/components/report-state-handler";
 
 const Page = () => {
-    const { reports, loading, error } = useAllReportsContext();
+    const { reports, loading, error, forceUpdate } = useAllReportsContext();
     const { selectedReports, selectedCount } = useUrlSelectedReports();
     const { wasmModule, isLoading } = useWasm();
 
     const [searchQuery, setSearchQuery] = useState("");
     const router = useRouter();
+    const [actionLoading, setActionLoading] = useState(false)
 
     const [showArchived, setShowArchived] = useState(false);
 
@@ -54,7 +55,7 @@ const Page = () => {
                 </Typography>
                 <div className="flex flex-col mt-4">
                     {Array.from({ length: 20 }, (_, index) => (
-                        <ReportMetaView key={index} report={null} loading={true} openRedirectPath="/tasks/overview/view" wasmModule={wasmModule} />
+                        <ReportMetaView key={index} report={null} loading={true} openRedirectPath="/tasks/overview/view" wasmModule={wasmModule} setActionLoading={setActionLoading} actionLoading={actionLoading} forceUpdate={forceUpdate} />
                     ))}
                 </div>
             </div>
@@ -117,7 +118,9 @@ const Page = () => {
                             key={report.id}
                             openRedirectPath="/tasks/view/overview"
                             wasmModule={wasmModule}
-
+                            setActionLoading={setActionLoading}
+                            actionLoading={actionLoading}
+                            forceUpdate={forceUpdate}
                         />
                     ))}
                 </div>
@@ -141,6 +144,9 @@ const Page = () => {
                                 key={report.id}
                                 openRedirectPath="/tasks/view/overview"
                                 wasmModule={wasmModule}
+                                setActionLoading={setActionLoading}
+                                actionLoading={actionLoading}
+                                forceUpdate={forceUpdate}
 
                             />
                         ))}

@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Slider, Drawer, Button, Radio, Switch, Badge } from "antd";
+import { Slider, Drawer, Button, Radio, Switch, Badge, Divider } from "antd";
 import { SlidersOutlined } from "@ant-design/icons";
 import Typography from "@/components/typography";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Report } from "@wasm";
+import SelectTaskDocuments from "./update-selected-task-documents";
+import ComplianceFilter from "./compliance-filter";
+import SearchRequirements from "./search-query";
 
 interface FilterBarProps {
     reports?: Report[];
@@ -85,7 +88,21 @@ const FilterBar: React.FC<FilterBarProps> = ({ reports }) => {
                 width={600}
             >
                 {/* Compliance Rating Slider */}
-                <div className="py-2 mb-4 flex items-center justify-between w-full border-b b">
+                <div className="flex flex-col ">
+                    <SearchRequirements />
+                    <Divider />
+                    <SelectTaskDocuments />
+                    <Divider />
+                    <ComplianceFilter />
+                </div>
+            </Drawer>
+        </>
+    );
+};
+
+export default FilterBar;
+
+{/* <div className="py-2 mb-4 flex items-center justify-between w-full border-b b">
                     <Typography color="secondary">Compliance Rating</Typography>
                     <Slider
                         range
@@ -100,56 +117,50 @@ const FilterBar: React.FC<FilterBarProps> = ({ reports }) => {
                     />
                 </div>
 
-                {/* Acceptance Level Slider */}
-                <div className="py-2 mb-4 flex items-center justify-between w-full border-b b">
-                    <Typography color="secondary">Acceptance level: {acceptanceLevel}</Typography>
-                    <Slider
-                        value={100 - acceptanceLevel}
-                        onChange={(val) => setAcceptanceLevel(100 - val)}
-                        max={100}
-                        min={0}
-                        reverse
-                        className="w-60"
-                        tooltip={{
-                            formatter: (val) => `${100 - (val ?? 0)}`,
-                        }}
-                        trackStyle={{ backgroundColor: "var(--success)" }}
-                    />
-                </div>
+//                 {/* Acceptance Level Slider */}
+// <div className="py-2 mb-4 flex items-center justify-between w-full border-b b">
+//     <Typography color="secondary">Acceptance level: {acceptanceLevel}</Typography>
+//     <Slider
+//         value={100 - acceptanceLevel}
+//         onChange={(val) => setAcceptanceLevel(100 - val)}
+//         max={100}
+//         min={0}
+//         reverse
+//         className="w-60"
+//         tooltip={{
+//             formatter: (val) => `${100 - (val ?? 0)}`,
+//         }}
+//         trackStyle={{ backgroundColor: "var(--success)" }}
+//     />
+// </div>
 
-                {/* Aggregation Radio Group */}
-                <div className="py-2 mb-4 flex items-center justify-between w-full border-b b">
-                    <Typography color="secondary">Aggregation</Typography>
-                    <Radio.Group
-                        onChange={(e) => setAggregation(e.target.value)}
-                        value={aggregation}
-                    >
-                        <Radio value="Acceptance based aggregation">Aggregate</Radio>
-                        <Radio value="Show actual ratings">Actual ratings</Radio>
-                    </Radio.Group>
-                </div>
+// {/* Aggregation Radio Group */ }
+// <div className="py-2 mb-4 flex items-center justify-between w-full border-b b">
+//     <Typography color="secondary">Aggregation</Typography>
+//     <Radio.Group
+//         onChange={(e) => setAggregation(e.target.value)}
+//         value={aggregation}
+//     >
+//         <Radio value="Acceptance based aggregation">Aggregate</Radio>
+//         <Radio value="Show actual ratings">Actual ratings</Radio>
+//     </Radio.Group>
+// </div>
 
-                {/* Implementation Status Switches */}
-                <div className="py-2 mb-4 flex items-center justify-between w-full border-b b">
-                    <Typography color="secondary">Implementation status</Typography>
-                    <div className="flex flex-col space-y-2 w-60">
-                        <div className="flex justify-between items-center py-1">
-                            <Typography>Ignored:</Typography>
-                            <Switch checked={ignored} onChange={setIgnored} />
-                        </div>
-                        <div className="flex justify-between items-center py-1">
-                            <Typography>Task Created:</Typography>
-                            <Switch checked={taskCreated} onChange={setTaskCreated} />
-                        </div>
-                        <div className="flex justify-between items-center py-1">
-                            <Typography>None:</Typography>
-                            <Switch checked={none} onChange={setNone} />
-                        </div>
-                    </div>
-                </div>
-            </Drawer>
-        </>
-    );
-};
-
-export default FilterBar;
+// {/* Implementation Status Switches */ }
+// <div className="py-2 mb-4 flex items-center justify-between w-full border-b b">
+//     <Typography color="secondary">Implementation status</Typography>
+//     <div className="flex flex-col space-y-2 w-60">
+//         <div className="flex justify-between items-center py-1">
+//             <Typography>Ignored:</Typography>
+//             <Switch checked={ignored} onChange={setIgnored} />
+//         </div>
+//         <div className="flex justify-between items-center py-1">
+//             <Typography>Task Created:</Typography>
+//             <Switch checked={taskCreated} onChange={setTaskCreated} />
+//         </div>
+//         <div className="flex justify-between items-center py-1">
+//             <Typography>None:</Typography>
+//             <Switch checked={none} onChange={setNone} />
+//         </div>
+//     </div>
+// </div> */}

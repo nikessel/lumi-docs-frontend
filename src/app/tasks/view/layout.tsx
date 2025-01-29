@@ -4,7 +4,7 @@ import React from 'react';
 import { Button, Divider } from 'antd';
 import { SaveOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import "@/styles/globals.css";
-import ReportSectionSelector from '@/components/report-section-selector';
+// import ReportSectionSelector from '@/components/report-section-selector';
 import ReportCreatedOn from '@/components/created-on';
 import FilterBar from '@/components/filter-bar'
 import { useSelectedFilteredReports } from '@/hooks/report-hooks';
@@ -13,6 +13,7 @@ import { createUrlWithParams } from '@/utils/url-utils';
 import { useRouter, useSearchParams } from 'next/navigation';
 import SubMenu from './sub-menu';
 import { SelectedFilteredReportsTasksProvider } from '@/contexts/tasks-context/selected-filtered-report-tasks';
+import ReportsHeader from '@/app/reports/view/report-header';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -37,7 +38,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                             {reports.length > 0 ?
 
                                 <div className="space-y-4">
-                                    <ReportSectionSelector reports={reports} />
+                                    <ReportsHeader reports={reports} header={"Tasks"} />
                                 </div>
                                 : <div>Tasks</div>
                             }

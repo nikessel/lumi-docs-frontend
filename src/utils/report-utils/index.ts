@@ -1,5 +1,5 @@
 import { saveData, getData, getMetadata, saveMetadata } from "@/utils/db-utils"
-import type { Report, ReportStatus, RequirementAssessment, RequirementGroupAssessment } from "@wasm";
+import type { Report, RequirementOrRequirementGroupAssessment, IdType, ReportStatus, SectionAssessment, RequirementAssessment, RequirementGroupAssessment, Requirement } from "@wasm";
 import type * as WasmModule from "@wasm";
 import { dbName, dbVersion } from "@/utils/db-utils";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
@@ -248,35 +248,78 @@ export async function fetchReportsByIds(
 }
 
 export async function getSelectedFilteredReports(
-    wasmModule: typeof WasmModule | null
+    wasmModule: typeof WasmModule | null,
+    selectedReports: string[],
+    searchQuery: string,
+    compliance: [number, number] | null,
+    requirements: Requirement[]
 ): Promise<Report[]> {
+    console.log("GETTINGFILTEREDREPORTS")
     if (!wasmModule) {
         throw new Error("WASM module not loaded");
     }
 
-    const searchParams = new URLSearchParams(window.location.search);
-    const reportsParam = searchParams.get('selectedReports');
-    const selectedReportsIds = reportsParam
-        ? reportsParam.split(",").map(report => decodeURIComponent(report))
-        : [];
-
-    if (selectedReportsIds.length === 0) {
+    if (selectedReports.length === 0) {
         return [];
     }
 
-    const { reports: fetchedReports, errors } = await fetchReportsByIds(wasmModule, selectedReportsIds);
+    const { reports: fetchedReports, errors } = await fetchReportsByIds(wasmModule, selectedReports);
 
     if (Object.keys(errors).length > 0) {
         console.error("Errors fetching reports:", errors);
         throw new Error("Some reports could not be fetched.");
     }
 
-    return filterReports(fetchedReports); // Apply filtering logic here
+    return filterReports(fetchedReports, searchQuery, compliance, requirements); // Apply filtering logic here
 }
 
-export function filterReports(reports: Report[]): Report[] {
-    // Placeholder logic; return the reports as is
-    return reports;
+export function filterReports(reports: Report[], searchQuery: string, compliance: [number, number] | null, requirements: Requirement[]): Report[] {
+    return reports
+        .map(report => {
+            const filteredSections = new Map<IdType, SectionAssessment>();
+            report.section_assessments.forEach((section, sectionId) => {
+                if (!section.requirement_assessments) return;
+
+                const filteredRequirements = new Map<IdType, RequirementOrRequirementGroupAssessment>();
+
+                section.requirement_assessments.forEach((assessment, requirementId) => {
+                    if ("requirement" in assessment) {
+                        const requirement = requirements.find((req) => req.id === requirementId);
+
+                        const name = requirement?.name ?? "Unknown Requirement";
+                        const description = requirement?.description ?? "No description available";
+
+                        const { compliance_rating, details, objective_research_summary } = assessment.requirement;
+
+                        const matchesCompliance = compliance
+                            ? compliance_rating >= compliance[0] && compliance_rating <= compliance[1]
+                            : true;
+
+                        const matchesSearchQuery = searchQuery
+                            ? details.includes(searchQuery) || objective_research_summary.includes(searchQuery) || name.includes(searchQuery) || description.includes(searchQuery)
+                            : true;
+
+                        if (matchesCompliance && matchesSearchQuery) {
+                            filteredRequirements.set(requirementId, assessment);
+                        }
+                    }
+                });
+
+                if (filteredRequirements.size > 0) {
+                    filteredSections.set(sectionId, {
+                        ...section,
+                        requirement_assessments: filteredRequirements
+                    });
+                }
+            });
+
+            if (filteredSections.size > 0) {
+                return { ...report, section_assessments: filteredSections };
+            }
+
+            return null;
+        })
+        .filter(Boolean) as Report[];
 }
 
 export function extractAllRequirementAssessments(reports: Report[]): (RequirementAssessment & { id: string })[] {
@@ -353,11 +396,58 @@ export async function restoreReport(
         }
         // Add a fallback return or throw to ensure all code paths are covered
         throw new Error("Unexpected response from restore_report.");
+
     } catch (err: unknown) {
         console.error("Error restoring report:", err);
         throw new Error(`Failed to restore report with ID ${reportId}`);
     }
 }
+
+// export async function restoreReport(
+//     wasmModule: typeof WasmModule | null,
+//     reportId: string
+// ): Promise<string> {
+//     if (!wasmModule) {
+//         throw new Error("WASM module not loaded");
+//     }
+
+//     try {
+//         const response = await wasmModule.restore_report({ input: reportId });
+
+//         if (response.output) {
+//             // Update the cached report in IndexedDB
+//             const cachedReports = await getData<CachedReport>(dbName, "reports", dbVersion);
+
+//             const updatedReports = cachedReports.map((report) => {
+//                 if (report.id === reportId) {
+//                     // Check if the report has an archived status with a previous_status
+//                     const previousStatus =
+//                         typeof report.status === "object" &&
+//                             "archived" in report.status &&
+//                             report.status.archived.previous_status
+//                             ? report.status.archived.previous_status
+//                             : "ready"; // Default to "ready" if no previous status exists
+
+//                     return {
+//                         ...report,
+//                         status: previousStatus,
+//                     };
+//                 }
+//                 return report;
+//             });
+
+//             await saveData(dbName, "reports", updatedReports, dbVersion, true);
+
+//             return `Report with ID ${reportId} restored successfully.`;
+//         } else if (response.error) {
+//             throw new Error(response.error.message);
+//         }
+//         throw new Error("Unexpected response from restore_report.");
+//     } catch (err: unknown) {
+//         console.error("Error restoring report:", err);
+//         throw new Error(`Failed to restore report with ID ${reportId}`);
+//     }
+// }
 
 export const isArchived = (status: ReportStatus | undefined): boolean => {
     return typeof status === "object" && "archived" in status;

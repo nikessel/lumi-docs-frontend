@@ -4,28 +4,25 @@ import React from 'react';
 import { Button, Divider } from 'antd';
 import { SaveOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import "@/styles/globals.css";
-import ReportSectionSelector from '@/components/report-section-selector';
+// import ReportSectionSelector from '@/components/report-section-selector';
 import ReportCreatedOn from '@/components/created-on';
 import FilterBar from '@/components/filter-bar'
 import RequirementGroups from './show-requirement-group';
 import { useSelectedFilteredReports } from '@/hooks/report-hooks'; // Adjust the path if needed
 import ReportStateHandler from '@/components/report-state-handler'
-import { useRouter, useSearchParams } from 'next/navigation';
 
 const ReportPage = () => {
     const { reports, loading, error } = useSelectedFilteredReports();
-    const searchParams = useSearchParams();
-    const router = useRouter();
 
     return (
         <ReportStateHandler loading={loading} error={error} reports={reports} expectReports={true}>
             <div>
                 <div className="flex justify-between items-center">
-                    <div>
+                    {/* <div>
                         <div className="space-y-4">
                             <ReportSectionSelector reports={reports} />
                         </div>
-                    </div>
+                    </div> */}
                     <div className="flex items-center space-x-2">
                         <Button icon={<SaveOutlined />}>Save view</Button>
                         <Button icon={<ArrowRightOutlined />} type="primary">

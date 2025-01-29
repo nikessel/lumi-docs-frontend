@@ -22,7 +22,7 @@ const ReportCreatedOn: React.FC<ReportCreatedOnProps> = ({ reports }) => {
                     Created On
                 </Tag>
             </Tooltip> : <Tag color="success" className="cursor-pointer">
-                {new Date(reports[0].created_date).toLocaleDateString()}
+                {new Date(reports[0]?.created_date).toLocaleDateString()}
             </Tag>}
         </div>
     );

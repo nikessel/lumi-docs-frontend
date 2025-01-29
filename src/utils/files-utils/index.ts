@@ -2,6 +2,7 @@ import { saveData, getData, getMetadata, saveMetadata } from "@/utils/db-utils";
 import type { File } from "@wasm";
 import type * as WasmModule from "@wasm";
 import { dbName } from "@/utils/db-utils";
+import { doesNotReject } from "assert";
 
 const FILES_DB_NAME = dbName;
 const FILES_STORE_NAME = "files";
@@ -76,3 +77,101 @@ export const getDocumentIconLetters = (title: string) =>
         .slice(0, 3) // Take up to the first three words
         .map((word) => word.charAt(0).toUpperCase()) // Take the first letter of each word
         .join("");
+
+export async function createDirectory(
+    wasmModule: typeof WasmModule | null,
+    title: string,
+    path: string
+): Promise<{ success: boolean; error: string | null }> {
+    if (!wasmModule) {
+        return { success: false, error: "WASM module not loaded" };
+    }
+
+    try {
+        const response = wasmModule.new_file(
+            {
+                path: `${title}`,
+                size: 0
+            }
+        )
+
+        console.log("wasmModule", response)
+
+
+        // const response = await wasmModule.create_file({
+        //     input: {
+        //         id: `folder-${Date.now()}`,
+        //         title: title,
+        //         is_directory: true,
+        //         extension: "txt",
+        //         created_date: new Date().toISOString(),
+        //         size: 0,
+        //         path: path,
+        //         uploaded: true,
+        //         multipart_upload_id: `folder-${Date.now()}`,
+        //         total_chunks: 1,
+        //         status: "ready",
+        //         number: 0,
+        //         multipart_upload_part_ids: [`folder-${Date.now()}`]
+        //     }
+        // });
+        // console.log("create directory", response)
+
+        if (response.error) {
+            return { success: false, error: response.error.message };
+        }
+
+        return { success: true, error: null };
+    } catch (err) {
+        console.error("Error creating directory:", err);
+        return { success: false, error: "Failed to create directory" };
+    }
+}
+
+export async function moveFile(
+    wasmModule: typeof WasmModule | null,
+    fileId: string,
+    newPath: string
+): Promise<{ success: boolean; error: string | null }> {
+    if (!wasmModule) {
+        return { success: false, error: "WASM module not loaded" };
+    }
+
+    try {
+        const response = await wasmModule.update_directory({
+            id: fileId,
+            path: newPath,
+        });
+
+        console.log("movefile", response)
+
+        if (response.error) {
+            return { success: false, error: response.error.message };
+        }
+
+        // // Update the file's path in IndexedDB
+        // const cachedFiles = await getData<CachedFile>(
+        //     FILES_DB_NAME,
+        //     FILES_STORE_NAME,
+        //     FILES_DB_VERSION
+        // );
+
+        // const updatedFiles = cachedFiles.map((file) =>
+        //     file.id === fileId ? { ...file, path: newPath } : file
+        // );
+
+        // await saveData(
+        //     FILES_DB_NAME,
+        //     FILES_STORE_NAME,
+        //     updatedFiles,
+        //     FILES_DB_VERSION,
+        //     true
+        // );
+
+        return { success: true, error: null };
+    } catch (err) {
+        console.error("Error moving file:", err);
+        return { success: false, error: "Failed to move file" };
+    }
+}
+

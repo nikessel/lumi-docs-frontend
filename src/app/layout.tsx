@@ -23,6 +23,10 @@ import { loadStripe } from '@stripe/stripe-js';
 import { useAuth } from "@/components/Auth0";
 import useLoadingStore from "@/stores/global-loading-unification";
 import { useAllReports } from "@/hooks/report-hooks";
+import { SearchParamsProvider } from "@/contexts/search-params-context";
+import { FilteredRequirementsProvider } from "@/contexts/requirement-context/filtered-report-requirement-context";
+import { useSelectedFilteredReportsContext } from "@/contexts/reports-context/selected-filtered-reports";
+import { SelectedFilteredReportsProvider } from "@/contexts/reports-context/selected-filtered-reports";
 
 const { Content } = Layout;
 
@@ -35,8 +39,8 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
   const { isLoading: AuthLoading } = useAuth()
   const { loading: reportsLoading } = useAllReports()
   const loadingComponents = useLoadingStore((state) => state.loadingComponents)
-
-  const noLayout = typeof window !== "undefined" && (window.location.pathname === "/documentation" || window.location.pathname === "/logout");
+  const { reports } = useSelectedFilteredReportsContext()
+  const noLayout = typeof window !== "undefined" && (window.location.pathname === "/documentation" || window.location.pathname === "/logout" || window.location.pathname === "/signup");
 
   useEffect(() => {
     if (!wasmLoading && !AuthLoading && !reportsLoading && window.location.pathname !== "/callback" && loadingComponents.indexOf("wasmprovider") < 0 && !initialLoadCompleted) {
@@ -56,19 +60,21 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
           <Layout className="h-full" style={{ minWidth: 1200 }}>
             {!noLayout ? <AppSider /> : ""}
             <Layout className="h-full">
-              <AllReportsProvider>
-                <RegulatoryFrameworksProvider>
-                  <FilesProvider>
-                    <UserProvider>
-                      <Content className="pt-8 pb-8 px-4 sm:px-8 container h-full">
-                        <div className="bg-white p-6 rounded shadow-sm h-full overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-                          {children}
-                        </div>
-                      </Content>
-                    </UserProvider>
-                  </FilesProvider>
-                </RegulatoryFrameworksProvider>
-              </AllReportsProvider>
+              <FilteredRequirementsProvider reports={reports}>
+                <AllReportsProvider>
+                  <RegulatoryFrameworksProvider>
+                    <FilesProvider>
+                      <UserProvider>
+                        <Content className="pt-8 pb-8 px-4 sm:px-8 container h-full">
+                          <div className="bg-white p-6 rounded shadow-sm h-full overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                            {children}
+                          </div>
+                        </Content>
+                      </UserProvider>
+                    </FilesProvider>
+                  </RegulatoryFrameworksProvider>
+                </AllReportsProvider>
+              </FilteredRequirementsProvider>
             </Layout>
           </Layout>
         </ConfigProvider>
@@ -88,7 +94,11 @@ export default function RootLayout({
       <body className="h-full">
         <WasmProviderComponent>
           <AuthProvider>
-            <LayoutWithWasm>{children}</LayoutWithWasm>
+            <SearchParamsProvider>
+              <SelectedFilteredReportsProvider>
+                <LayoutWithWasm>{children}</LayoutWithWasm>
+              </SelectedFilteredReportsProvider>
+            </SearchParamsProvider>
           </AuthProvider>
         </WasmProviderComponent>
       </body>

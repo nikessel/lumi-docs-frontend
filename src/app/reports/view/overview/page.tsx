@@ -1,6 +1,6 @@
 'use client';
 import Tree from "./tree-view";
-import { Card, Statistic } from 'antd';
+import { Card, Statistic, Skeleton } from 'antd';
 import { getComplianceColorCode } from "@/utils/formating";
 import { useSelectedFilteredReports } from "@/hooks/report-hooks";
 import TreeView from "./tree-view-new";
@@ -12,10 +12,12 @@ import { useSelectedFilteredReportsContext } from "@/contexts/reports-context/se
 import { useSelectedFilteredReportsTasksContext } from "@/contexts/tasks-context/selected-filtered-report-tasks";
 import { analyzeReports } from "@/utils/advanced-charts-utils";
 import { analyzeTasks } from "@/utils/tasks-utils";
+import { DotChartOutlined } from '@ant-design/icons';
 
 const Page = () => {
-    const { reports } = useSelectedFilteredReportsContext();
-    const { tasks } = useSelectedFilteredReportsTasksContext();
+    const { reports, loading: reportsLoading } = useSelectedFilteredReportsContext();
+    const { tasks, loading: tasksLoading } = useSelectedFilteredReportsTasksContext();
+
     const analyzedReports = analyzeReports(reports);
 
     const averageCompliance = reports.length > 0
@@ -30,6 +32,39 @@ const Page = () => {
         : 0;
 
     const analyzedTasks = analyzeTasks(tasks);
+
+    const isLoading = reportsLoading || tasksLoading;
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col gap-4" style={{ height: "70vh" }} >
+                <div className="flex items-stretch gap-2 h-auto w-full">
+                    <div className="flex-1">
+                        <Card bordered={false} className="h-full">
+                            <Skeleton active />
+                        </Card>
+                    </div>
+                    <div className="flex-1">
+                        <Card bordered={false} className="h-full">
+                            <Skeleton active />
+                        </Card>
+                    </div>
+                    <div className="flex-1">
+                        <Card bordered={false} className="h-full">
+                            <Skeleton active />
+                        </Card>
+                    </div>
+                </div>
+
+                <div className="flex justify-between" style={{ width: "100%", height: "55vh" }}>
+                    <Skeleton.Node active={true} style={{ width: 450, height: 350 }} />
+                    <Skeleton.Node active={true} style={{ width: 450, height: 350 }} />
+
+                </div>
+            </div>
+        );
+    }
+
 
     return (
         <div className="flex flex-col gap-4" style={{ height: "70vh" }} >

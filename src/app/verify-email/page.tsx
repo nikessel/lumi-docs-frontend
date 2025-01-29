@@ -1,12 +1,32 @@
 "use client";
-
+import { useEffect } from "react"
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/Auth0";
+import { useWasm } from "@/components/WasmProvider";
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
   const { login } = useAuth();
+  // const { wasmModule } = useWasm()
+
+  // useEffect(() => {
+  //   const fetchUser = async () => {
+  //     if (!wasmModule) {
+  //       console.log("VERIFY WASM module not loaded");
+  //       return;
+  //     }
+
+  //     try {
+  //       const userResponse = await wasmModule.get_user();
+  //       console.log("VERIFY User Data:", userResponse);
+  //     } catch (error) {
+  //       console.error("VERIFY Error fetching user:", error);
+  //     }
+  //   };
+
+  //   fetchUser();
+  // }, [wasmModule]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

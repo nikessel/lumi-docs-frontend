@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Table, Button, Progress } from 'antd';
+import { Table, Button, Progress, Skeleton } from 'antd';
 import ReportStateHandler from '@/components/report-state-handler';
 import { extractAllRequirementAssessments } from '@/utils/report-utils';
 import DetailedAssessmentModal from '@/components/detailed-assessment-modal';
@@ -28,8 +28,19 @@ const Page = () => {
 
     const [openModal, setOpenModal] = useState<boolean>(false);
 
-    const loading = reportsLoading || requirementsLoading;
+    const [loading, setLoading] = useState(true)
+
     const error = reportsError || requirementsError;
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (!reportsLoading && !requirementsLoading) {
+                setLoading(false);
+            }
+        }, 200);
+
+        return () => clearTimeout(timer);
+    }, [reportsLoading, requirementsLoading]);
 
     useEffect(() => {
         if (reports) {
@@ -92,23 +103,51 @@ const Page = () => {
         },
     ];
 
-    return (
-        <ReportStateHandler loading={loading} error={error} reports={reports} expectReports={true}>
-            <div>
-                <Table
-                    dataSource={allAssessmentsSorted}
-                    rowKey="id"
-                    columns={columns}
-                    pagination={{ pageSize: 10 }}
-                />
-                <DetailedAssessmentModal
-                    requirement={selectedRequirement.requirement}
-                    requirementAssessment={selectedRequirement.requirementAssessment}
-                    onClose={() => setOpenModal(false)}
-                    open={openModal}
-                />
+    if (loading) {
+        return (
+            <div className="">
+                <div className="w-100">
+                    <Table
+                        dataSource={Array.from({ length: 10 }).map((_, index) => ({ key: index }))}
+                        columns={[
+                            {
+                                title: 'Requirement Name',
+                                key: 'name',
+                                render: () => <Skeleton.Input active style={{ width: 200 }} />,
+                            },
+                            {
+                                title: 'Compliance Rating',
+                                key: 'compliance_rating',
+                                render: () => <Skeleton.Avatar active shape="circle" size={50} />,
+                            },
+                            {
+                                title: '',
+                                key: 'actions',
+                                render: () => <Skeleton.Button active />,
+                            },
+                        ]}
+                        pagination={false}
+                    />
+                </div>
             </div>
-        </ReportStateHandler>
+        );
+    }
+
+    return (
+        <div>
+            <Table
+                dataSource={allAssessmentsSorted}
+                rowKey="id"
+                columns={columns}
+                pagination={{ pageSize: 10 }}
+            />
+            <DetailedAssessmentModal
+                requirement={selectedRequirement.requirement}
+                requirementAssessment={selectedRequirement.requirementAssessment}
+                onClose={() => setOpenModal(false)}
+                open={openModal}
+            />
+        </div>
     );
 };
 

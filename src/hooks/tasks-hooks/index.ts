@@ -4,6 +4,11 @@ import { fetchTasksByReport } from "@/utils/tasks-utils"
 import { Report, Task } from "@wasm";
 import { getSelectedFilteredReports } from "@/utils/report-utils";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
+import { useSearchParamsState } from "@/contexts/search-params-context";
+import { filter } from "jszip";
+import { useFilesContext } from "@/contexts/files-context";
+import { useFilteredRequirementsContext } from '@/contexts/requirement-context/filtered-report-requirement-context';
+import { useSelectedFilteredReports } from "../report-hooks";
 
 interface UseAllReportsTasks {
     tasks: Task[];
@@ -66,10 +71,13 @@ export const useSelectedFilteredReportsTasks = (): UseSelectedFilteredReportsTas
 
     const lastUpdated = useCacheInvalidationStore((state) => state.lastUpdated["tasks"]);
     const setBeingRefetched = useCacheInvalidationStore((state) => state.setBeingRefetched);
+    const { selectedReports, selectedTaskDocuments, searchQuery, compliance } = useSearchParamsState()
+    const { files, isLoading: filesLoading } = useFilesContext()
+    const { requirements, loading: requirementsLoading } = useFilteredRequirementsContext()
 
     useEffect(() => {
         const fetchFilteredTasks = async (isInitialLoad = false) => {
-            if (!wasmModule) return;
+            if (!wasmModule || filesLoading || requirementsLoading) return;
 
             try {
                 if (isInitialLoad) {
@@ -78,11 +86,23 @@ export const useSelectedFilteredReportsTasks = (): UseSelectedFilteredReportsTas
                     setBeingRefetched("filteredTasks", true); // Set refetching for subsequent fetches
                 }
 
-                const reports = await getSelectedFilteredReports(wasmModule);
-                const filteredTasks = await Promise.all(
+                const reports = await getSelectedFilteredReports(wasmModule, selectedReports, searchQuery, compliance, requirements);
+
+                let allTasks = await Promise.all(
                     reports.map(report => fetchTasksByReport(wasmModule, report.id))
                 );
-                setTasks(filteredTasks.flat());
+
+                let flattenedTasks = allTasks.flat();
+
+                if (selectedTaskDocuments.length > 0) {
+                    flattenedTasks = flattenedTasks.filter(task => {
+                        const AscDocId = files?.find((file) => file.title === task.associated_document)?.id
+                        return AscDocId && selectedTaskDocuments.includes(AscDocId)
+                    });
+
+                }
+
+                setTasks(flattenedTasks);
             } catch (err: any) {
                 setError(err.message || "Failed to fetch filtered tasks");
             } finally {
@@ -95,7 +115,7 @@ export const useSelectedFilteredReportsTasks = (): UseSelectedFilteredReportsTas
         };
 
         fetchFilteredTasks(loading);
-    }, [wasmModule, lastUpdated]);
+    }, [wasmModule, lastUpdated, selectedReports, selectedTaskDocuments, files, requirements]);
 
     return { tasks, loading, error };
 };

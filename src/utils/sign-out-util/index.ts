@@ -1,11 +1,9 @@
-import { useGlobalActionsStore } from "@/stores/global-actions-store";
 import { useCreateReportStore } from "@/stores/create-report-store";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
 import { deleteDatabase } from "../db-utils";
 
 export async function clearAllData(): Promise<{ status: string; message: string }> {
     try {
-        useGlobalActionsStore.getState().resetState();
         useCreateReportStore.getState().resetState();
         useCacheInvalidationStore.getState().resetState();
 

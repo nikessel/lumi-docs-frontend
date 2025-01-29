@@ -27,6 +27,7 @@ interface AuthContextType {
   user: Claims | null;
   error: string | null;
   login: () => Promise<void>;
+  signup: () => Promise<void>;
   logout: () => Promise<void>;
   setUser: Dispatch<SetStateAction<Claims | null>>;
   setError: Dispatch<SetStateAction<string | null>>;
@@ -82,6 +83,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [idToken] = useStorage(SK.id_token);
 
   const router = useRouter();
+
+  const signup = useCallback(async () => {
+    if (!wasmModule) {
+      setError("WASM module not loaded");
+      return;
+    }
+
+    try {
+      const response = await wasmModule.get_public_auth0_config();
+      if (response.error || !response.output) {
+        throw new Error(response.error?.message || "No Auth0 config received");
+      }
+
+      const config = response.output.output;
+      const state = Math.random().toString(36).substring(7);
+      localStorage.setItem("auth_state", state);
+
+      const authUrl = new URL(`https://${config.domain}/authorize`);
+      authUrl.searchParams.append("response_type", "code");
+      authUrl.searchParams.append("client_id", config.client_id);
+      authUrl.searchParams.append("redirect_uri", config.login_redirect_uri);
+      authUrl.searchParams.append("scope", "openid profile email");
+      authUrl.searchParams.append("state", state);
+      authUrl.searchParams.append("screen_hint", "signup"); // 👈 **Forces Auth0 to show Sign-Up page**
+
+      window.location.href = authUrl.toString();
+    } catch (err) {
+      console.error("Signup error:", err);
+      setError(err instanceof Error ? err.message : "An unknown error occurred");
+    }
+  }, [wasmModule]);
+
 
   const handleEmailVerification = useCallback(async (email: string) => {
     storage.clear();
@@ -165,6 +198,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         token: idToken,
       });
 
+      const existsResponse = await wasmModule.user_exists();
+      const userExists = existsResponse.output?.output;
+
+      if (!userExists) {
+        return;
+      }
+
 
       if (claimsResult.error) {
         if (claimsResult.error.kind === "EmailNotVerified") {
@@ -231,6 +271,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     error,
     login,
+    signup,
     logout,
     setUser,
     setError,
@@ -251,16 +292,46 @@ export function AuthCallback() {
   const { setUser, setError, setIsAuthenticated } = context;
   const [processing, setProcessing] = useState(true);
   const { wasmModule, isLoading: isWasmLoading } = useWasm();
-  const addLoadingComponent = useLoadingStore((state) => state.addLoadingComponent)
-  const removeLoadingComponent = useLoadingStore((state) => state.removeLoadingComponent)
 
-  useEffect(() => {
-    if (processing) {
-      addLoadingComponent("authcallback")
-    } else {
-      removeLoadingComponent("authcallback")
-    }
-  }, [processing])
+  // const params = new URLSearchParams(window.location.search);
+  // const code = params.get("code");
+
+  // useEffect(() => {
+  //   const handleCallback = async () => {
+  //     try {
+  //       if (!code) throw new Error("Authorization code is missing");
+
+  //       const response = await fetch("/api/auth/callback", {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ code }),
+  //       });
+
+  //       console.log("!!!!!!", response)
+
+  //       const data = await response.json();
+
+  //       if (!response.ok) {
+  //         throw new Error(data.error || "Failed to fetch user info");
+  //       }
+
+  //       setUser(data.user); // Save user info
+  //       //setLoading(false);
+
+  //       if (!data.user.email_verified) {
+  //         alert("Email not verified. Please verify your email.");
+  //       } else {
+  //         console.log("User info:", data.user);
+  //       }
+  //     } catch (err) {
+  //       //setError(err.message);
+  //       //setLoading(false);
+  //     }
+  //   };
+
+  //   handleCallback();
+  // }, [code]);
+
 
   const handleEmailVerification = useCallback(
     async (email: string) => {
@@ -300,30 +371,42 @@ export function AuthCallback() {
 
     (async () => {
       try {
+
         const exchangeResult = await wasmModule.exchange_code_for_identity({
           code,
         });
 
+        console.log("exchangeResult", exchangeResult)
+
         if (!mounted) return;
 
+        //test email verified, redirect. 
+
         if (exchangeResult.error) {
+          // handleEmailVerification("") //REMOVE WHEN EXCHANGE RESULTS ARE CORRECT
           if (exchangeResult.error.kind === "EmailNotVerified") {
             const emailMatch =
               exchangeResult.error.message.match(/for email: (.+?)$/);
             handleEmailVerification(emailMatch?.[1] || "");
             return;
           }
-          throw new Error(exchangeResult.error.message);
+          console.error(exchangeResult.error.message);
         }
 
+        const tokensTest = exchangeResult?.output?.output;
+
+        if (tokensTest?.id_token) {
+          const claimsResultTest = await wasmModule.token_to_claims({
+            token: tokensTest.id_token,
+          });
+          console.log("exchangeResult claimsResultTest", claimsResultTest)
+        }
 
         if (!exchangeResult.output?.output) {
           throw new Error("No output received from identity exchange");
         }
 
         const tokens = exchangeResult.output.output;
-
-
 
         if (!tokens.id_token) {
           throw new Error("Missing id_token in response");
@@ -348,11 +431,24 @@ export function AuthCallback() {
           throw new Error(claimsResult.error.message);
         }
 
+        // const existsResponse = await wasmModule.user_exists();
+        // const userExists = existsResponse.output?.output;
+
+        // if (!userExists) {
+        //   setTimeout(() => {
+        //     if (mounted) {
+        //       window.location.href = "/signup"; // 👈 Redirects to profile completion
+        //     }
+        //   }, 0);
+        //   return;
+        // }
+
         if (!claimsResult.output?.output) {
           throw new Error("No output received from claims");
         }
 
         const claims = claimsResult.output.output;
+
 
         if (!claims.email_verified) {
           handleEmailVerification(claims.email);

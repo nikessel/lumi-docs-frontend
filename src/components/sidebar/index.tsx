@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { clearAllData } from "@/utils/sign-out-util";
 import { useAuth } from "../Auth0";
+import HelpCard from "../help-card";
 
 const { Sider } = Layout;
 
@@ -106,14 +107,10 @@ const AppSiderComponent: React.FC = () => {
     ];
 
     return (
-        <Sider
-            collapsible
-            collapsed={collapsed}
-            className="h-screen"
-            trigger={null}
-        >
-            <div className="h-full flex flex-col justify-between">
+        <Sider collapsible collapsed={collapsed} className="h-screen" trigger={null}>
+            <div className="h-full flex flex-col">
                 {contextHolder}
+
                 <div>
                     {showToggleButton && <SidebarToggleButton collapsed={collapsed} onToggle={toggleCollapse} />}
                     <SiderLogo collapsed={collapsed} />
@@ -123,14 +120,14 @@ const AppSiderComponent: React.FC = () => {
                         selectedKeys={[activeKey]} // Highlight the menu item for the base path
                         items={menuItems}
                     />
-                    {/* <Divider orientation="left">
-                        <div className="text-xs">Account</div>
-                    </Divider>
-                    <Menu
-                        mode="inline"
-                        selectedKeys={[activeKey]} // Highlight the menu item for the base path
-                        items={accountMenuItems}
-                    /> */}
+                </div>
+
+                {/* Add spacing above HelpCard */}
+                <div className="flex-grow" />
+
+                {/* Move HelpCard slightly above the bottom */}
+                <div className="w-full flex justify-center mb-12">
+                    <HelpCard collapsed={collapsed} />
                 </div>
             </div>
         </Sider>
