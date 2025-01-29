@@ -19,10 +19,8 @@ export async function fetchSectionsByIds(
         sections: [],
         errors: {},
     };
-    console.log("SECTUIONS BEFOEE")
     // Fetch cached sections
     const cachedSections = await getData<CachedSection>(dbName, SECTIONS_STORE_NAME, dbVersion) || [];
-    console.log("SECTUIONS AFTER")
 
     const sectionsToFetch: string[] = [];
     const validCachedSections: Section[] = [];
@@ -36,7 +34,6 @@ export async function fetchSectionsByIds(
             : true;
 
         if (cachedSection && !isExpired) {
-            console.log(`Using cached section for ID: ${sectionId}`);
             validCachedSections.push(cachedSection);
         } else {
             sectionsToFetch.push(sectionId);
@@ -57,8 +54,6 @@ export async function fetchSectionsByIds(
         });
         return result;
     }
-
-    console.log(`Fetching sections for IDs: ${sectionsToFetch.join(", ")}`);
 
     const fetchPromises = sectionsToFetch.map(async (id) => {
         try {
@@ -103,7 +98,6 @@ export async function fetchSectionsByRegulatoryFramework(
         );
 
         if (validCache) {
-            console.log(`Using cached sections for framework: ${regulatoryFramework}`);
             result.sections = cachedSections.filter(
                 (section) => section.regulatory_framework === regulatoryFramework
             );
@@ -115,7 +109,6 @@ export async function fetchSectionsByRegulatoryFramework(
             throw new Error("WASM module not loaded");
         }
 
-        console.log(`Fetching sections for framework: ${regulatoryFramework}`);
         const response = await wasmModule.get_sections_by_regulatory_framework({
             input: regulatoryFramework,
         });

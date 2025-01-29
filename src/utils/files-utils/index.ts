@@ -31,7 +31,6 @@ export async function fetchFiles(
         : true;
 
     if (cachedFiles.length > 0 && !isCacheExpired && isFullFetch) {
-        console.log("Using cached files data");
         result.files = cachedFiles;
         return result;
     }
@@ -59,7 +58,6 @@ export async function fetchFiles(
             await saveMetadata(FILES_DB_NAME, "fullFetch", true, FILES_DB_VERSION);
             await saveMetadata(FILES_DB_NAME, "lastFetch", Date.now(), FILES_DB_VERSION);
 
-            console.log("Fetched and cached files data");
             result.files = filesData;
         } else if (response.error) {
             result.error = response.error.message;
@@ -71,3 +69,10 @@ export async function fetchFiles(
 
     return result;
 }
+
+export const getDocumentIconLetters = (title: string) =>
+    title
+        .split(" ")
+        .slice(0, 3) // Take up to the first three words
+        .map((word) => word.charAt(0).toUpperCase()) // Take the first letter of each word
+        .join("");

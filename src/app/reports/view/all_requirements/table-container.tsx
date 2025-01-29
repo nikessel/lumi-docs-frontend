@@ -47,7 +47,6 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
     const currentView = breadcrumb[breadcrumb.length - 1];
 
     const handleRowClick = (record: TableRow) => {
-        console.log(record);
         // Handle RequirementGroupAssessment with `assessments`
         if ('assessments' in record && record.assessments) {
             const children: TableRow[] = Array.from(record.assessments.entries()).map(([key, value]) => {
@@ -103,7 +102,6 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
             }
         } else {
             const { id, ...assessment } = record;
-            console.log("!!!!!1", record)
             setOpenModal(true)
             setSelectedRequirement({ requirement: requirements.find((req) => req.id === record.id), requirementAssessment: assessment as RequirementAssessment })
         }
@@ -117,31 +115,38 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
         {
             title: 'Title',
             key: 'name',
-            render: (_: unknown, record: TableRow) => {
-                const section = sections.find((section) => section.id === record.id);
-                const requirement = requirements.find((req) => req.id === record.id);
-                const requirementGroup = requirement_groups.find((group) => group.id === record.id);
+            sorter: (a: TableRow, b: TableRow) => {
+                const nameA =
+                    sections.find((section) => section.id === a.id)?.name ||
+                    requirements.find((req) => req.id === a.id)?.name ||
+                    requirement_groups.find((group) => group.id === a.id)?.name ||
+                    a.id;
 
-                // Render with primary and secondary text
-                return section ? (
-                    <div >
-                        <div className="mb-1"><RegulatoryFrameworkTag standard={section.regulatory_framework} /> {section.name}</div>
-                        <small style={{ color: '#888' }}>[add description]</small>
-                    </div>
-                ) : requirement ? (
+                const nameB =
+                    sections.find((section) => section.id === b.id)?.name ||
+                    requirements.find((req) => req.id === b.id)?.name ||
+                    requirement_groups.find((group) => group.id === b.id)?.name ||
+                    b.id;
+
+                return nameA.localeCompare(nameB); // Compare strings alphabetically
+            },
+            render: (_: unknown, record: TableRow) => {
+                const name =
+                    sections.find((section) => section.id === record.id)?.name ||
+                    requirements.find((req) => req.id === record.id)?.name ||
+                    requirement_groups.find((group) => group.id === record.id)?.name ||
+                    record.id;
+
+                const regulatoryFramework = sections.find((section) => section.id === record.id)?.regulatory_framework;
+
+                return (
                     <div>
-                        <div>{requirement.name}</div>
-                        <small style={{ color: '#888' }}>[add description]</small>
-                    </div>
-                ) : requirementGroup ? (
-                    <div>
-                        <div>{requirementGroup.name}</div>
-                        <small style={{ color: '#888' }}>[add description]</small>
-                    </div>
-                ) : (
-                    <div>
-                        <div>{record.id}</div>
-                        <small style={{ color: '#888' }}>[add description]</small>
+                        {regulatoryFramework && (
+                            <div className="mb-1">
+                                <RegulatoryFrameworkTag standard={regulatoryFramework} />
+                            </div>
+                        )}
+                        <div>{name}</div>
                     </div>
                 );
             },
@@ -150,11 +155,21 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
             title: 'Compliance Rating',
             dataIndex: 'compliance_rating',
             key: 'compliance_rating',
+            sorter: (a: TableRow, b: TableRow) => {
+                const ratingA = Number(a.compliance_rating) || 0;
+                const ratingB = Number(b.compliance_rating) || 0;
+                return ratingA - ratingB; // Sort numerically
+            },
             render: (_: unknown, record: TableRow) => {
                 return (
-                    <div> <Progress percent={Number(record.compliance_rating)} strokeColor={getComplianceColorCode(Number(record.compliance_rating))} /> </div>
-                )
-            }
+                    <div>
+                        <Progress
+                            percent={Number(record.compliance_rating)}
+                            strokeColor={getComplianceColorCode(Number(record.compliance_rating))}
+                        />
+                    </div>
+                );
+            },
         },
         {
             title: '',
@@ -168,23 +183,27 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
                                 : 0;
 
                     return (
-                        <div className="w-full flex justify-end">
+                        <div className="w-full flex justify-end text-primary">
                             <a onClick={() => handleRowClick(record)}>
-                                View Children ({childrenCount})
+                                View {childrenCount} items
                             </a>
                         </div>
                     );
                 }
 
-                return <div className="w-full flex justify-end">
-                    <a onClick={() => handleRowClick(record)}>View Details</a></div>;
+                return (
+                    <div className="w-full flex justify-end text-primary">
+                        <a onClick={() => handleRowClick(record)}>View Details</a>
+                    </div>
+                );
             },
         },
     ];
 
+
     return (
         <div>
-            <Breadcrumb className="mb-2">
+            <Breadcrumb className="my-4">
                 {breadcrumb.map((crumb, index) => {
                     let displayTitle;
 

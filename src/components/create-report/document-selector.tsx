@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { List, Checkbox, Button } from "antd";
+import { useCreateReportStore } from "@/stores/create-report-store";
 
 interface Document {
     id: string;
@@ -9,35 +10,38 @@ interface Document {
 
 interface SelectDocumentsProps {
     documents: Document[];
-    selectedDocuments: number[];
-    setSelectedDocuments: React.Dispatch<React.SetStateAction<number[]>>;
 }
 
-const SelectDocuments: React.FC<SelectDocumentsProps> = ({
-    documents,
-    selectedDocuments,
-    setSelectedDocuments,
-}) => {
-    const [allDocumentsSelected, setAllDocumentsSelected] = useState(true);
+const SelectDocuments: React.FC<SelectDocumentsProps> = ({ documents }) => {
+    const {
+        selectedDocumentNumbers,
+        setSelectedDocumentNumbers,
+    } = useCreateReportStore(); // Access Zustand store
+
+    const [allDocumentsSelected, setAllDocumentsSelected] = useState(
+        selectedDocumentNumbers.length === documents.length
+    );
     const [showDocuments, setShowDocuments] = useState(false);
 
     const handleAllDocumentsToggle = (checked: boolean) => {
         setAllDocumentsSelected(checked);
         if (checked) {
-            setSelectedDocuments(documents.map((document) => document.number)); // Select all documents
+            setSelectedDocumentNumbers(documents.map((document) => document.number)); // Select all documents
         } else {
-            setSelectedDocuments([]); // Deselect all documents
+            setSelectedDocumentNumbers([]); // Deselect all documents
         }
     };
 
-    const handleDocumentSelect = (document_number: number) => {
-        setSelectedDocuments((prev) => {
-            if (prev.includes(document_number)) {
-                return prev.filter((documentId) => documentId !== document_number);
-            } else {
-                return [...prev, document_number];
-            }
-        });
+    const handleDocumentSelect = (documentNumber: number) => {
+        if (selectedDocumentNumbers.includes(documentNumber)) {
+            // Remove document from selection
+            setSelectedDocumentNumbers(
+                selectedDocumentNumbers.filter((number) => number !== documentNumber)
+            );
+        } else {
+            // Add document to selection
+            setSelectedDocumentNumbers([...selectedDocumentNumbers, documentNumber]);
+        }
     };
 
     const toggleShowDocuments = () => {
@@ -49,15 +53,12 @@ const SelectDocuments: React.FC<SelectDocumentsProps> = ({
             {/* All Documents Checkbox with Show Documents Button */}
             <div className="flex items-center">
                 <Checkbox
-                    checked={selectedDocuments.length === documents.length}
+                    checked={selectedDocumentNumbers.length === documents.length}
                     onChange={(e) => handleAllDocumentsToggle(e.target.checked)}
                 >
-                    All Documents ({documents.length})
+                    All Documents ({selectedDocumentNumbers.length}/{documents.length})
                 </Checkbox>
-                <Button
-                    type="link"
-                    onClick={toggleShowDocuments}
-                >
+                <Button type="link" onClick={toggleShowDocuments}>
                     {showDocuments ? "Hide documents" : "Show documents"}
                 </Button>
             </div>
@@ -70,12 +71,16 @@ const SelectDocuments: React.FC<SelectDocumentsProps> = ({
                     dataSource={documents}
                     renderItem={(document) => (
                         <List.Item>
-                            <Checkbox
-                                checked={selectedDocuments.includes(document.number)}
-                                onChange={() => handleDocumentSelect(document.number)}
-                            >
-                                {document.name}
-                            </Checkbox>
+                            <div className="flex justify-between items-center w-full">
+
+                                <Checkbox
+                                    checked={selectedDocumentNumbers.includes(document.number)}
+                                    onChange={() => handleDocumentSelect(document.number)}
+                                >
+                                    {document.name}
+                                </Checkbox>
+                                <div className="px-2 py-1 rounded-md text-green-500 bg-green-100 text-center text-xs">FREE</div>
+                            </div>
                         </List.Item>
                     )}
                 />

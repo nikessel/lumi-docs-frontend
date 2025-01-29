@@ -2,19 +2,19 @@
 
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Progress } from 'antd';
-import { useSelectedFilteredReports } from '@/hooks/report-hooks';
-import { useFilteredReportsRequirements } from '@/hooks/requirement-hooks';
 import ReportStateHandler from '@/components/report-state-handler';
 import { extractAllRequirementAssessments } from '@/utils/report-utils';
 import DetailedAssessmentModal from '@/components/detailed-assessment-modal';
 import type { RequirementAssessment, Requirement } from "@wasm";
 import { getComplianceColorCode } from '@/utils/formating';
+import { useSelectedFilteredReportsContext } from '@/contexts/reports-context/selected-filtered-reports';
+import { useFilteredRequirementsContext } from '@/contexts/requirement-context/filtered-report-requirement-context';
 
 type RequirementAssessmentWithId = RequirementAssessment & { id: string };
 
 const Page = () => {
-    const { reports, loading: reportsLoading, error: reportsError } = useSelectedFilteredReports();
-    const { requirements, loading: requirementsLoading, error: requirementsError } = useFilteredReportsRequirements(reports);
+    const { reports, loading: reportsLoading, error: reportsError } = useSelectedFilteredReportsContext();
+    const { requirements, loading: requirementsLoading, error: requirementsError } = useFilteredRequirementsContext();
 
     const [allAssessmentsSorted, setAllAssessmentsSorted] = useState<RequirementAssessmentWithId[]>([]);
 
@@ -39,8 +39,6 @@ const Page = () => {
         }
     }, [reports]);
 
-    console.log(allAssessmentsSorted)
-
     // Handle View Details click
     const handleViewDetails = (record: RequirementAssessmentWithId) => {
         const requirement = requirements.find((req) => req.id === record.id);
@@ -56,18 +54,18 @@ const Page = () => {
             key: 'name',
             render: (id: string) => requirements.find((req) => req.id === id)?.name || 'Unknown Requirement',
         },
-        {
-            title: 'Description',
-            dataIndex: 'description',
-            key: 'description',
-            render: () => '[Insert description]',
-        },
-        {
-            title: 'Details',
-            dataIndex: 'details',
-            key: 'details',
-            render: () => '[Insert details]',
-        },
+        // {
+        //     title: 'Description',
+        //     dataIndex: 'description',
+        //     key: 'description',
+        //     render: () => '[Insert description]',
+        // },
+        // {
+        //     title: 'Details',
+        //     dataIndex: 'details',
+        //     key: 'details',
+        //     render: () => '[Insert details]',
+        // },
         {
             title: 'Compliance Rating',
             dataIndex: 'compliance_rating',

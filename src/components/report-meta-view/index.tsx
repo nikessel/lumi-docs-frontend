@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from "react";
 import { Button, Progress, Tooltip, Dropdown, Menu, Skeleton, Tag } from "antd";
-import { MoreOutlined, DeleteOutlined, ShareAltOutlined, FolderOutlined } from "@ant-design/icons";
+import { MoreOutlined, DeleteOutlined, ShareAltOutlined, FolderOutlined, ReloadOutlined } from "@ant-design/icons";
 import Typography from "../typography";
 import "@/styles/globals.css";
 import { useRouter } from "next/navigation";
@@ -12,26 +12,43 @@ import { useSearchParams } from 'next/navigation';
 import RegulatoryFrameworkTag from "../regulatory-framework-tag";
 import { Report } from '@wasm';
 import { formatStatus } from "@/utils/styling-utils";
+import { archiveReport, isArchived, restoreReport } from "@/utils/report-utils";
+import { message as antdMessage } from "antd";
+import type * as WasmModule from "@wasm";
+import { LoadingOutlined } from "@ant-design/icons";
+import { Spin } from "antd";
+import ReportStatusTag from "../report-status-tag";
+import useCacheInvalidationStore from "@/stores/cache-validation-store";
+import { useGlobalActionsStore } from "@/stores/global-actions-store";
 
 interface ReportMetaViewProps {
     openRedirectPath: string,
     report: Report | null,
     loading?: boolean
+    wasmModule: typeof WasmModule | null;
 }
 
 const ReportMetaView: React.FC<ReportMetaViewProps> = ({
     report,
     openRedirectPath,
-    loading
+    loading,
+    wasmModule,
 }) => {
     const router = useRouter();
     const searchParams = useSearchParams();
     const selectedReports = searchParams.get('selectedReports')?.split(",") || [];
     const [isSelected, setIsSelected] = useState(selectedReports.includes(report?.id || ""));
+    const [actionLoading, setActionLoading] = useState("");
+    const [messageApi, contextHolder] = antdMessage.useMessage();
+    const addStaleReportId = useCacheInvalidationStore((state) => state.addStaleReportId)
+    const addRestoringId = useGlobalActionsStore((state) => state.addRestoringId)
+    const addArchivingId = useGlobalActionsStore((state) => state.addArchivingId)
+    const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate)
 
     useEffect(() => {
         setIsSelected(selectedReports.includes(report?.id || ""));
     }, [selectedReports, report?.id]);
+
 
     const toggleSelection = () => {
         const updatedReports = isSelected
@@ -42,18 +59,57 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
         window.history.replaceState(null, '', `${window.location.pathname}?${newSearchParams.toString()}`);
     };
 
+    const handleArchiveReport = async (e: React.MouseEvent, action: string) => {
+        e.stopPropagation();
+        if (!report?.id) return;
+
+        setActionLoading(action);
+
+        try {
+            const res = await archiveReport(wasmModule, report.id);
+            addArchivingId(report.id)
+            addStaleReportId(report.id)
+            triggerUpdate("reports")
+        } catch (error) {
+            console.error("Error archiving report:", error);
+        }
+    };
+
+    const handleRestoreReport = async (e: React.MouseEvent, action: string) => {
+        e.stopPropagation();
+        if (!report?.id) return;
+
+        setActionLoading(action);
+
+        try {
+            const res = await restoreReport(wasmModule, report.id);
+            addRestoringId(report.id)
+            addStaleReportId(report.id)
+            // triggerUpdate("reports")
+        } catch (error) {
+            console.error("Error archiving report:", error);
+        }
+    };
+
+
     const menu = (
         <Menu>
-            <Menu.Item key="archive" icon={<FolderOutlined />}>
-                Archive
-            </Menu.Item>
-            <Menu.Item key="share" icon={<ShareAltOutlined />}>
-                Share
-            </Menu.Item>
-            <Menu.Divider />
-            <Menu.Item key="delete" icon={<DeleteOutlined />} danger>
-                Delete
-            </Menu.Item>
+            {!isArchived(report?.status) ?
+                <Menu.Item
+                    key="archive"
+                    onClick={(info) => handleArchiveReport(info.domEvent as React.MouseEvent, "archive")}
+                    icon={<FolderOutlined />}
+                >
+                    Archive
+                </Menu.Item> :
+                <Menu.Item
+                    key="restore"
+                    onClick={(info) => handleRestoreReport(info.domEvent as React.MouseEvent, "restore")}
+                    icon={<ReloadOutlined />}
+                >
+                    Restore
+                </Menu.Item>
+            }
         </Menu>
     );
 
@@ -79,8 +135,7 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
             className={`relative flex items-center justify-between border-b py-1 ${report?.status === "processing" ? "cursor-not-allowed" : "cursor-pointer"
                 }`}
             onClick={report?.status === "processing" ? undefined : toggleSelection}
-        >
-            {/* Overlay for processing */}
+        >{contextHolder}
             {report?.status === "processing" && (
                 <div className="absolute inset-0 bg-gray-100 bg-opacity-70 flex items-center justify-center z-10">
                     <Typography textSize="small" className="text-gray-500">
@@ -95,24 +150,26 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
             </div>
             {report?.status !== "processing" ?
                 <div
-                    className={`flex items-center space-x-12 }`}
+                    className={`flex items-center space-x-6 }`}
                 >
-                    <div className="w-32 flex justify-center">
-                        {report?.status === "ready" ? <Tag color="green">{formatStatus(report?.status)}</Tag> : <Tag color="red">{formatStatus(report?.status)}</Tag>}
+                    <div className="w-20 flex justify-center">
+                        <ReportStatusTag status={report?.status} />
                     </div>
-                    <div className="w-32 flex justify-center">
+                    <div className="w-20 flex justify-center">
                         <RegulatoryFrameworkTag standard={report?.regulatory_framework} />
                     </div>
-                    <Typography color="secondary" textSize="small">
-                        {new Date(report?.created_date).toLocaleDateString()}
-                    </Typography>
+                    <div className="w-20 flex justify-center ">
+                        <Typography color="secondary" textSize="small">
+                            {report?.created_date ? new Date(report?.created_date).toLocaleDateString() : ""}
+                        </Typography>
+                    </div>
                     <Tooltip title={`Resolved Tasks: 50%`}>
                         <Progress steps={5} size={8} percent={50} showInfo={false} />
                     </Tooltip>
                     <Tooltip title={`Compliance score: ${report?.compliance_rating}%`}>
                         <Progress size={20} type="circle" percent={report?.compliance_rating} showInfo={false} />
                     </Tooltip>
-                    <Button
+                    {!isArchived(report?.status) ? <Button
                         type="link"
                         size="small"
                         onClick={(e) => {
@@ -121,9 +178,9 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
                         }}
                     >
                         Open
-                    </Button>
+                    </Button> : ""}
                     <Dropdown overlay={menu} trigger={["click"]} placement="bottomRight">
-                        <Button type="text" icon={<MoreOutlined />} />
+                        <Button type="text" icon={<MoreOutlined />} onClick={(e) => e.stopPropagation()} />
                     </Dropdown>
                 </div> : ""}
         </div>

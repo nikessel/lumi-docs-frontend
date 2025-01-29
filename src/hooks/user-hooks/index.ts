@@ -2,24 +2,25 @@ import { useEffect, useState } from "react";
 import { fetchUser } from "@/utils/user-utils";
 import type { User } from "@wasm";
 import { useWasm } from '@/components/WasmProvider';
+import useCacheInvalidationStore from "@/stores/cache-validation-store";
 
 interface UseUserReturn {
     user: User | null;
-    kanbanColumns: { id: string; title: string }[]; // Update type to match the expected structure
     loading: boolean;
     error: string | null;
 }
 
-export const useUser = (refreshTrigger: number): UseUserReturn => {
+export const useUser = (): UseUserReturn => {
     const { wasmModule } = useWasm();
     const [user, setUser] = useState<User | null>(null);
-    const [kanbanColumns, setKanbanColumns] = useState<{ id: string; title: string }[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
+    const lastUpdated = useCacheInvalidationStore((state) => state.lastUpdated["user"]);
+    const setBeingRefetched = useCacheInvalidationStore((state) => state.setBeingRefetched);
 
-        const loadUser = async () => {
+    useEffect(() => {
+        const fetchUserData = async (isInitialLoad = false) => {
             if (!wasmModule) {
                 setError("WASM module not provided");
                 setLoading(false);
@@ -27,43 +28,41 @@ export const useUser = (refreshTrigger: number): UseUserReturn => {
             }
 
             try {
-                const userData = await fetchUser(wasmModule);
-
-
-                setUser(userData);
-
-                if (userData?.preferences) {
-                    let preferences;
-
-                    // Parse preferences if it's a JSON string
-                    if (typeof userData.preferences === "string") {
-                        preferences = JSON.parse(userData.preferences);
-                    } else {
-                        console.warn("Unexpected preferences format, defaulting to empty preferences");
-                        preferences = {};
-                    }
-                    console.log("refreshTrigger", preferences)
-
-
-                    if (Array.isArray(preferences.kanban)) {
-                        setKanbanColumns(preferences.kanban);
-                    } else {
-                        setKanbanColumns([]);
-                    }
+                if (isInitialLoad) {
+                    setLoading(true); // Set loading for the initial fetch
                 } else {
-                    setKanbanColumns([]);
+                    setBeingRefetched("user", true); // Set refetching state
+                }
+                const fetchedUser = await fetchUser(wasmModule);
+
+                if (fetchedUser) {
+                    // Parse preferences if they exist and are a string
+                    if (typeof fetchedUser.preferences === "string") {
+                        try {
+                            fetchedUser.preferences = JSON.parse(fetchedUser.preferences);
+                        } catch (parseError) {
+                            console.warn("Failed to parse user preferences, using raw value:", fetchedUser.preferences);
+                        }
+                    }
+                    setUser(fetchedUser);
+                } else {
+                    setError("User data not found");
                 }
             } catch (err: any) {
                 console.error("Failed to fetch user:", err.message);
                 setError(err.message || "Error fetching user");
             } finally {
-                setLoading(false);
+                if (isInitialLoad) {
+                    setLoading(false); // Clear loading state for the initial fetch
+                } else {
+                    setBeingRefetched("user", false); // Clear refetching state
+                }
             }
         };
 
-        loadUser();
-    }, [wasmModule, refreshTrigger]);
+        fetchUserData(loading); // Initial fetch
+    }, [wasmModule, lastUpdated]);
 
-    return { user, kanbanColumns, loading, error };
+    return { user, loading, error };
 };
 

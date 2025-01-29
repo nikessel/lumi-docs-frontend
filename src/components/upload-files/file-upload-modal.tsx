@@ -68,8 +68,6 @@ const FileUploadModal: React.FC<{
             return ext && SUPPORTED_EXTENSIONS.includes(ext) && !shouldIgnoreFile(file);
         });
 
-        console.log("!!!!!", files)
-
         const fileMap = new Map<string, UploadFile>();
 
         validFiles.forEach((file) => {
@@ -88,14 +86,11 @@ const FileUploadModal: React.FC<{
     }, []);
 
     const handleFileChange = useCallback(({ fileList }: any) => {
-        console.log("Raw fileList:", fileList);
 
         const files = fileList.map((item: any) => ({
             ...item,
             originFileObj: item.originFileObj || item, // Ensure originFileObj fallback
         }));
-
-        console.log("Processed files:", files);
 
         processFiles(files as UploadFile[]);
     }, [processFiles]);
@@ -108,8 +103,6 @@ const FileUploadModal: React.FC<{
 
         try {
             const nativeFiles = selectedFiles.map((file) => file.originFileObj as File);
-
-            console.log("uploadManager native files", selectedFiles, nativeFiles)
 
             uploadManager.uploadFiles(nativeFiles);
 
@@ -147,8 +140,6 @@ const FileUploadModal: React.FC<{
         }
     };
 
-    console.log("uploadManager", uploadManager)
-
     const handleRemoveSelectedFile = (uid: string) => {
         setSelectedFiles((prevFiles) => prevFiles.filter((file) => file.uid !== uid));
     };
@@ -175,7 +166,7 @@ const FileUploadModal: React.FC<{
             ]}
         >
             {contextHolder}
-            <Dragger showUploadList={false} className="w-full" multiple={true} beforeUpload={() => false} onChange={handleFileChange}>
+            <Dragger maxCount={100} showUploadList={false} className="w-full" multiple={true} beforeUpload={() => false} onChange={handleFileChange}>
                 <p className="ant-upload-drag-icon">
                     <InboxOutlined />
                 </p>
@@ -192,6 +183,7 @@ const FileUploadModal: React.FC<{
                         multiple
                         beforeUpload={() => false}
                         onChange={handleFileChange}
+                        maxCount={100}
                     >
                         <Button icon={<FilePdfOutlined />}>Select Files</Button>
                     </Upload>
@@ -201,6 +193,7 @@ const FileUploadModal: React.FC<{
                         beforeUpload={() => false}
                         onChange={handleFileChange}
                         directory
+                        maxCount={100}
                     >
                         <Button icon={<FolderAddOutlined />}>Select Directory</Button>
                     </Upload>

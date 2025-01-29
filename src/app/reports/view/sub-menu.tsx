@@ -1,49 +1,33 @@
 import React from 'react';
-import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { Divider } from 'antd';
-import { createUrlWithParams, isActiveLink } from '@/utils/url-utils';
+import { useSearchParams } from 'next/navigation';
+import { createUrlWithParams } from '@/utils/url-utils';
+import HorizontalTabMenu from '@/components/horizontal-tab-menu';
 
-const SubMenu = () => {
-    const pathname = usePathname();
+const SubMenu: React.FC = () => {
     const searchParams = useSearchParams();
 
     const menuItems = [
         {
             label: "Overview",
             link: createUrlWithParams("/reports/view/overview", searchParams),
+            description:
+                "The Overview tab provides a graphical summary of the selected reports. Explore key metrics and visualize compliance status across associated regulatory frameworks in a tree view.",
         },
         {
             label: "All Requirements",
             link: createUrlWithParams("/reports/view/all_requirements", searchParams),
+            description:
+                "This tab presents a structured view of your compliance status, organized by the associated regulatory frameworks. The structure aligns with the standards, ensuring consistency across all reports for a specific framework.",
         },
         {
             label: "Key Findings",
             link: createUrlWithParams("/reports/view/key_findings", searchParams),
+            description:
+                "Extracts requirements from the selected reports and highlights the assessments with the lowest compliance ratings, prioritizing areas requiring immediate attention.",
         },
     ];
 
-    const getItemClasses = (link: string) => {
-        const isSelected = isActiveLink(link, pathname);
-        return isSelected
-            ? "text-primary bg-bg_secondary font-medium"
-            : "text-text_secondary bg-muted hover:text-primary";
-    };
-
-    return (
-        <div className="flex items-center">
-            {menuItems.map((item, index) => (
-                <React.Fragment key={item.link}>
-                    <Link href={item.link}>
-                        <div className={`cursor-pointer px-2 py-2 rounded-md ${getItemClasses(item.link)}`}>
-                            {item.label}
-                        </div>
-                    </Link>
-                    {index < menuItems.length - 1 && <Divider type="vertical" />}
-                </React.Fragment>
-            ))}
-        </div>
-    );
+    return <HorizontalTabMenu items={menuItems} />;
 };
 
 export default SubMenu;

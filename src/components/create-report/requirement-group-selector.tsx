@@ -1,32 +1,33 @@
 import React, { useEffect, useState } from "react";
 import { List, Checkbox, Button } from "antd";
+import { useCreateReportStore } from "@/stores/create-report-store";
+import { formatPrice } from "../payment/price-tracker";
 
-interface RequirementGroup {
+interface RequirementGroupDisplay {
     id: string;
     name: string;
+    price_for_group: number;
 }
 
 interface SelectRequirementGroupsProps {
-    requirementGroups: RequirementGroup[];
-    selectedRequirementGroups: string[];
-    setSelectedRequirementGroups: React.Dispatch<React.SetStateAction<string[]>>;
+    requirementGroups: RequirementGroupDisplay[];
 }
 
 const SelectRequirementGroups: React.FC<SelectRequirementGroupsProps> = ({
     requirementGroups,
-    selectedRequirementGroups,
-    setSelectedRequirementGroups,
 }) => {
+    const { selectedRequirementGroups, setSelectedRequirementGroups } = useCreateReportStore.getState();
+
     const [showGroups, setShowGroups] = useState(false);
 
+    const [allGroupsSelected, setAllGroupsSelected] = useState(true);
+
     useEffect(() => {
-        // Default to all groups selected
-        if (requirementGroups.length > 0 && selectedRequirementGroups.length === 0) {
-            setSelectedRequirementGroups(requirementGroups.map((group) => group.id));
-        }
-    }, [requirementGroups, selectedRequirementGroups, setSelectedRequirementGroups]);
+        setAllGroupsSelected(selectedRequirementGroups.length === requirementGroups.length);
+    }, [selectedRequirementGroups, requirementGroups]);
 
     const handleAllGroupsToggle = (checked: boolean) => {
+        setAllGroupsSelected(checked);
         if (checked) {
             setSelectedRequirementGroups(requirementGroups.map((group) => group.id)); // Select all groups
         } else {
@@ -34,14 +35,17 @@ const SelectRequirementGroups: React.FC<SelectRequirementGroupsProps> = ({
         }
     };
 
+
     const handleGroupSelect = (id: string) => {
-        setSelectedRequirementGroups((prev) => {
-            if (prev.includes(id)) {
-                return prev.filter((groupId) => groupId !== id);
-            } else {
-                return [...prev, id];
-            }
-        });
+        if (selectedRequirementGroups.includes(id)) {
+            // Remove the group if it already exists
+            setSelectedRequirementGroups(
+                selectedRequirementGroups.filter((groupId) => groupId !== id)
+            );
+        } else {
+            // Add the group if it doesn't exist
+            setSelectedRequirementGroups([...selectedRequirementGroups, id]);
+        }
     };
 
     const toggleShowGroups = () => {
@@ -52,10 +56,10 @@ const SelectRequirementGroups: React.FC<SelectRequirementGroupsProps> = ({
         <div className="space-y-4">
             <div className="flex items-center">
                 <Checkbox
-                    checked={selectedRequirementGroups.length === requirementGroups.length}
+                    checked={allGroupsSelected}
                     onChange={(e) => handleAllGroupsToggle(e.target.checked)}
                 >
-                    All Requirement Groups ({requirementGroups.length})
+                    All Requirement Groups ({selectedRequirementGroups.length}/{requirementGroups.length})
                 </Checkbox>
                 <Button type="link" onClick={toggleShowGroups}>
                     {showGroups ? "Hide groups" : "Show groups"}
@@ -69,12 +73,15 @@ const SelectRequirementGroups: React.FC<SelectRequirementGroupsProps> = ({
                     dataSource={requirementGroups}
                     renderItem={(group) => (
                         <List.Item>
-                            <Checkbox
-                                checked={selectedRequirementGroups.includes(group.id)}
-                                onChange={() => handleGroupSelect(group.id)}
-                            >
-                                {group.name}
-                            </Checkbox>
+                            <div className="flex justify-between items-center w-full">
+                                <Checkbox
+                                    checked={selectedRequirementGroups.includes(group.id)}
+                                    onChange={() => handleGroupSelect(group.id)}
+                                >
+                                    {group.name}
+                                </Checkbox>
+                                <div className="px-2 py-1 rounded-md text-primary bg-bg_secondary text-center text-xs">{formatPrice(group.price_for_group)}</div>
+                            </div>
                         </List.Item>
                     )}
                 />

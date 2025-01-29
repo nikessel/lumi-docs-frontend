@@ -13,6 +13,8 @@ import type { StorageKey, Claims } from "@wasm";
 import { useRouter } from "next/navigation";
 import { useWasm } from "@/components/WasmProvider";
 import { storage, useStorage } from "@/storage";
+import useLoadingStore from "@/stores/global-loading-unification";
+import LoadingLogoScreen from "./loading-screen";
 
 const SK = {
   id_token: "id_token" as StorageKey,
@@ -78,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const { wasmModule, isLoading: isWasmLoading } = useWasm();
   const [idToken] = useStorage(SK.id_token);
+
   const router = useRouter();
 
   const handleEmailVerification = useCallback(async (email: string) => {
@@ -151,6 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [wasmModule]);
 
   const checkSession = useCallback(async () => {
+
     if (!wasmModule || !idToken) {
       setIsLoading(false);
       return;
@@ -160,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const claimsResult = await wasmModule.token_to_claims({
         token: idToken,
       });
+
 
       if (claimsResult.error) {
         if (claimsResult.error.kind === "EmailNotVerified") {
@@ -246,6 +251,16 @@ export function AuthCallback() {
   const { setUser, setError, setIsAuthenticated } = context;
   const [processing, setProcessing] = useState(true);
   const { wasmModule, isLoading: isWasmLoading } = useWasm();
+  const addLoadingComponent = useLoadingStore((state) => state.addLoadingComponent)
+  const removeLoadingComponent = useLoadingStore((state) => state.removeLoadingComponent)
+
+  useEffect(() => {
+    if (processing) {
+      addLoadingComponent("authcallback")
+    } else {
+      removeLoadingComponent("authcallback")
+    }
+  }, [processing])
 
   const handleEmailVerification = useCallback(
     async (email: string) => {
@@ -282,6 +297,7 @@ export function AuthCallback() {
       return;
     }
 
+
     (async () => {
       try {
         const exchangeResult = await wasmModule.exchange_code_for_identity({
@@ -300,11 +316,14 @@ export function AuthCallback() {
           throw new Error(exchangeResult.error.message);
         }
 
+
         if (!exchangeResult.output?.output) {
           throw new Error("No output received from identity exchange");
         }
 
         const tokens = exchangeResult.output.output;
+
+
 
         if (!tokens.id_token) {
           throw new Error("Missing id_token in response");
@@ -344,11 +363,14 @@ export function AuthCallback() {
         setIsAuthenticated(true);
         localStorage.removeItem("auth_state");
 
+        setProcessing(false)
         setTimeout(() => {
           if (mounted) {
-            router.push("/");
+            // router.push("/dashboard")
+            window.location.href = "/dashboard"; // Navigate to /dashboard and reload as if the user hit Enter in the browser
           }
         }, 0);
+
       } catch (err) {
         if (!mounted) return;
         console.error("Authentication error:", err);
@@ -381,12 +403,7 @@ export function AuthCallback() {
   ]);
 
   if (processing) {
-    return (
-      <div className="flex flex-col items-center justify-center space-y-4">
-        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-gray-600">Processing login...</p>
-      </div>
-    );
+    return null
   }
 
   return null;

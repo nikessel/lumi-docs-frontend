@@ -11,6 +11,8 @@ import { useSelectedFilteredReports } from '@/hooks/report-hooks';
 import ReportStateHandler from '@/components/report-state-handler'
 import { createUrlWithParams } from '@/utils/url-utils';
 import { useRouter, useSearchParams } from 'next/navigation';
+import SubMenu from './sub-menu';
+import { SelectedFilteredReportsTasksProvider } from '@/contexts/tasks-context/selected-filtered-report-tasks';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -28,37 +30,42 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     return (
         <ReportStateHandler loading={loading} error={error} reports={reports} expectReports={false}>
-            <div>
-                <div className="flex justify-between items-center">
-                    <div>
-                        {reports.length > 0 ?
+            <SelectedFilteredReportsTasksProvider>
+                <div>
+                    <div className="flex justify-between items-center">
+                        <div>
+                            {reports.length > 0 ?
 
-                            <div className="space-y-4">
-                                <ReportSectionSelector reports={reports} />
-                            </div>
-                            : <div>Tasks</div>
-                        }
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <Button icon={<SaveOutlined />}>Save view</Button>
-                        <Button icon={<ArrowRightOutlined />} type="primary" onClick={handleGoToReports}>
-                            Go to Reports
-                        </Button>
-                    </div>
-                </div>
-                <Divider className="border-thin mt-2 mb-2" />
-
-                <div className="flex justify-between items-center">
-                    {reports.length > 0 ? <div className="flex justify-between w-full">
-                        <div className="flex items-center gap-4">
-                            <ReportCreatedOn reports={reports} />
-                            <FilterBar reports={reports} />
+                                <div className="space-y-4">
+                                    <ReportSectionSelector reports={reports} />
+                                </div>
+                                : <div>Tasks</div>
+                            }
                         </div>
-                    </div> : ""}
-                </div>
+                        <div className="flex items-center space-x-2">
+                            <Button icon={<SaveOutlined />}>Save view</Button>
+                            <Button icon={<ArrowRightOutlined />} type="primary" onClick={handleGoToReports}>
+                                Go to Reports
+                            </Button>
+                        </div>
+                    </div>
+                    <Divider className="border-thin mt-2 mb-2" />
 
-                <div className="mt-2">{children}</div>
-            </div>
+                    <div className="flex justify-between items-center">
+                        <SubMenu />
+                        <div>
+                            {reports.length > 0 ? <div className="flex justify-between w-full">
+                                <div className="flex items-center gap-4">
+                                    <ReportCreatedOn reports={reports} />
+                                    <FilterBar reports={reports} />
+                                </div>
+                            </div> : ""}
+                        </div>
+                    </div>
+
+                    <div className="mt-4">{children}</div>
+                </div>
+            </SelectedFilteredReportsTasksProvider>
         </ReportStateHandler>
     );
 };

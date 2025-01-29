@@ -8,11 +8,13 @@ import { useRequirementGroupsForSectionIds } from '@/hooks/requirement-group-hoo
 import { useRequirementsForGroupIds } from '@/hooks/requirement-hooks';
 import { Section, RequirementGroup, Requirement } from '@wasm';
 import RegulatoryFrameworkTag from '@/components/regulatory-framework-tag';
+import { useRegulatoryFrameworksContext } from '@/contexts/regulatory-frameworks-context';
+import ReportStateHandler from '@/components/report-state-handler';
 
 const RegulatoryFrameworksTable: React.FC = () => {
-    const { frameworks, loading: frameworksLoading } = useRegulatoryFrameworks();
+    const { frameworks, loading: frameworksLoading } = useRegulatoryFrameworksContext();
     const frameworkIds = useMemo(() => frameworks.map(f => f.id), [frameworks]);
-    const { sections, loading: sectionsLoading } = useSectionsForRegulatoryFrameworks(frameworkIds);
+    const { sections, loading: sectionsLoading, error } = useSectionsForRegulatoryFrameworks(frameworkIds);
     const sectionIds = useMemo(() => sections.map(section => section.id), [sections]);
     const { requirementGroups, loading: groupsLoading } = useRequirementGroupsForSectionIds(sectionIds);
     const groupIds = useMemo(() => requirementGroups.map(group => group.id), [requirementGroups]);
@@ -201,33 +203,36 @@ const RegulatoryFrameworksTable: React.FC = () => {
     }, [isLoading, view, frameworks, sections, requirementGroups, requirements, selectedId]);
 
     return (
-        <div>
-            <Breadcrumb className="mb-2">
-                {breadcrumb.map((crumb, index) => (
-                    <Breadcrumb.Item key={index} onClick={() => handleBreadcrumbClick(index)}>
-                        {crumb.name}
-                    </Breadcrumb.Item>
-                ))}
-            </Breadcrumb>
-            <Table
-                columns={columns}
-                dataSource={dataSource}
-                pagination={{ pageSize: 10 }}
-                rowKey="key"
-                onRow={(record) => ({
-                    onClick: () => {
-                        if (view !== 'requirements') {
-                            handleRowClick(
-                                record.key,
-                                record.name,
-                                view === 'frameworks' ? 'sections' : view === 'sections' ? 'groups' : 'requirements'
-                            );
-                        }
-                    },
-                    style: { cursor: view === 'requirements' ? 'default' : 'pointer' },
-                })}
-            />
-        </div>
+        <ReportStateHandler expectReports={false} loading={false} reports={[]} error={error}>
+
+            <div>
+                <Breadcrumb className="mb-2">
+                    {breadcrumb.map((crumb, index) => (
+                        <Breadcrumb.Item key={index} onClick={() => handleBreadcrumbClick(index)}>
+                            {crumb.name}
+                        </Breadcrumb.Item>
+                    ))}
+                </Breadcrumb>
+                <Table
+                    columns={columns}
+                    dataSource={dataSource}
+                    pagination={{ pageSize: 10 }}
+                    rowKey="key"
+                    onRow={(record) => ({
+                        onClick: () => {
+                            if (view !== 'requirements') {
+                                handleRowClick(
+                                    record.key,
+                                    record.name,
+                                    view === 'frameworks' ? 'sections' : view === 'sections' ? 'groups' : 'requirements'
+                                );
+                            }
+                        },
+                        style: { cursor: view === 'requirements' ? 'default' : 'pointer' },
+                    })}
+                />
+            </div>
+        </ReportStateHandler>
     );
 };
 

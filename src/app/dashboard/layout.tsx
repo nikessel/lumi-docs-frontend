@@ -3,8 +3,10 @@ import React from "react";
 import Typography from "@/components/typography";
 import { Divider } from "antd";
 import "@/styles/globals.css";
-import { useUser } from "@/hooks/user-hooks";
-
+import { AllReportsTasksProvider } from '@/contexts/tasks-context/all-report-tasks';
+import ReportStateHandler from "@/components/report-state-handler";
+import { useAllReportsContext } from "@/contexts/reports-context/all-reports-context";
+import { useUserContext } from "@/contexts/user-context";
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -12,24 +14,30 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
 
-    const { user, loading: userLoading, error: userError } = useUser(0)
+    const { user, loading: userLoading, error: userError } = useUserContext()
+
+    const { reports, loading, error } = useAllReportsContext();
 
     return (
-        <div>
-            {/* Header Section */}
-            <div className="flex justify-between items-center">
-                <Typography textSize="h4">Dashboard </Typography>
+        <ReportStateHandler loading={loading} error={error} reports={reports} expectReports={false}>
+            <div>
+                <AllReportsTasksProvider reports={reports}>
+                    {/* Header Section */}
+                    <div className="flex justify-between items-center">
+                        <Typography textSize="h4">Dashboard </Typography>
+                    </div>
+                    <Divider className="border-thin mt-2 mb-2" />
+                    <div className="flex justify-between items-center">
+                        <Typography color="secondary">
+                            Welcome back, {user?.first_name}
+                        </Typography>
+                    </div>
+                    <div className="mt-4">
+                        {children}
+                    </div>
+                </AllReportsTasksProvider>
             </div>
-            <Divider className="border-thin mt-2 mb-2" />
-            <div className="flex justify-between items-center">
-                <Typography color="secondary">
-                    Welcome back, {user?.first_name}
-                </Typography>
-            </div>
-            <div className="mt-4">
-                {children}
-            </div>
-        </div>
+        </ReportStateHandler>
     );
 };
 

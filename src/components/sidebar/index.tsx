@@ -1,11 +1,13 @@
 'use client';
 import React, { useState, useEffect } from "react";
-import { Layout, Menu, Divider } from "antd";
+import { Layout, Menu, Divider, message } from "antd";
 import { FilePdfOutlined, FileDoneOutlined, ProjectOutlined, BarChartOutlined, FileSearchOutlined, SettingOutlined, CreditCardOutlined, LogoutOutlined } from "@ant-design/icons";
 import SidebarToggleButton from "./sider-toggle-button";
 import SiderLogo from "./sider-logo";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { clearAllData } from "@/utils/sign-out-util";
+import { useAuth } from "../Auth0";
 
 const { Sider } = Layout;
 
@@ -13,6 +15,8 @@ const AppSiderComponent: React.FC = () => {
     const [collapsed, setCollapsed] = useState(false);
     const [showToggleButton, setShowToggleButton] = useState(true);
     const pathname = usePathname();
+    const { logout } = useAuth()
+    const [messageApi, contextHolder] = message.useMessage()
 
     const checkWindowWidth = () => {
         if (window.innerWidth <= 1200) {
@@ -22,6 +26,12 @@ const AppSiderComponent: React.FC = () => {
             setShowToggleButton(true);
         }
     };
+
+    const handleSignOut = async () => {
+        messageApi.loading("Signing out")
+        await clearAllData()
+        logout()
+    }
 
     useEffect(() => {
         checkWindowWidth();
@@ -67,7 +77,13 @@ const AppSiderComponent: React.FC = () => {
         {
             key: "/standards",
             icon: <FileSearchOutlined />,
-            label: <Link href="/standards">Standards</Link>,
+            label: <Link href="/standards">Regulatory Frameworks</Link>,
+        },
+        {
+            key: "/",
+            icon: <LogoutOutlined />,
+            label: <div>Sign out</div>,
+            onClick: () => handleSignOut()
         },
     ];
 
@@ -97,6 +113,7 @@ const AppSiderComponent: React.FC = () => {
             trigger={null}
         >
             <div className="h-full flex flex-col justify-between">
+                {contextHolder}
                 <div>
                     {showToggleButton && <SidebarToggleButton collapsed={collapsed} onToggle={toggleCollapse} />}
                     <SiderLogo collapsed={collapsed} />
@@ -106,14 +123,14 @@ const AppSiderComponent: React.FC = () => {
                         selectedKeys={[activeKey]} // Highlight the menu item for the base path
                         items={menuItems}
                     />
-                    <Divider orientation="left">
+                    {/* <Divider orientation="left">
                         <div className="text-xs">Account</div>
                     </Divider>
                     <Menu
                         mode="inline"
                         selectedKeys={[activeKey]} // Highlight the menu item for the base path
                         items={accountMenuItems}
-                    />
+                    /> */}
                 </div>
             </div>
         </Sider>

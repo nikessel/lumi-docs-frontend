@@ -1,7 +1,8 @@
 import { saveData, getData, getMetadata, saveMetadata } from "@/utils/db-utils"
-import type { Report, RequirementAssessment, RequirementGroupAssessment } from "@wasm";
+import type { Report, ReportStatus, RequirementAssessment, RequirementGroupAssessment } from "@wasm";
 import type * as WasmModule from "@wasm";
 import { dbName, dbVersion } from "@/utils/db-utils";
+import useCacheInvalidationStore from "@/stores/cache-validation-store";
 
 // Extended type for cached reports
 interface CachedReport extends Report {
@@ -16,7 +17,7 @@ interface CachedReport extends Report {
 const DB_NAME = dbName;
 const STORE_NAME = "reports";
 const DB_VERSION = dbVersion;
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+const CACHE_TTL = 60 * 60 * 1000;
 
 export async function fetchReports(
     wasmModule: typeof WasmModule | null
@@ -35,132 +36,142 @@ export async function fetchReports(
         error: null,
     };
 
+    const validCachedReports: Report[] = [];
+    const staleReportIdsToFetch: string[] = [];
 
-
-    // Fetch cached reports dynamically
+    const { staleReportIds, removeStaleReportIds } = useCacheInvalidationStore.getState();
     const cachedReports = await getData<CachedReport>(DB_NAME, STORE_NAME, DB_VERSION);
     const isFullFetch = await getMetadata(DB_NAME, "fullFetch", DB_VERSION);
 
-    const lastFetchTimestamp = await getMetadata(DB_NAME, "lastFetch", DB_VERSION);
-
-
-    const isExpired = lastFetchTimestamp
-        ? Date.now() - lastFetchTimestamp > CACHE_TTL
-        : true;
-
-    if (cachedReports.length > 0 && !isExpired && isFullFetch) {
-        console.log("Using cached reports data");
-        result.reports = cachedReports;
-        return result;
-    }
-
-    if (!wasmModule) {
-        result.error = "WASM module not loaded";
-        return result;
-    }
-
-    try {
-        const response = await wasmModule.get_all_reports();
-        console.log("WASM response:", response);
-
-        if (response.output) {
-            const reportsData = response.output.output;
-
-            // Add timestamp to each report
-            const reportsWithTimestamps = reportsData.map((report: Report) => ({
-                ...report,
-                timestamp: Date.now(),
-            }));
-
-            // Save reports dynamically
-            await saveData(DB_NAME, STORE_NAME, reportsWithTimestamps, DB_VERSION, true);
-            console.log("beforesavemeta")
-            await saveMetadata(DB_NAME, "fullFetch", true, DB_VERSION);
-            await saveMetadata(DB_NAME, "lastFetch", Date.now(), DB_VERSION);
-            console.log("aftersavemeta")
-            result.reports = reportsData;
-        } else if (response.error) {
-            result.error = response.error.message;
+    if (staleReportIds.length < 1) {
+        if (!wasmModule) {
+            result.error = "WASM module not loaded";
+            return result;
         }
-    } catch (err: unknown) {
-        console.error("Error fetching reports:", err);
-        result.error = "Failed to fetch reports";
+
+        try {
+            const response = await wasmModule.get_all_reports();
+            if (response.output) {
+                const reportsData = response.output.output;
+
+                // Add timestamp to each report
+                const reportsWithTimestamps = reportsData.map((report: Report) => ({
+                    ...report,
+                    timestamp: Date.now(),
+                }));
+
+                // Save reports and metadata
+                await saveData(DB_NAME, STORE_NAME, reportsWithTimestamps, DB_VERSION, true);
+                await saveMetadata(DB_NAME, "fullFetch", true, DB_VERSION);
+                await saveMetadata(DB_NAME, "lastFetch", Date.now(), DB_VERSION);
+
+                result.reports = reportsData;
+                return result;
+            } else if (response.error) {
+                result.error = response.error.message;
+                return result;
+            }
+        } catch (err: unknown) {
+            console.error("Error during full fetch:", err);
+            result.error = "Failed to perform full fetch";
+            return result;
+        }
+    } else {
+        cachedReports.forEach((report) => {
+            if (!staleReportIds.includes(report.id) && report.timestamp && Date.now() - report.timestamp <= CACHE_TTL) {
+                validCachedReports.push(report);
+            } else {
+                staleReportIdsToFetch.push(report.id);
+            }
+        });
+
+        staleReportIds.forEach((id) => {
+            if (!staleReportIdsToFetch.includes(id)) {
+                staleReportIdsToFetch.push(id);
+            }
+        });
+
+        result.reports.push(...validCachedReports);
+
+        if (!wasmModule) {
+            result.error = "WASM module not loaded";
+            return result;
+        }
+
+        // if (staleReportIdsToFetch.length > 0) {
+        //     console.log(`create1asdasdasd Fetching stale or missing reports for IDs: ${staleReportIdsToFetch.join(", ")}`);
+        //     const fetchResults = await fetchReportsByIds(wasmModule, staleReportIdsToFetch);
+        //     console.log(`create1asdasdasd  fetchResults`, fetchResults);
+
+        //     result.reports.push(
+        //         ...fetchResults.reports.map((report) => ({
+        //             ...report,
+        //             timestamp: Date.now(), // Add timestamp here
+        //         }))
+        //     );
+
+        //     if (Object.keys(fetchResults.errors).length > 0) {
+        //         console.error("Errors fetching some reports:", fetchResults.errors);
+        //         result.error = "Some reports could not be fetched.";
+        //     } else {
+        //         removeStaleReportIds(staleReportIdsToFetch);
+        //     }
+        // }
+
+        if (staleReportIdsToFetch.length > 0) {
+
+            let fetchResults: { reports: Report[]; errors: { [id: string]: string } } = {
+                reports: [],
+                errors: {},
+            };
+
+            let attempts = 0;
+            const maxAttempts = 5;
+            const retryDelay = 500; // 500ms
+
+            while (attempts < maxAttempts) {
+                try {
+                    fetchResults = await fetchReportsByIds(wasmModule, staleReportIdsToFetch);
+
+                    // If there are no errors, break out of the retry loop
+                    if (Object.keys(fetchResults.errors).length === 0) {
+                        break;
+                    }
+                } catch (err) {
+                    console.error(`Error fetching reports on attempt ${attempts + 1}:`, err);
+                }
+
+                attempts++;
+                if (attempts < maxAttempts) {
+                    await new Promise((resolve) => setTimeout(resolve, retryDelay));
+                }
+            }
+
+            // Add successfully fetched reports to the result
+            result.reports.push(
+                ...fetchResults.reports.map((report) => ({
+                    ...report,
+                    timestamp: Date.now(), // Add timestamp here
+                }))
+            );
+
+            // If there are still errors after retries, handle them
+            if (Object.keys(fetchResults.errors).length > 0) {
+                console.error("Errors fetching some reports after retries:", fetchResults.errors);
+                result.error = "Some reports could not be fetched after retries.";
+            } else {
+                removeStaleReportIds(staleReportIdsToFetch);
+            }
+        }
+
+        if (!result.error) {
+            await saveMetadata(DB_NAME, "lastFetch", Date.now(), DB_VERSION);
+        }
     }
 
     return result;
 }
 
-
-// export async function fetchReports(
-//     wasmModule: typeof WasmModule | null
-// ): Promise<{
-//     reports: Report[];
-//     blobUrls: { [id: string]: string };
-//     error: string | null;
-// }> {
-//     const result: {
-//         reports: Report[];
-//         blobUrls: { [id: string]: string };
-//         error: string | null;
-//     } = {
-//         reports: [],
-//         blobUrls: {},
-//         error: null,
-//     };
-
-//     const cachedReports = await getData<CachedReport>(DB_NAME, STORE_NAME, DB_VERSION);
-//     const isFullFetch = await getMetadata(DB_NAME, "fullFetch", DB_VERSION);
-//     const lastFetchTimestamp = await getMetadata(DB_NAME, "lastFetch", DB_VERSION);
-
-//     const isExpired = lastFetchTimestamp
-//         ? Date.now() - lastFetchTimestamp > CACHE_TTL
-//         : true;
-
-//     if (cachedReports.length > 0 && !isExpired && isFullFetch) {
-//         console.log("Using cached reports data");
-//         result.reports = cachedReports;
-//         return result;
-//     }
-
-//     if (!wasmModule) {
-//         result.error = "WASM module not loaded";
-//         return result;
-//     }
-
-//     try {
-//         const response = await wasmModule.get_all_reports();
-//         console.log("WASM response:", response);
-
-//         if (response.output) {
-//             const reportsData = response.output.output;
-//             console.log("Reports data:", reportsData);
-
-//             // Add timestamp to each report
-//             const reportsWithTimestamps = reportsData.map((report: Report) => ({
-//                 ...report,
-//                 timestamp: Date.now(),
-//             }));
-
-//             // Save reports and metadata
-//             console.log("About to save data with timestamps");
-//             await saveData(DB_NAME, STORE_NAME, reportsWithTimestamps, DB_VERSION, true);
-//             console.log("About to save metaData fullFetch");
-//             await saveMetadata(DB_NAME, "fullFetch", true, DB_VERSION);
-//             console.log("About to save metaData lastFetch");
-//             await saveMetadata(DB_NAME, "lastFetch", Date.now(), DB_VERSION);
-
-//             result.reports = reportsData;
-//         } else if (response.error) {
-//             console.error("WASM error:", response.error.message);
-//             result.error = response.error.message;
-//         }
-//     } catch (err: unknown) {
-//         console.error("Error fetching reports:", err);
-//         result.error = "Failed to fetch reports";
-//     }
-//     console.log("RESULTTTTT", result)
-//     return result;
-// }
 
 export async function fetchReportsByIds(
     wasmModule: typeof WasmModule | null,
@@ -170,6 +181,8 @@ export async function fetchReportsByIds(
         reports: [],
         errors: {},
     };
+
+    const { staleReportIds, removeStaleIds } = useCacheInvalidationStore.getState();
 
     // Fetch cached reports dynamically
     const cachedReports = await getData<CachedReport>(DB_NAME, STORE_NAME, DB_VERSION);
@@ -181,12 +194,13 @@ export async function fetchReportsByIds(
     reportIds.forEach((reportId) => {
         const cachedReport = cachedReports.find((report) => report.id === reportId);
 
+        const isStale = staleReportIds.includes(reportId);
+
         const isExpired = cachedReport?.timestamp
             ? Date.now() - cachedReport.timestamp > CACHE_TTL
             : true;
 
-        if (cachedReport && !isExpired) {
-            console.log(`Using cached report for ID: ${reportId}`);
+        if (cachedReport && !isExpired && !isStale) {
             validCachedReports.push(cachedReport);
         } else {
             reportsToFetch.push(reportId);
@@ -204,8 +218,6 @@ export async function fetchReportsByIds(
             });
             return results;
         }
-
-        console.log(`Fetching fresh reports for IDs: ${reportsToFetch.join(", ")}`);
 
         const fetchPromises = reportsToFetch.map(async (reportId) => {
             try {
@@ -228,6 +240,8 @@ export async function fetchReportsByIds(
 
         // Wait for all fetch operations to complete
         await Promise.all(fetchPromises);
+
+        removeStaleIds(reportsToFetch)
     }
 
     return results;
@@ -298,3 +312,55 @@ export function extractAllRequirementAssessments(reports: Report[]): (Requiremen
 
     return assessments;
 }
+
+export async function archiveReport(
+    wasmModule: typeof WasmModule | null,
+    reportId: string
+): Promise<string> {
+    if (!wasmModule) {
+        throw new Error("WASM module not loaded");
+    }
+
+    try {
+        const response = await wasmModule.archive_report({ input: reportId });
+        if (response.output) {
+            return `Report with ID ${reportId} archived successfully.`;
+        } else if (response.error) {
+            throw new Error(response.error.message);
+        }
+        // Add an explicit return statement in case neither condition is met
+        return "Unexpected response from archive_report.";
+    } catch (err: unknown) {
+        console.error("Error archiving report:", err);
+        throw new Error(`Failed to archive report with ID ${reportId}`);
+    }
+}
+
+export async function restoreReport(
+    wasmModule: typeof WasmModule | null,
+    reportId: string
+): Promise<string> {
+    if (!wasmModule) {
+        throw new Error("WASM module not loaded");
+    }
+
+    try {
+        const response = await wasmModule.restore_report({ input: reportId });
+        if (response.output) {
+            return `Report with ID ${reportId} restored successfully.`;
+        } else if (response.error) {
+            throw new Error(response.error.message);
+        }
+        // Add a fallback return or throw to ensure all code paths are covered
+        throw new Error("Unexpected response from restore_report.");
+    } catch (err: unknown) {
+        console.error("Error restoring report:", err);
+        throw new Error(`Failed to restore report with ID ${reportId}`);
+    }
+}
+
+export const isArchived = (status: ReportStatus | undefined): boolean => {
+    return typeof status === "object" && "archived" in status;
+};
+
+

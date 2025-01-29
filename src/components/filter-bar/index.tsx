@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Slider, Drawer, Button, Radio, Switch } from "antd";
+import { Slider, Drawer, Button, Radio, Switch, Badge } from "antd";
 import { SlidersOutlined } from "@ant-design/icons";
 import Typography from "@/components/typography";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -71,10 +71,11 @@ const FilterBar: React.FC<FilterBarProps> = ({ reports }) => {
     return (
         <>
             {/* Button to open the drawer */}
-            <Button size="small" icon={<SlidersOutlined />} onClick={showDrawer} type="primary">
-                Filters
-            </Button>
-
+            <Badge count={4}>
+                <Button size="small" icon={<SlidersOutlined />} onClick={showDrawer} type="primary">
+                    Filters
+                </Button>
+            </Badge>
             {/* Drawer containing the filter controls */}
             <Drawer
                 title="Filters"
