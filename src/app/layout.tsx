@@ -40,7 +40,7 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
   const { loading: reportsLoading } = useAllReports()
   const loadingComponents = useLoadingStore((state) => state.loadingComponents)
   const { reports } = useSelectedFilteredReportsContext()
-  const noLayout = typeof window !== "undefined" && (window.location.pathname === "/documentation" || window.location.pathname === "/logout" || window.location.pathname === "/signup");
+  const noLayout = typeof window !== "undefined" && (window.location.pathname === "/documentation" || window.location.pathname === "/logout" || window.location.pathname === "/signup" || window.location.pathname === "/verify-email");
 
   useEffect(() => {
     if (!wasmLoading && !AuthLoading && !reportsLoading && window.location.pathname !== "/callback" && loadingComponents.indexOf("wasmprovider") < 0 && !initialLoadCompleted) {

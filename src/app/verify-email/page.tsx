@@ -8,7 +8,25 @@ export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
   const { login } = useAuth();
-  // const { wasmModule } = useWasm()
+  const { wasmModule } = useWasm()
+
+  useEffect(() => {
+    if (!wasmModule) {
+      console.log("VERIFY WASM module not loaded");
+      return;
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        const userResponse = await wasmModule.get_user();
+        console.log("VERIFY User Data:", userResponse);
+      } catch (error) {
+        console.error("VERIFY Error fetching user:", error);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [wasmModule]);
 
   // useEffect(() => {
   //   const fetchUser = async () => {

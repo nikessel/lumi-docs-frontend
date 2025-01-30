@@ -380,11 +380,12 @@ export function AuthCallback() {
 
         if (!mounted) return;
 
-        //test email verified, redirect. 
-
         if (exchangeResult.error) {
-          // handleEmailVerification("") //REMOVE WHEN EXCHANGE RESULTS ARE CORRECT
           if (exchangeResult.error.kind === "EmailNotVerified") {
+            console.log("exchangeResult INSIDE", exchangeResult)
+
+            // storage.set(SK.id_token, tokens.id_token);
+            // storage.set(SK.access_token, tokens.access_token);
             const emailMatch =
               exchangeResult.error.message.match(/for email: (.+?)$/);
             handleEmailVerification(emailMatch?.[1] || "");
