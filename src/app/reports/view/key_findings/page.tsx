@@ -9,8 +9,9 @@ import type { RequirementAssessment, Requirement } from "@wasm";
 import { getComplianceColorCode } from '@/utils/formating';
 import { useSelectedFilteredReportsContext } from '@/contexts/reports-context/selected-filtered-reports';
 import { useFilteredRequirementsContext } from '@/contexts/requirement-context/filtered-report-requirement-context';
+import { RegulatoryFramework } from '@wasm';
 
-type RequirementAssessmentWithId = RequirementAssessment & { id: string };
+type RequirementAssessmentWithId = RequirementAssessment & { id: string, reportId: string, regulatoryFramework: RegulatoryFramework };
 
 const Page = () => {
     const { reports, loading: reportsLoading, error: reportsError } = useSelectedFilteredReportsContext();
@@ -20,7 +21,7 @@ const Page = () => {
 
     const [selectedRequirement, setSelectedRequirement] = useState<{
         requirement: Requirement | undefined;
-        requirementAssessment: RequirementAssessment | undefined;
+        requirementAssessment: RequirementAssessmentWithId | undefined;
     }>({
         requirement: undefined,
         requirementAssessment: undefined,
@@ -56,6 +57,8 @@ const Page = () => {
         setSelectedRequirement({ requirement, requirementAssessment: record });
         setOpenModal(true);
     };
+
+    console.log("selectedRequirement", selectedRequirement)
 
     // Columns for the table
     const columns = [
@@ -146,6 +149,7 @@ const Page = () => {
                 requirementAssessment={selectedRequirement.requirementAssessment}
                 onClose={() => setOpenModal(false)}
                 open={openModal}
+                regulatoryFramework={selectedRequirement.requirementAssessment?.regulatoryFramework}
             />
         </div>
     );

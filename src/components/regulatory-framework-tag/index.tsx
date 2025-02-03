@@ -21,7 +21,7 @@ const RegulatoryFrameworkTag: React.FC<StandardTagProps> = ({ standard }) => {
 
     const standardEntry = standardMap[standard] || { label: standard, color: 'default' };
 
-    return <Tag color={standardEntry.color}>{standardEntry.label}</Tag>;
+    return <div><Tag color={standardEntry.color}>{standardEntry.label}</Tag></div>;
 };
 
 export default RegulatoryFrameworkTag;

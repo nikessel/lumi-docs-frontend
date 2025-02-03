@@ -13,6 +13,7 @@ import FileUploadModal from '@/components/upload-files/file-upload-modal';
 import { useFilesContext } from '@/contexts/files-context';
 import ReportStateHandler from '@/components/report-state-handler';
 import useCacheInvalidationStore from '@/stores/cache-validation-store';
+import { viewFile, downloadFile, fetchFileData } from '@/utils/files-utils';
 
 const Page = () => {
     const { files, isLoading, error } = useFilesContext();
@@ -26,78 +27,77 @@ const Page = () => {
     const [isModalVisible, setIsModalVisible] = useState(false); // State for modal visibility
     const addStaleFileId = useCacheInvalidationStore((state) => state.addStaleFileId)
 
-    // Function to fetch file data
-    const fetchFileData = useCallback(async (fileId: string) => {
-        if (!wasmModule) {
-            return null;
-        }
+    // // Function to fetch file data
+    // const fetchFileData = useCallback(async (fileId: string) => {
+    //     if (!wasmModule) {
+    //         return null;
+    //     }
 
-        if (fileData[fileId]) {
-            return fileData[fileId];
-        }
+    //     if (fileData[fileId]) {
+    //         return fileData[fileId];
+    //     }
 
-        try {
-            const response = await wasmModule.get_file_data({ input: fileId });
+    //     try {
+    //         const response = await wasmModule.get_file_data({ input: fileId });
 
-            if (response.output) {
-                const data = response.output.output;
-                setFileData((prev) => ({ ...prev, [fileId]: data }));
-                return data;
-            } else if (response.error) {
-                console.error(`Error fetching data for file ${fileId}:`, response.error.message);
-            }
-        } catch (err) {
-            console.error("Error fetching file data:", err);
-        }
-        return null;
-    }, [wasmModule, fileData]);
+    //         if (response.output) {
+    //             const data = response.output.output;
+    //             setFileData((prev) => ({ ...prev, [fileId]: data }));
+    //             return data;
+    //         } else if (response.error) {
+    //             console.error(`Error fetching data for file ${fileId}:`, response.error.message);
+    //         }
+    //     } catch (err) {
+    //         console.error("Error fetching file data:", err);
+    //     }
+    //     return null;
+    // }, [wasmModule, fileData]);
 
-    // View file
-    const viewFile = useCallback(async (fileId: string) => {
-        setViewLoading((prev) => ({ ...prev, [fileId]: true }));
-        try {
-            if (blobUrls[fileId]) {
-                window.open(blobUrls[fileId], "_blank", "noopener,noreferrer");
-                return;
-            }
+    // // View file
+    // const viewFile = useCallback(async (fileId: string) => {
+    //     setViewLoading((prev) => ({ ...prev, [fileId]: true }));
+    //     try {
+    //         if (blobUrls[fileId]) {
+    //             window.open(blobUrls[fileId], "_blank", "noopener,noreferrer");
+    //             return;
+    //         }
 
-            const data = await fetchFileData(fileId);
-            if (data) {
-                const bytes = new Uint8Array(data);
-                const blob = new Blob([bytes], { type: "application/pdf" });
-                const url = URL.createObjectURL(blob);
-                setBlobUrls((prev) => ({ ...prev, [fileId]: url }));
-                window.open(url, "_blank", "noopener,noreferrer");
-            }
-        } finally {
-            setViewLoading((prev) => ({ ...prev, [fileId]: false }));
-        }
-    }, [blobUrls, fetchFileData]);
+    //         const data = await fetchFileData(fileId);
+    //         if (data) {
+    //             const bytes = new Uint8Array(data);
+    //             const blob = new Blob([bytes], { type: "application/pdf" });
+    //             const url = URL.createObjectURL(blob);
+    //             setBlobUrls((prev) => ({ ...prev, [fileId]: url }));
+    //             window.open(url, "_blank", "noopener,noreferrer");
+    //         }
+    //     } finally {
+    //         setViewLoading((prev) => ({ ...prev, [fileId]: false }));
+    //     }
+    // }, [blobUrls, fetchFileData]);
 
-    // Download file
-    const downloadFile = useCallback(async (fileId: string, fileName: string, mimeType: string) => {
-        setDownloadLoading((prev) => ({ ...prev, [fileId]: true }));
-        try {
-            const data = await fetchFileData(fileId);
-            if (data) {
-                const bytes = new Uint8Array(data);
-                const blob = new Blob([bytes], { type: mimeType });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.href = url;
-                link.download = fileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-            }
-        } finally {
-            setDownloadLoading((prev) => ({ ...prev, [fileId]: false }));
-        }
-    }, [fetchFileData]);
+    // // Download file
+    // const downloadFile = useCallback(async (fileId: string, fileName: string, mimeType: string) => {
+    //     setDownloadLoading((prev) => ({ ...prev, [fileId]: true }));
+    //     try {
+    //         const data = await fetchFileData(fileId);
+    //         if (data) {
+    //             const bytes = new Uint8Array(data);
+    //             const blob = new Blob([bytes], { type: mimeType });
+    //             const url = URL.createObjectURL(blob);
+    //             const link = document.createElement("a");
+    //             link.href = url;
+    //             link.download = fileName;
+    //             document.body.appendChild(link);
+    //             link.click();
+    //             document.body.removeChild(link);
+    //             URL.revokeObjectURL(url);
+    //         }
+    //     } finally {
+    //         setDownloadLoading((prev) => ({ ...prev, [fileId]: false }));
+    //     }
+    // }, [fetchFileData]);
 
-    console.log("files", files)
-
+    // console.log("files", files)
 
     if (isLoading || wasmLoading) {
         return (
@@ -151,7 +151,18 @@ const Page = () => {
                 {error ? (
                     <Typography color="secondary">{error}</Typography>
                 ) : (
-                    <FileManager files={files} downloadFile={downloadFile} viewFile={viewFile} viewLoading={viewLoading} downloadLoading={downloadLoading} />
+                    <FileManager
+                        files={files}
+                        viewLoading={viewLoading}
+                        downloadLoading={downloadLoading}
+                        viewFile={(fileId) =>
+                            viewFile(fileId, (id) => fetchFileData(id, wasmModule, fileData, setFileData), blobUrls, setBlobUrls, setViewLoading)
+                        }
+                        downloadFile={(fileId, fileName, mimeType) =>
+                            downloadFile(fileId, fileName, mimeType, (id) => fetchFileData(id, wasmModule, fileData, setFileData), setDownloadLoading)
+                        }
+                    />
+
 
                     // <List
                     //     dataSource={files}

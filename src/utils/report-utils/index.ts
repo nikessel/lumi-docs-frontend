@@ -271,70 +271,164 @@ export async function getSelectedFilteredReports(
 
     console.log("GERREPORTS", fetchedReports)
 
-
     return filterReports(fetchedReports, searchQuery, compliance, requirements); // Apply filtering logic here
 }
 
-export function filterReports(reports: Report[], searchQuery: string, compliance: [number, number] | null, requirements: Requirement[]): Report[] {
+export function filterReports(
+    reports: Report[],
+    searchQuery: string,
+    compliance: [number, number] | null,
+    requirements: Requirement[]
+): Report[] {
     return reports
         .map(report => {
             const filteredSections = new Map<IdType, SectionAssessment>();
+
             report.section_assessments.forEach((section, sectionId) => {
                 if (!section.sub_assessments) return;
 
-                const filteredRequirements = new Map<IdType, RequirementAssessmentOrRequirementGroupAssessment>();
+                const filteredAssessments = filterAssessmentsRecursively(
+                    section.sub_assessments,
+                    searchQuery,
+                    compliance,
+                    requirements
+                );
 
-                section.sub_assessments.forEach((assessment, requirementId) => {
-                    if ("requirement_assessment" in assessment) {
-                        const requirement = requirements.find((req) => req.id === requirementId);
-
-                        const name = requirement?.name ?? "Unknown Requirement";
-                        const description = requirement?.description ?? "No description available";
-
-                        const { compliance_rating, details, objective_research_summary } = assessment.requirement_assessment;
-
-                        const matchesCompliance = compliance
-                            ? compliance_rating >= compliance[0] && compliance_rating <= compliance[1]
-                            : true;
-
-                        const matchesSearchQuery = searchQuery
-                            ? details.includes(searchQuery) || objective_research_summary.includes(searchQuery) || name.includes(searchQuery) || description.includes(searchQuery)
-                            : true;
-
-                        if (matchesCompliance && matchesSearchQuery) {
-                            filteredRequirements.set(requirementId, assessment);
-                        }
-                    }
-                });
-
-                if (filteredRequirements.size > 0) {
+                if (filteredAssessments.size > 0) {
                     filteredSections.set(sectionId, {
                         ...section,
-                        sub_assessments: filteredRequirements
+                        sub_assessments: filteredAssessments,
                     });
                 }
             });
 
-            if (filteredSections.size > 0) {
-                return { ...report, section_assessments: filteredSections };
-            }
-
-            return null;
+            return filteredSections.size > 0 ? { ...report, section_assessments: filteredSections } : null;
         })
         .filter(Boolean) as Report[];
 }
 
-export function extractAllRequirementAssessments(reports: Report[]): (RequirementAssessment & { id: string })[] {
-    const assessments: (RequirementAssessment & { id: string })[] = [];
+/**
+ * Recursively filters requirement groups and assessments
+ */
+function filterAssessmentsRecursively(
+    assessments: Map<IdType, RequirementAssessmentOrRequirementGroupAssessment>,
+    searchQuery: string,
+    compliance: [number, number] | null,
+    requirements: Requirement[]
+): Map<IdType, RequirementAssessmentOrRequirementGroupAssessment> {
+    const filteredAssessments = new Map<IdType, RequirementAssessmentOrRequirementGroupAssessment>();
+
+    assessments.forEach((assessment, id) => {
+        if ("requirement_assessment" in assessment) {
+            // It's a requirement assessment
+            const requirement = requirements.find(req => req.id === id);
+            const name = requirement?.name ?? "Unknown Requirement";
+            const description = requirement?.description ?? "No description available";
+
+            const { compliance_rating, details, objective_research_summary } = assessment.requirement_assessment;
+
+            const matchesCompliance = compliance
+                ? compliance_rating >= compliance[0] && compliance_rating <= compliance[1]
+                : true;
+
+            const matchesSearchQuery = searchQuery
+                ? details.includes(searchQuery) ||
+                objective_research_summary.includes(searchQuery) ||
+                name.includes(searchQuery) ||
+                description.includes(searchQuery)
+                : true;
+
+            if (matchesCompliance && matchesSearchQuery) {
+                filteredAssessments.set(id, assessment);
+            }
+        } else if ("requirement_group_assessment" in assessment && assessment.requirement_group_assessment.sub_assessments) {
+            const filteredSubAssessments = filterAssessmentsRecursively(
+                assessment.requirement_group_assessment.sub_assessments,
+                searchQuery,
+                compliance,
+                requirements
+            );
+
+            if (filteredSubAssessments.size > 0) {
+                filteredAssessments.set(id, {
+                    ...assessment,
+                    requirement_group_assessment: {
+                        ...assessment.requirement_group_assessment,
+                        sub_assessments: filteredSubAssessments,
+                    },
+                });
+            }
+        }
+    });
+
+    return filteredAssessments;
+}
+
+
+// export function filterReports(reports: Report[], searchQuery: string, compliance: [number, number] | null, requirements: Requirement[]): Report[] {
+//     return reports
+//         .map(report => {
+//             const filteredSections = new Map<IdType, SectionAssessment>();
+
+//             report.section_assessments.forEach((section, sectionId) => {
+
+//                 if (!section.sub_assessments) return;
+
+//                 const filteredRequirements = new Map<IdType, RequirementAssessmentOrRequirementGroupAssessment>();
+
+//                 section.sub_assessments.forEach((assessment, requirementId) => {
+
+//                     if ("requirement_assessment" in assessment) {
+
+//                         const requirement = requirements.find((req) => req.id === requirementId);
+
+//                         const name = requirement?.name ?? "Unknown Requirement";
+//                         const description = requirement?.description ?? "No description available";
+
+//                         const { compliance_rating, details, objective_research_summary } = assessment.requirement_assessment;
+
+//                         const matchesCompliance = compliance
+//                             ? compliance_rating >= compliance[0] && compliance_rating <= compliance[1]
+//                             : true;
+
+//                         const matchesSearchQuery = searchQuery
+//                             ? details.includes(searchQuery) || objective_research_summary.includes(searchQuery) || name.includes(searchQuery) || description.includes(searchQuery)
+//                             : true;
+
+//                         if (matchesCompliance && matchesSearchQuery) {
+//                             filteredRequirements.set(requirementId, assessment);
+//                         }
+//                     }
+//                 });
+
+//                 if (filteredRequirements.size > 0) {
+//                     filteredSections.set(sectionId, {
+//                         ...section,
+//                         sub_assessments: filteredRequirements
+//                     });
+//                 }
+//             });
+
+//             if (filteredSections.size > 0) {
+//                 return { ...report, section_assessments: filteredSections };
+//             }
+
+//             return null;
+//         })
+//         .filter(Boolean) as Report[];
+// }
+
+export function extractAllRequirementAssessments(reports: Report[]): (RequirementAssessment & { id: string, reportId: string, regulatoryFramework: WasmModule.RegulatoryFramework })[] {
+    const assessments: (RequirementAssessment & { id: string, reportId: string, regulatoryFramework: WasmModule.RegulatoryFramework })[] = [];
 
     // Helper function to extract requirement assessments recursively
-    function extractFromGroup(group: RequirementGroupAssessment, parentId: string) {
+    function extractFromGroup(group: RequirementGroupAssessment, reportId: string, regulatoryFramework: WasmModule.RegulatoryFramework) {
         if (group.sub_assessments) {
             for (const [key, value] of group.sub_assessments.entries()) {
                 if ('requirement_assessment' in value) {
-                    assessments.push({ ...value.requirement_assessment, id: key });
+                    assessments.push({ ...value.requirement_assessment, id: key, reportId: reportId, regulatoryFramework: regulatoryFramework });
                 } else if ('requirement_group_assessment' in value) {
-                    extractFromGroup(value.requirement_group_assessment, key);
+                    extractFromGroup(value.requirement_group_assessment, reportId, regulatoryFramework);
                 }
             }
         }
@@ -346,9 +440,9 @@ export function extractAllRequirementAssessments(reports: Report[]): (Requiremen
             if (section.sub_assessments) {
                 for (const [key, value] of section.sub_assessments.entries()) {
                     if ('requirement_assessment' in value) {
-                        assessments.push({ ...value.requirement_assessment, id: key });
+                        assessments.push({ ...value.requirement_assessment, id: key, reportId: report.id, regulatoryFramework: report.regulatory_framework });
                     } else if ('requirement_group_assessment' in value) {
-                        extractFromGroup(value.requirement_group_assessment, key);
+                        extractFromGroup(value.requirement_group_assessment, report.id, report.regulatory_framework);
                     }
                 }
             }

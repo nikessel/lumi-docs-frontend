@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Table, Breadcrumb, Progress } from 'antd';
 import { Report, Section, Requirement, RequirementGroup, SectionAssessment, RequirementGroupAssessment, RequirementAssessment } from '@wasm';
 import DetailedAssessmentModal from '@/components/detailed-assessment-modal';
 import { getComplianceColorCode } from '@/utils/formating';
 import RegulatoryFrameworkTag from '@/components/regulatory-framework-tag';
+import { RegulatoryFramework } from '@wasm';
+import { extractAllRequirementAssessments } from '@/utils/report-utils';
 
 // Union type for rows in the table
-type TableRow = (SectionAssessment | RequirementGroupAssessment | RequirementAssessment) & { id: string };
+type TableRow = (SectionAssessment | RequirementGroupAssessment | RequirementAssessment & { reportId: string, regulatoryFramework: RegulatoryFramework }) & { id: string };
 
 interface TableContainerProps {
     reports: Report[];
@@ -23,9 +25,20 @@ type BreadcrumbState = {
 };
 
 const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requirements, requirement_groups }) => {
+
+    const [allAssessmentsSorted, setAllAssessmentsSorted] = useState<(RequirementAssessment & { id: string, reportId: string, regulatoryFramework: RegulatoryFramework })[]>([]);
+
+    useEffect(() => {
+        if (reports) {
+            const assessments = extractAllRequirementAssessments(reports);
+            const sortedAssessments = assessments.sort((a, b) => a.compliance_rating - b.compliance_rating);
+            setAllAssessmentsSorted(sortedAssessments);
+        }
+    }, [reports]);
+
     const [selectedRequirement, setSelectedRequirement] = useState<{
         requirement: Requirement | undefined;
-        requirementAssessment: RequirementAssessment | undefined;
+        requirementAssessment: RequirementAssessment & { id: string, reportId: string, regulatoryFramework: RegulatoryFramework } | undefined;
     }>({
         requirement: undefined,
         requirementAssessment: undefined,
@@ -74,37 +87,10 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
                 ]);
             }
         }
-        // Handle SectionAssessment with `requirement_assessments`
-        // else if ('sub_assessments' in record && record.sub_assessments) {
-        //     const children: TableRow[] = Array.from(record.sub_assessments.entries()).map(([key, value]) => {
-        //         if ('requirement_assessment' in value) {
-        //             return {
-        //                 ...value.requirement_assessment,
-        //                 id: key, // Add the key as `id`
-        //             } as TableRow;
-        //         } else if ('requirement_group_assessment' in value) {
-        //             return {
-        //                 ...value.requirement_group_assessment,
-        //                 id: key, // Add the key as `id`
-        //             } as TableRow;
-        //         }
-        //         throw new Error('Unexpected requirement type');
-        //     });
-
-        //     if (children.length > 0) {
-        //         setBreadcrumb((prev) => [
-        //             ...prev,
-        //             {
-        //                 title: record.id || 'Section',
-        //                 data: children,
-        //             },
-        //         ]);
-        //     }
-        // } 
         else {
             const { id, ...assessment } = record;
             setOpenModal(true)
-            setSelectedRequirement({ requirement: requirements.find((req) => req.id === record.id), requirementAssessment: assessment as RequirementAssessment })
+            setSelectedRequirement({ requirement: requirements.find((req) => req.id === record.id), requirementAssessment: allAssessmentsSorted.find((ass) => ass.id === record.id) })
         }
     };
 
@@ -232,7 +218,12 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
                 columns={columns}
                 pagination={false}
             />
-            <DetailedAssessmentModal requirement={selectedRequirement.requirement} requirementAssessment={selectedRequirement.requirementAssessment} onClose={() => setOpenModal(false)} open={openModal} />
+            <DetailedAssessmentModal
+                requirement={selectedRequirement.requirement}
+                requirementAssessment={selectedRequirement.requirementAssessment}
+                onClose={() => setOpenModal(false)} open={openModal}
+                regulatoryFramework={selectedRequirement.requirementAssessment?.regulatoryFramework}
+            />
         </div>
     );
 };

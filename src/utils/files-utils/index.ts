@@ -1,3 +1,4 @@
+import React from "react";
 import { saveData, getData, getMetadata, saveMetadata } from "@/utils/db-utils";
 import type { File } from "@wasm";
 import type * as WasmModule from "@wasm";
@@ -179,3 +180,89 @@ export async function moveFile(
     }
 }
 
+export const fetchFileData = async (
+    fileId: string,
+    wasmModule: typeof WasmModule | null, // Replace `any` with the correct type if available
+    fileData: Record<string, Uint8Array>,
+    setFileData: React.Dispatch<React.SetStateAction<Record<string, Uint8Array>>>
+): Promise<Uint8Array | null> => {
+    if (!wasmModule) {
+        return null;
+    }
+
+    if (fileData[fileId]) {
+        return fileData[fileId];
+    }
+
+    try {
+        const response = await wasmModule.get_file_data({ input: fileId });
+
+        if (response.output) {
+            const data = response.output.output;
+            setFileData(prev => ({ ...prev, [fileId]: data }));
+            return data;
+        } else if (response.error) {
+            console.error(`Error fetching data for file ${fileId}:`, response.error.message);
+        }
+    } catch (err) {
+        console.error("Error fetching file data:", err);
+    }
+    return null;
+};
+
+
+export const viewFile = async (
+    fileId: string,
+    fetchFileData: (fileId: string) => Promise<Uint8Array | null>,
+    blobUrls: Record<string, string>,
+    setBlobUrls: (callback: (prev: Record<string, string>) => Record<string, string>) => void,
+    setViewLoading: (callback: (prev: Record<string, boolean>) => Record<string, boolean>) => void
+) => {
+    setViewLoading(prev => ({ ...prev, [fileId]: true }));
+
+    try {
+        if (blobUrls[fileId]) {
+            window.open(blobUrls[fileId], "_blank", "noopener,noreferrer");
+            return;
+        }
+
+        const data = await fetchFileData(fileId);
+        if (data) {
+            const bytes = new Uint8Array(data);
+            const blob = new Blob([bytes], { type: "application/pdf" });
+            const url = URL.createObjectURL(blob);
+            setBlobUrls(prev => ({ ...prev, [fileId]: url }));
+            window.open(url, "_blank", "noopener,noreferrer");
+        }
+    } finally {
+        setViewLoading(prev => ({ ...prev, [fileId]: false }));
+    }
+};
+
+export const downloadFile = async (
+    fileId: string,
+    fileName: string,
+    mimeType: string,
+    fetchFileData: (fileId: string) => Promise<Uint8Array | null>,
+    setDownloadLoading: (callback: (prev: Record<string, boolean>) => Record<string, boolean>) => void
+) => {
+    setDownloadLoading(prev => ({ ...prev, [fileId]: true }));
+
+    try {
+        const data = await fetchFileData(fileId);
+        if (data) {
+            const bytes = new Uint8Array(data);
+            const blob = new Blob([bytes], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+    } finally {
+        setDownloadLoading(prev => ({ ...prev, [fileId]: false }));
+    }
+};

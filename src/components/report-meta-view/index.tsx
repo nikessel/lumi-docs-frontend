@@ -17,6 +17,16 @@ import ReportStatusTag from "../report-status-tag";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
 import { useSearchParamsState } from "@/contexts/search-params-context";
 
+const extractProgress = (title: string): number => {
+    const match = title.match(/(\d+)\/(\d+)/);
+    if (!match) return 0; // Default to 0% if no match is found
+
+    const completed = parseInt(match[1], 10);
+    const total = parseInt(match[2], 10);
+
+    return total > 0 ? Math.round((completed / total) * 100) : 0;
+};
+
 interface ReportMetaViewProps {
     openRedirectPath: string,
     report: Report | null,
@@ -41,6 +51,14 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
     const [isSelected, setIsSelected] = useState(selectedReports.includes(report?.id || ""));
     const [messageApi, contextHolder] = antdMessage.useMessage();
     const addStaleReportId = useCacheInvalidationStore((state) => state.addStaleReportId)
+    const [assessmentProgres, setAssessmentProgress] = useState(0)
+
+    useEffect(() => {
+        if (report?.status === "processing") {
+            const progress = extractProgress(report.title)
+            setAssessmentProgress(progress)
+        }
+    }, [report])
 
     useEffect(() => {
         setIsSelected(selectedReports.includes(report?.id || ""));
@@ -162,18 +180,24 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
                 }`}
             onClick={report?.status === "processing" ? undefined : toggleSelection}
         >{contextHolder}
-            {report?.status === "processing" && (
-                <div className="absolute inset-0 bg-gray-100 bg-opacity-70 flex items-center justify-center z-10">
-                    <Typography textSize="small" className="text-gray-500">
-                        Processing...
-                    </Typography>
-                </div>
-            )}
 
-            <div className={`flex items-center gap-3 ${report?.status === "processing" ? "opacity-50" : ""}`}>
-                <Image src={isSelected ? Checked : Unchecked} alt="checkbox" width={20} />
-                <Typography>{report?.title}</Typography>
-            </div>
+
+            {report?.status === "processing" ?
+                <Tooltip title="The report progress is updated every 5 minutes">
+                    <div
+                        style={{ width: "100%" }}
+                        className={`flex items-center gap-3 flex`}
+                    >
+                        <div className="whitespace-nowrap mr-3">{report.title}</div>
+                        <Progress status="active" percent={assessmentProgres} />
+                    </div>
+                </Tooltip>
+                :
+                <div className={`flex items-center gap-3`}>
+                    <Image src={isSelected ? Checked : Unchecked} alt="checkbox" width={20} />
+                    <Typography>{report?.title}</Typography>
+                </div>
+            }
             {report?.status !== "processing" ?
                 <div
                     className={`flex items-center space-x-6 }`}
