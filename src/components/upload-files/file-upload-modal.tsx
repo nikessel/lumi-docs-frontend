@@ -7,6 +7,7 @@ import type { UploadProps, UploadFile } from 'antd';
 import { InboxOutlined, FilePdfOutlined, FolderAddOutlined } from '@ant-design/icons';
 import { formatFileSize } from "@/utils/helpers";
 import { notification } from "antd";
+import useCacheInvalidationStore from "@/stores/cache-validation-store";
 
 
 const SUPPORTED_EXTENSIONS: FileExtension[] = ["pdf", "txt", "md", "zip"];
@@ -23,6 +24,8 @@ const FileUploadModal: React.FC<{
     const [selectedFiles, setSelectedFiles] = useState<UploadFile[]>([]);
     const uploadManager = useUploadManager();
     const [api, contextHolder] = notification.useNotification();
+    const addStaleFileId = useCacheInvalidationStore((state) => state.addStaleFileId)
+    const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate)
 
     useEffect(() => {
         if (!uploadManager.isUploading && (uploadManager.uploadedFiles > 0 || uploadManager.failedFiles || uploadManager.filesAlreadyExisted)) {
@@ -104,7 +107,9 @@ const FileUploadModal: React.FC<{
         try {
             const nativeFiles = selectedFiles.map((file) => file.originFileObj as File);
 
-            uploadManager.uploadFiles(nativeFiles);
+            await uploadManager.uploadFiles(nativeFiles);
+            addStaleFileId("all")
+            triggerUpdate("files")
 
             // onUploadComplete(uploadedFiles);
             // setSelectedFiles([]);

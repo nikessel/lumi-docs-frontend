@@ -29,6 +29,7 @@ export const useSelectedFilteredReports = (): UseSelectedFilteredReports => {
             try {
                 setLoading(true);
                 const fetchedReports = await getSelectedFilteredReports(wasmModule, selectedReports, searchQuery, compliance, requirements);
+                console.log("fetchedReports", fetchedReports)
                 setReports(fetchedReports);
             } catch (err: any) {
                 console.error(err);

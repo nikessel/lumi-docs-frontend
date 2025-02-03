@@ -4,6 +4,7 @@ import Stripe from "stripe";
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
 export async function POST(req: Request) {
+    console.log("STRIPEPOST!!!!!")
     try {
         if (!stripe) throw new Error("Stripe is not configured");
 

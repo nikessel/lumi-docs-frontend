@@ -1,6 +1,6 @@
-import type { 
-  Report, 
-  RequirementOrRequirementGroupAssessment,
+import type {
+  Report,
+  RequirementAssessmentOrRequirementGroupAssessment,
   RequirementAssessment,
   RequirementGroupAssessment,
   IdType
@@ -30,10 +30,10 @@ export function processReport(report: Report, section: Section): TreeNode {
   }
 
   // Process requirement assessments if they exist
-  const children = sectionAssessment.requirement_assessments
-    ? Array.from(sectionAssessment.requirement_assessments.entries()).map(([reqId, req]) => 
-        processRequirement(reqId, req)
-      )
+  const children = sectionAssessment.sub_assessments
+    ? Array.from(sectionAssessment.sub_assessments.entries()).map(([reqId, req]) =>
+      processRequirement(reqId, req)
+    )
     : undefined;
 
   return {
@@ -44,12 +44,12 @@ export function processReport(report: Report, section: Section): TreeNode {
 }
 
 function processRequirement(
-  reqId: IdType, 
-  requirement: RequirementOrRequirementGroupAssessment
+  reqId: IdType,
+  requirement: RequirementAssessmentOrRequirementGroupAssessment
 ): TreeNode {
-  const assessmentChildren = 'requirement' in requirement
-    ? processRequirementAssessment(requirement.requirement)
-    : processRequirementGroupAssessment(requirement.requirement_group);
+  const assessmentChildren = 'requirement_assessment' in requirement
+    ? processRequirementAssessment(requirement.requirement_assessment)
+    : processRequirementGroupAssessment(requirement.requirement_group_assessment);
 
   return {
     id: reqId,
@@ -68,17 +68,17 @@ function processRequirementAssessment(
 function processRequirementGroupAssessment(
   assessment: RequirementGroupAssessment
 ): TreeNode[] | undefined {
-  if (!assessment.assessments) {
+  if (!assessment.sub_assessments) {
     return undefined;
   }
 
-  const entries = Array.from(assessment.assessments.entries()) as Array<[IdType, RequirementOrRequirementGroupAssessment]>;
-  
+  const entries = Array.from(assessment.sub_assessments.entries()) as Array<[IdType, RequirementAssessmentOrRequirementGroupAssessment]>;
+
   return entries.map(([id, childAssessment]) => ({
     id,
     title: `Assessment ${id}`,
-    children: 'requirement' in childAssessment
-      ? processRequirementAssessment(childAssessment.requirement)
-      : processRequirementGroupAssessment(childAssessment.requirement_group)
+    children: 'requirement_assessment' in childAssessment
+      ? processRequirementAssessment(childAssessment.requirement_assessment)
+      : processRequirementGroupAssessment(childAssessment.requirement_group_assessment)
   }));
 }

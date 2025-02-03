@@ -3,6 +3,7 @@ import type { File } from "@wasm";
 import type * as WasmModule from "@wasm";
 import { dbName } from "@/utils/db-utils";
 import { doesNotReject } from "assert";
+import useCacheInvalidationStore from "@/stores/cache-validation-store";
 
 const FILES_DB_NAME = dbName;
 const FILES_STORE_NAME = "files";
@@ -25,13 +26,15 @@ export async function fetchFiles(
     const cachedFiles = await getData<CachedFile>(FILES_DB_NAME, FILES_STORE_NAME, FILES_DB_VERSION);
     const lastFetchTimestamp = await getMetadata(FILES_DB_NAME, "lastFetch", FILES_DB_VERSION);
     const isFullFetch = await getMetadata(FILES_DB_NAME, "fullFetch", FILES_DB_VERSION);
+    const staleFileIds = useCacheInvalidationStore.getState().staleFileIds
+    const clearStaleFileIds = useCacheInvalidationStore.getState().clearStaleFileIds
 
     // Check if cache is valid
     const isCacheExpired = lastFetchTimestamp
         ? Date.now() - lastFetchTimestamp > FILES_CACHE_TTL
         : true;
 
-    if (cachedFiles.length > 0 && !isCacheExpired && isFullFetch) {
+    if (cachedFiles.length > 0 && !isCacheExpired && isFullFetch && staleFileIds.length < 1) {
         result.files = cachedFiles;
         return result;
     }
@@ -44,6 +47,7 @@ export async function fetchFiles(
     try {
         // Fetch files from the WASM module
         const response = await wasmModule.get_all_files();
+        console.log("GETTING ALL FILES")
 
         if (response.output) {
             const filesData = response.output.output;
@@ -58,7 +62,7 @@ export async function fetchFiles(
             await saveData(FILES_DB_NAME, FILES_STORE_NAME, filesWithTimestamps, FILES_DB_VERSION, true);
             await saveMetadata(FILES_DB_NAME, "fullFetch", true, FILES_DB_VERSION);
             await saveMetadata(FILES_DB_NAME, "lastFetch", Date.now(), FILES_DB_VERSION);
-
+            clearStaleFileIds()
             result.files = filesData;
         } else if (response.error) {
             result.error = response.error.message;

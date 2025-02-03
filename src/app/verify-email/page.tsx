@@ -3,12 +3,21 @@ import { useEffect } from "react"
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/Auth0";
 import { useWasm } from "@/components/WasmProvider";
+import { useStorage } from "@/storage";
+import type { StorageKey, Claims } from "@wasm";
+
+const SK = {
+  id_token: "id_token" as StorageKey,
+  access_token: "access_token" as StorageKey,
+} as const;
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
   const { login } = useAuth();
   const { wasmModule } = useWasm()
+  const [idToken] = useStorage(SK.id_token);
+
 
   useEffect(() => {
     if (!wasmModule) {
@@ -17,16 +26,22 @@ export default function VerifyEmailPage() {
     }
 
     const interval = setInterval(async () => {
+      console.log(idToken)
       try {
-        const userResponse = await wasmModule.get_user();
-        console.log("VERIFY User Data:", userResponse);
+        if (idToken) {
+          const claimsResultTest = await wasmModule.token_to_claims({
+            token: idToken,
+          });
+          const userResponse = await wasmModule.get_user();
+          console.log("VERIFY User Data:", claimsResultTest);
+        }
       } catch (error) {
         console.error("VERIFY Error fetching user:", error);
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [wasmModule]);
+  }, [wasmModule, idToken]);
 
   // useEffect(() => {
   //   const fetchUser = async () => {

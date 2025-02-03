@@ -4,7 +4,7 @@ import { fetchRequirementGroupsByIds } from "@/utils/requirement-group-utils";
 import {
     RequirementGroup,
     Report,
-    RequirementOrRequirementGroupAssessment,
+    RequirementAssessmentOrRequirementGroupAssessment,
     Section
 } from "@wasm";
 
@@ -24,14 +24,14 @@ export const useFilteredReportsRequirementGroups = (
 
     useEffect(() => {
         const extractGroupIds = (
-            assessments: Map<string, RequirementOrRequirementGroupAssessment>
+            assessments: Map<string, RequirementAssessmentOrRequirementGroupAssessment>
         ): string[] => {
             const ids: string[] = [];
 
             assessments.forEach((assessment, key) => {
-                if ("requirement_group" in assessment) {
+                if ("requirement_group_assessment" in assessment) {
                     ids.push(key); // Use the key as the group ID
-                    const groupAssessments = assessment.requirement_group.assessments || new Map();
+                    const groupAssessments = assessment.requirement_group_assessment.sub_assessments || new Map();
                     ids.push(...extractGroupIds(groupAssessments)); // Recursively extract nested group IDs
                 }
             });
@@ -51,8 +51,8 @@ export const useFilteredReportsRequirementGroups = (
                 // Collect all requirement group IDs
                 const allGroupIds = reports.flatMap((report) =>
                     Array.from(report.section_assessments.values()).flatMap((section) =>
-                        section.requirement_assessments
-                            ? extractGroupIds(section.requirement_assessments)
+                        section.sub_assessments
+                            ? extractGroupIds(section.sub_assessments)
                             : []
                     )
                 );

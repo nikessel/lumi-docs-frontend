@@ -35,14 +35,14 @@ export const analyzeReports = (reports: Report[]): AnalysisResult => {
         maxNestedLevels = Math.max(maxNestedLevels, currentDepth);
         incrementLevelCount(currentDepth);
 
-        if (requirementGroup.assessments) {
-            for (const [, assessment] of requirementGroup.assessments) {
-                if ('requirement' in assessment) {
+        if (requirementGroup.sub_assessments) {
+            for (const [, assessment] of requirementGroup.sub_assessments) {
+                if ('requirement_assessment' in assessment) {
                     numberOfRequirementAssessments++;
                     incrementLevelCount(currentDepth + 1);
-                } else if ('requirement_group' in assessment) {
+                } else if ('requirement_group_assessment' in assessment) {
                     numberOfRequirementGroupAssessments++;
-                    traverseRequirementGroup(assessment.requirement_group, currentDepth + 1);
+                    traverseRequirementGroup(assessment.requirement_group_assessment, currentDepth + 1);
                 }
             }
         }
@@ -53,14 +53,14 @@ export const analyzeReports = (reports: Report[]): AnalysisResult => {
             for (const [, section] of report.section_assessments) {
                 numberOfSections++;
                 incrementLevelCount(1); // Level 1: Section
-                if (section.requirement_assessments) {
-                    for (const [, assessment] of section.requirement_assessments) {
-                        if ('requirement' in assessment) {
+                if (section.sub_assessments) {
+                    for (const [, assessment] of section.sub_assessments) {
+                        if ('requirement_assessment' in assessment) {
                             numberOfRequirementAssessments++;
                             incrementLevelCount(2); // Level 2: Direct requirements
-                        } else if ('requirement_group' in assessment) {
+                        } else if ('requirement_group_assessment' in assessment) {
                             numberOfRequirementGroupAssessments++;
-                            traverseRequirementGroup(assessment.requirement_group, 2); // Depth starts at 2 (section → requirement group)
+                            traverseRequirementGroup(assessment.requirement_group_assessment, 2); // Depth starts at 2 (section → requirement group)
                         }
                     }
                 }
@@ -95,12 +95,12 @@ const traverseRequirementGroupForComplianceRatings = (
     // Add compliance rating for the requirement group
     complianceRatings.push(requirementGroup.compliance_rating);
 
-    if (requirementGroup.assessments) {
-        for (const [, assessment] of requirementGroup.assessments) {
-            if ("requirement" in assessment) {
-                complianceRatings.push(assessment.requirement.compliance_rating);
-            } else if ("requirement_group" in assessment) {
-                traverseRequirementGroupForComplianceRatings(assessment.requirement_group, complianceRatings);
+    if (requirementGroup.sub_assessments) {
+        for (const [, assessment] of requirementGroup.sub_assessments) {
+            if ("requirement_assessment" in assessment) {
+                complianceRatings.push(assessment.requirement_assessment.compliance_rating);
+            } else if ("requirement_group_assessment" in assessment) {
+                traverseRequirementGroupForComplianceRatings(assessment.requirement_group_assessment, complianceRatings);
             }
         }
     }
@@ -120,12 +120,12 @@ export const generateWaffleDataFromReports = (reports: Report[]): ComplianceData
                 // Add compliance rating for the section
                 complianceRatings.push(section.compliance_rating);
 
-                if (section.requirement_assessments) {
-                    for (const [, assessment] of section.requirement_assessments) {
-                        if ("requirement" in assessment) {
-                            complianceRatings.push(assessment.requirement.compliance_rating);
-                        } else if ("requirement_group" in assessment) {
-                            traverseRequirementGroupForComplianceRatings(assessment.requirement_group, complianceRatings);
+                if (section.sub_assessments) {
+                    for (const [, assessment] of section.sub_assessments) {
+                        if ("requirement_assessment" in assessment) {
+                            complianceRatings.push(assessment.requirement_assessment.compliance_rating);
+                        } else if ("requirement_group_assessment" in assessment) {
+                            traverseRequirementGroupForComplianceRatings(assessment.requirement_group_assessment, complianceRatings);
                         }
                     }
                 }

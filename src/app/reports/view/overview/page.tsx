@@ -18,6 +18,8 @@ const Page = () => {
     const { reports, loading: reportsLoading } = useSelectedFilteredReportsContext();
     const { tasks, loading: tasksLoading } = useSelectedFilteredReportsTasksContext();
 
+    console.log("reports", reports)
+
     const analyzedReports = analyzeReports(reports);
 
     const averageCompliance = reports.length > 0

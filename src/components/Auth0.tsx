@@ -335,13 +335,13 @@ export function AuthCallback() {
 
   const handleEmailVerification = useCallback(
     async (email: string) => {
-      storage.clear();
-      setIsAuthenticated(false);
-      setUser(null);
+      // storage.clear();
+      // setIsAuthenticated(false);
+      // setUser(null);
       const url = `/verify-email?email=${encodeURIComponent(email)}`;
       window.location.href = url;
     },
-    [setIsAuthenticated, setUser],
+    [],
   );
 
   useEffect(() => {
@@ -376,23 +376,23 @@ export function AuthCallback() {
           code,
         });
 
-        console.log("exchangeResult", exchangeResult)
+        // console.log("exchangeResult", exchangeResult)
 
         if (!mounted) return;
 
-        if (exchangeResult.error) {
-          if (exchangeResult.error.kind === "EmailNotVerified") {
-            console.log("exchangeResult INSIDE", exchangeResult)
+        // if (exchangeResult.error) {
+        //   if (exchangeResult.error.kind === "EmailNotVerified") {
+        //     console.log("exchangeResult INSIDE", exchangeResult)
 
-            // storage.set(SK.id_token, tokens.id_token);
-            // storage.set(SK.access_token, tokens.access_token);
-            const emailMatch =
-              exchangeResult.error.message.match(/for email: (.+?)$/);
-            handleEmailVerification(emailMatch?.[1] || "");
-            return;
-          }
-          console.error(exchangeResult.error.message);
-        }
+        //     // storage.set(SK.id_token, tokens.id_token);
+        //     // storage.set(SK.access_token, tokens.access_token);
+        //     const emailMatch =
+        //       exchangeResult.error.message.match(/for email: (.+?)$/);
+        //     // handleEmailVerification(emailMatch?.[1] || "");
+        //     return;
+        //   }
+        //   console.error(exchangeResult.error.message);
+        // }
 
         const tokensTest = exchangeResult?.output?.output;
 
@@ -422,15 +422,15 @@ export function AuthCallback() {
 
         if (!mounted) return;
 
-        if (claimsResult.error) {
-          if (claimsResult.error.kind === "EmailNotVerified") {
-            const emailMatch =
-              claimsResult.error.message.match(/for email: (.+?)$/);
-            handleEmailVerification(emailMatch?.[1] || "");
-            return;
-          }
-          throw new Error(claimsResult.error.message);
-        }
+        // if (claimsResult.error) {
+        //   if (claimsResult.error.kind === "EmailNotVerified") {
+        //     const emailMatch =
+        //       claimsResult.error.message.match(/for email: (.+?)$/);
+        //     handleEmailVerification(emailMatch?.[1] || "");
+        //     return;
+        //   }
+        //   throw new Error(claimsResult.error.message);
+        // }
 
         // const existsResponse = await wasmModule.user_exists();
         // const userExists = existsResponse.output?.output;
@@ -449,7 +449,6 @@ export function AuthCallback() {
         }
 
         const claims = claimsResult.output.output;
-
 
         if (!claims.email_verified) {
           handleEmailVerification(claims.email);

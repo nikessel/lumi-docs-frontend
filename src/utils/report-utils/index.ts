@@ -1,5 +1,5 @@
 import { saveData, getData, getMetadata, saveMetadata } from "@/utils/db-utils"
-import type { Report, RequirementOrRequirementGroupAssessment, IdType, ReportStatus, SectionAssessment, RequirementAssessment, RequirementGroupAssessment, Requirement } from "@wasm";
+import type { Report, RequirementAssessmentOrRequirementGroupAssessment, IdType, ReportStatus, SectionAssessment, RequirementAssessment, RequirementGroupAssessment, Requirement } from "@wasm";
 import type * as WasmModule from "@wasm";
 import { dbName, dbVersion } from "@/utils/db-utils";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
@@ -254,7 +254,6 @@ export async function getSelectedFilteredReports(
     compliance: [number, number] | null,
     requirements: Requirement[]
 ): Promise<Report[]> {
-    console.log("GETTINGFILTEREDREPORTS")
     if (!wasmModule) {
         throw new Error("WASM module not loaded");
     }
@@ -270,6 +269,9 @@ export async function getSelectedFilteredReports(
         throw new Error("Some reports could not be fetched.");
     }
 
+    console.log("GERREPORTS", fetchedReports)
+
+
     return filterReports(fetchedReports, searchQuery, compliance, requirements); // Apply filtering logic here
 }
 
@@ -278,18 +280,18 @@ export function filterReports(reports: Report[], searchQuery: string, compliance
         .map(report => {
             const filteredSections = new Map<IdType, SectionAssessment>();
             report.section_assessments.forEach((section, sectionId) => {
-                if (!section.requirement_assessments) return;
+                if (!section.sub_assessments) return;
 
-                const filteredRequirements = new Map<IdType, RequirementOrRequirementGroupAssessment>();
+                const filteredRequirements = new Map<IdType, RequirementAssessmentOrRequirementGroupAssessment>();
 
-                section.requirement_assessments.forEach((assessment, requirementId) => {
-                    if ("requirement" in assessment) {
+                section.sub_assessments.forEach((assessment, requirementId) => {
+                    if ("requirement_assessment" in assessment) {
                         const requirement = requirements.find((req) => req.id === requirementId);
 
                         const name = requirement?.name ?? "Unknown Requirement";
                         const description = requirement?.description ?? "No description available";
 
-                        const { compliance_rating, details, objective_research_summary } = assessment.requirement;
+                        const { compliance_rating, details, objective_research_summary } = assessment.requirement_assessment;
 
                         const matchesCompliance = compliance
                             ? compliance_rating >= compliance[0] && compliance_rating <= compliance[1]
@@ -308,7 +310,7 @@ export function filterReports(reports: Report[], searchQuery: string, compliance
                 if (filteredRequirements.size > 0) {
                     filteredSections.set(sectionId, {
                         ...section,
-                        requirement_assessments: filteredRequirements
+                        sub_assessments: filteredRequirements
                     });
                 }
             });
@@ -327,12 +329,12 @@ export function extractAllRequirementAssessments(reports: Report[]): (Requiremen
 
     // Helper function to extract requirement assessments recursively
     function extractFromGroup(group: RequirementGroupAssessment, parentId: string) {
-        if (group.assessments) {
-            for (const [key, value] of group.assessments.entries()) {
-                if ('requirement' in value) {
-                    assessments.push({ ...value.requirement, id: key });
-                } else if ('requirement_group' in value) {
-                    extractFromGroup(value.requirement_group, key);
+        if (group.sub_assessments) {
+            for (const [key, value] of group.sub_assessments.entries()) {
+                if ('requirement_assessment' in value) {
+                    assessments.push({ ...value.requirement_assessment, id: key });
+                } else if ('requirement_group_assessment' in value) {
+                    extractFromGroup(value.requirement_group_assessment, key);
                 }
             }
         }
@@ -341,12 +343,12 @@ export function extractAllRequirementAssessments(reports: Report[]): (Requiremen
     reports.forEach((report) => {
         // Traverse section assessments
         report.section_assessments.forEach((section, sectionId) => {
-            if (section.requirement_assessments) {
-                for (const [key, value] of section.requirement_assessments.entries()) {
-                    if ('requirement' in value) {
-                        assessments.push({ ...value.requirement, id: key });
-                    } else if ('requirement_group' in value) {
-                        extractFromGroup(value.requirement_group, key);
+            if (section.sub_assessments) {
+                for (const [key, value] of section.sub_assessments.entries()) {
+                    if ('requirement_assessment' in value) {
+                        assessments.push({ ...value.requirement_assessment, id: key });
+                    } else if ('requirement_group_assessment' in value) {
+                        extractFromGroup(value.requirement_group_assessment, key);
                     }
                 }
             }

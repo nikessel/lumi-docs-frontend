@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useWasm } from "@/components/WasmProvider";
 import { fetchRequirementsByIds } from "@/utils/requirement-utils";
-import { RequirementGroup, Requirement, Report, RequirementOrRequirementGroupAssessment } from "@wasm";
+import { RequirementGroup, Requirement, Report, RequirementAssessmentOrRequirementGroupAssessment } from "@wasm";
 
 interface UseFilteredReportsRequirements {
     requirements: Requirement[];
@@ -19,15 +19,15 @@ export const useFilteredReportsRequirements = (
 
     useEffect(() => {
         const extractRequirementIds = (
-            assessments: Map<string, RequirementOrRequirementGroupAssessment>
+            assessments: Map<string, RequirementAssessmentOrRequirementGroupAssessment>
         ): string[] => {
             const ids: string[] = [];
 
             assessments.forEach((assessment, key) => {
-                if ("requirement" in assessment) {
+                if ("requirement_assessment" in assessment) {
                     ids.push(key); // Use the key as the ID
-                } else if ("requirement_group" in assessment) {
-                    const groupAssessments = assessment.requirement_group.assessments || new Map();
+                } else if ("requirement_group_assessment" in assessment) {
+                    const groupAssessments = assessment.requirement_group_assessment.sub_assessments || new Map();
                     ids.push(...extractRequirementIds(groupAssessments)); // Recursively extract IDs
                 }
             });
@@ -47,8 +47,8 @@ export const useFilteredReportsRequirements = (
                 // Collect all requirement IDs
                 const allRequirementIds = reports.flatMap((report) =>
                     Array.from(report.section_assessments.values()).flatMap((section) =>
-                        section.requirement_assessments
-                            ? extractRequirementIds(section.requirement_assessments)
+                        section.sub_assessments
+                            ? extractRequirementIds(section.sub_assessments)
                             : []
                     )
                 );

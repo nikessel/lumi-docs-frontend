@@ -12,6 +12,7 @@ import { Select } from 'antd';
 import { File } from "@wasm";
 import { moveFile, createDirectory } from '@/utils/files-utils';
 import { useWasm } from '@/components/WasmProvider';
+import useCacheInvalidationStore from '@/stores/cache-validation-store';
 
 
 const FileManager: React.FC<{
@@ -40,7 +41,9 @@ const FileManager: React.FC<{
     const [fileToRename, setFileToRename] = useState<any | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
 
-    console.log("downloadLoading", downloadLoading)
+    useEffect(() => {
+        setFileList(files);
+    }, [files]);
 
     // Filter files based on the search term and current path
     const filteredFiles = useMemo(() => {
@@ -52,20 +55,14 @@ const FileManager: React.FC<{
                     currentPath === '' // Root level
                         ? isRootFile // Show root files
                         : file.path.startsWith(`${currentPath}/`) &&
-                        pathParts.slice(0, -1).join('/') === currentPath; // Matches the current folder
+                        pathParts.slice(0, -1).join('/') === currentPath;
 
                 return isInCurrentFolder;
             })
             .filter(file =>
-                file.title.toLowerCase().includes(searchTerm.toLowerCase()) // Apply search term filter
+                file.title.toLowerCase().includes(searchTerm.toLowerCase())
             );
     }, [fileList, searchTerm, currentPath]);
-
-    useEffect(() => {
-        setIsLoading(true);
-        const timeout = setTimeout(() => setIsLoading(false), 300);
-        return () => clearTimeout(timeout);
-    }, [filteredFiles]);
 
     useEffect(() => {
         const handleClickOutside = () => {

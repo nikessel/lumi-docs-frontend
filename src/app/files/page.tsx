@@ -12,6 +12,7 @@ import FileManager from './file-manager';
 import FileUploadModal from '@/components/upload-files/file-upload-modal';
 import { useFilesContext } from '@/contexts/files-context';
 import ReportStateHandler from '@/components/report-state-handler';
+import useCacheInvalidationStore from '@/stores/cache-validation-store';
 
 const Page = () => {
     const { files, isLoading, error } = useFilesContext();
@@ -23,6 +24,7 @@ const Page = () => {
     const [viewLoading, setViewLoading] = useState<{ [id: string]: boolean }>({});
     const [downloadLoading, setDownloadLoading] = useState<{ [id: string]: boolean }>({});
     const [isModalVisible, setIsModalVisible] = useState(false); // State for modal visibility
+    const addStaleFileId = useCacheInvalidationStore((state) => state.addStaleFileId)
 
     // Function to fetch file data
     const fetchFileData = useCallback(async (fileId: string) => {
@@ -121,6 +123,7 @@ const Page = () => {
     }
 
     const handleUploadComplete = (uploadedFiles: File[]) => {
+        addStaleFileId("all")
         console.log("Uploaded files:", uploadedFiles);
     };
 

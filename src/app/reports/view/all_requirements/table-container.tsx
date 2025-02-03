@@ -48,16 +48,16 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
 
     const handleRowClick = (record: TableRow) => {
         // Handle RequirementGroupAssessment with `assessments`
-        if ('assessments' in record && record.assessments) {
-            const children: TableRow[] = Array.from(record.assessments.entries()).map(([key, value]) => {
-                if ('requirement' in value) {
+        if ('sub_assessments' in record && record.sub_assessments) {
+            const children: TableRow[] = Array.from(record.sub_assessments.entries()).map(([key, value]) => {
+                if ('requirement_assessment' in value) {
                     return {
-                        ...value.requirement,
+                        ...value.requirement_assessment,
                         id: key, // Add the key as `id`
                     } as TableRow;
-                } else if ('requirement_group' in value) {
+                } else if ('requirement_group_assessment' in value) {
                     return {
-                        ...value.requirement_group,
+                        ...value.requirement_group_assessment,
                         id: key, // Add the key as `id`
                     } as TableRow;
                 }
@@ -75,32 +75,33 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
             }
         }
         // Handle SectionAssessment with `requirement_assessments`
-        else if ('requirement_assessments' in record && record.requirement_assessments) {
-            const children: TableRow[] = Array.from(record.requirement_assessments.entries()).map(([key, value]) => {
-                if ('requirement' in value) {
-                    return {
-                        ...value.requirement,
-                        id: key, // Add the key as `id`
-                    } as TableRow;
-                } else if ('requirement_group' in value) {
-                    return {
-                        ...value.requirement_group,
-                        id: key, // Add the key as `id`
-                    } as TableRow;
-                }
-                throw new Error('Unexpected requirement type');
-            });
+        // else if ('sub_assessments' in record && record.sub_assessments) {
+        //     const children: TableRow[] = Array.from(record.sub_assessments.entries()).map(([key, value]) => {
+        //         if ('requirement_assessment' in value) {
+        //             return {
+        //                 ...value.requirement_assessment,
+        //                 id: key, // Add the key as `id`
+        //             } as TableRow;
+        //         } else if ('requirement_group_assessment' in value) {
+        //             return {
+        //                 ...value.requirement_group_assessment,
+        //                 id: key, // Add the key as `id`
+        //             } as TableRow;
+        //         }
+        //         throw new Error('Unexpected requirement type');
+        //     });
 
-            if (children.length > 0) {
-                setBreadcrumb((prev) => [
-                    ...prev,
-                    {
-                        title: record.id || 'Section',
-                        data: children,
-                    },
-                ]);
-            }
-        } else {
+        //     if (children.length > 0) {
+        //         setBreadcrumb((prev) => [
+        //             ...prev,
+        //             {
+        //                 title: record.id || 'Section',
+        //                 data: children,
+        //             },
+        //         ]);
+        //     }
+        // } 
+        else {
             const { id, ...assessment } = record;
             setOpenModal(true)
             setSelectedRequirement({ requirement: requirements.find((req) => req.id === record.id), requirementAssessment: assessment as RequirementAssessment })
@@ -174,13 +175,13 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
         {
             title: '',
             render: (_: unknown, record: TableRow) => {
-                if ('requirement_assessments' in record || 'assessments' in record) {
+                if ('sub_assessments' in record) {
                     const childrenCount =
-                        'requirement_assessments' in record
-                            ? record.requirement_assessments?.size || 0
-                            : 'assessments' in record
-                                ? record.assessments?.size || 0
-                                : 0;
+                        'sub_assessments' in record
+                            ? record.sub_assessments?.size : 0
+                    // : 'assessments' in record
+                    //     ? record.assessments?.size || 0
+                    //     : 0;
 
                     return (
                         <div className="w-full flex justify-end text-primary">

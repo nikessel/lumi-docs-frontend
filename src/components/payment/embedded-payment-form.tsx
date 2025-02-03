@@ -7,6 +7,8 @@ import {
     EmbeddedCheckout,
 } from "@stripe/react-stripe-js";
 
+console.log("process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
     ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
     : null;
@@ -14,6 +16,8 @@ const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 interface EmbeddedPaymentFormProps {
     quantity: number;
 }
+
+console.log("stripePromise", stripePromise)
 
 const EmbeddedPaymentForm: React.FC<EmbeddedPaymentFormProps> = ({ quantity }) => {
 
