@@ -328,7 +328,7 @@ function filterAssessmentsRecursively(
             const { compliance_rating, details, objective_research_summary } = assessment.requirement_assessment;
 
             const matchesCompliance = compliance
-                ? compliance_rating >= compliance[0] && compliance_rating <= compliance[1]
+                ? compliance_rating && compliance_rating >= compliance[0] && compliance_rating <= compliance[1]
                 : true;
 
             const matchesSearchQuery = searchQuery

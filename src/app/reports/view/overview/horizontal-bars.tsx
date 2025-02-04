@@ -9,7 +9,7 @@ import { useFilteredReportSections } from '@/hooks/section-hooks';
 
 type DisplayDataItem = {
     label: string;
-    rating: number;
+    rating: number | undefined;
     id: { sectionId: string; reportId: string };
 };
 
@@ -41,7 +41,14 @@ const ComplianceBarChart: React.FC = () => {
         });
 
         // Sort sections by compliance rating (ascending order)
-        setSortedDisplay(displayData.sort((a, b) => a.rating - b.rating));
+        setSortedDisplay(
+            displayData.sort((a, b) => {
+                if (a.rating === undefined) return 1; // Move undefined to the bottom
+                if (b.rating === undefined) return -1; // Move undefined to the bottom
+                return a.rating - b.rating; // Normal numeric sorting
+            })
+        );
+
     }, [reports, sections, sectionsLoading]);
 
     const handleColumnClick = (section: DisplayDataItem) => {

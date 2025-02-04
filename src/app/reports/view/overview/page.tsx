@@ -24,14 +24,17 @@ const Page = () => {
 
     const averageCompliance = reports.length > 0
         ? reports.reduce((total, report) => {
-            const sectionRatings = Array.from(report.section_assessments || []).map(
-                ([, section]) => section.compliance_rating
-            );
+            const sectionRatings = Array.from(report.section_assessments || [])
+                .map(([, section]) => section.compliance_rating)
+                .filter((rating): rating is number => rating !== undefined); // Ignore undefined values
+
             const reportComplianceSum = sectionRatings.reduce((sum, rating) => sum + rating, 0);
             const numSections = sectionRatings.length;
+
             return total + (numSections > 0 ? reportComplianceSum / numSections : 0);
         }, 0) / reports.length
         : 0;
+
 
     const analyzedTasks = analyzeTasks(tasks);
 

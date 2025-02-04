@@ -8,6 +8,7 @@ import { getComplianceColorCode } from '@/utils/formating';
 import RegulatoryFrameworkTag from '@/components/regulatory-framework-tag';
 import { RegulatoryFramework } from '@wasm';
 import { extractAllRequirementAssessments } from '@/utils/report-utils';
+import NATag from '@/components/non-applicable-tag';
 
 // Union type for rows in the table
 type TableRow = (SectionAssessment | RequirementGroupAssessment | RequirementAssessment & { reportId: string, regulatoryFramework: RegulatoryFramework }) & { id: string };
@@ -31,10 +32,15 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
     useEffect(() => {
         if (reports) {
             const assessments = extractAllRequirementAssessments(reports);
-            const sortedAssessments = assessments.sort((a, b) => a.compliance_rating - b.compliance_rating);
+            const sortedAssessments = assessments.sort((a, b) => {
+                if (a.compliance_rating === undefined) return 1; // Push 'undefined' to the bottom
+                if (b.compliance_rating === undefined) return -1; // Push 'undefined' to the bottom
+                return a.compliance_rating - b.compliance_rating; // Normal numeric sorting
+            });
             setAllAssessmentsSorted(sortedAssessments);
         }
     }, [reports]);
+
 
     const [selectedRequirement, setSelectedRequirement] = useState<{
         requirement: Requirement | undefined;
@@ -150,10 +156,10 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
             render: (_: unknown, record: TableRow) => {
                 return (
                     <div>
-                        <Progress
+                        {record.compliance_rating ? <Progress
                             percent={Number(record.compliance_rating)}
                             strokeColor={getComplianceColorCode(Number(record.compliance_rating))}
-                        />
+                        /> : <NATag />}
                     </div>
                 );
             },

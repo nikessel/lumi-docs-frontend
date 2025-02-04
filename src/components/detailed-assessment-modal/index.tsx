@@ -10,6 +10,7 @@ import RegulatoryFrameworkTag from '../regulatory-framework-tag';
 import { useFilesContext } from '@/contexts/files-context';
 import { viewFile, fetchFileData } from "@/utils/files-utils";
 import { useWasm } from "@/components/WasmProvider";
+import NATag from '../non-applicable-tag';
 
 
 interface RequirementModalProps {
@@ -34,18 +35,22 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
     const [blobUrls, setBlobUrls] = React.useState<{ [id: string]: string }>({});
     const [viewLoading, setViewLoading] = React.useState<{ [id: string]: boolean }>({});
 
+    console.log("DETAILED", requirement, requirementAssessment)
+
     return (
         <Modal
             open={open}
             title={
                 <div className="pr-6" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span>{requirement?.name || 'Requirement Details'}</span>
-                    <Progress
+                    {requirementAssessment?.applicable ? <Progress
                         type="circle"
                         percent={complianceRating}
                         width={50}
                         strokeColor={getComplianceColorCode(complianceRating)}
-                    />
+                    /> :
+                        <NATag />
+                    }
                 </div>
             }
             onCancel={onClose}

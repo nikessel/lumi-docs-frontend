@@ -39,6 +39,7 @@ export const useAllReportsTasks = (reports: Report[]): UseAllReportsTasks => {
                 const allTasks = await Promise.all(
                     reports.map(report => fetchTasksByReport(wasmModule, report.id))
                 );
+
                 setTasks(allTasks.flat());
             } catch (err: any) {
                 setError(err.message || "Failed to fetch tasks");

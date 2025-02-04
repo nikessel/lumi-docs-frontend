@@ -79,7 +79,7 @@ interface ProtectedContentProps {
 
 // Protected content wrapper
 const ProtectedContent = ({ children }: ProtectedContentProps) => {
-  const { isAuthenticated, isLoading, user, logout } = useAuth();
+  const { isAuthenticated, isLoading, user, logout, login } = useAuth();
 
   if (isLoading) {
     return (
@@ -112,6 +112,10 @@ const ProtectedContent = ({ children }: ProtectedContentProps) => {
         >
           Logout
         </button>
+        <div className="text-center p-8">
+          <h2 className="text-xl mb-4">Test re-login</h2>
+          <Button onClick={login}>LOGIN AGAIN</Button>
+        </div>
       </div>
       {children}
     </div>

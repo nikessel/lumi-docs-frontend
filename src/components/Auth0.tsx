@@ -132,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await wasmModule.get_public_auth0_config();
+
       if (response.error || !response.output) {
         throw new Error(response.error?.message || "No Auth0 config received");
       }
@@ -416,6 +417,7 @@ export function AuthCallback() {
         storage.set(SK.id_token, tokens.id_token);
         storage.set(SK.access_token, tokens.access_token);
 
+
         const claimsResult = await wasmModule.token_to_claims({
           token: tokens.id_token,
         });
@@ -432,18 +434,6 @@ export function AuthCallback() {
         //   throw new Error(claimsResult.error.message);
         // }
 
-        // const existsResponse = await wasmModule.user_exists();
-        // const userExists = existsResponse.output?.output;
-
-        // if (!userExists) {
-        //   setTimeout(() => {
-        //     if (mounted) {
-        //       window.location.href = "/signup"; // 👈 Redirects to profile completion
-        //     }
-        //   }, 0);
-        //   return;
-        // }
-
         if (!claimsResult.output?.output) {
           throw new Error("No output received from claims");
         }
@@ -455,6 +445,18 @@ export function AuthCallback() {
           return;
         }
 
+        const existsResponse = await wasmModule.user_exists();
+        const userExists = existsResponse.output?.output;
+
+        if (!userExists) {
+          setTimeout(() => {
+            if (mounted) {
+              window.location.href = "/signup"; // 👈 Redirects to profile completion
+            }
+          }, 0);
+          return;
+        }
+
         setUser(claims);
         setIsAuthenticated(true);
         localStorage.removeItem("auth_state");
@@ -463,7 +465,7 @@ export function AuthCallback() {
         setTimeout(() => {
           if (mounted) {
             // router.push("/dashboard")
-            window.location.href = "/dashboard"; // Navigate to /dashboard and reload as if the user hit Enter in the browser
+            window.location.href = "/dashboard";
           }
         }, 0);
 

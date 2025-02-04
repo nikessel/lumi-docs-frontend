@@ -10,6 +10,7 @@ import { getComplianceColorCode } from '@/utils/formating';
 import { useSelectedFilteredReportsContext } from '@/contexts/reports-context/selected-filtered-reports';
 import { useFilteredRequirementsContext } from '@/contexts/requirement-context/filtered-report-requirement-context';
 import { RegulatoryFramework } from '@wasm';
+import NATag from '@/components/non-applicable-tag';
 
 type RequirementAssessmentWithId = RequirementAssessment & { id: string, reportId: string, regulatoryFramework: RegulatoryFramework };
 
@@ -46,7 +47,11 @@ const Page = () => {
     useEffect(() => {
         if (reports) {
             const assessments = extractAllRequirementAssessments(reports);
-            const sortedAssessments = assessments.sort((a, b) => a.compliance_rating - b.compliance_rating);
+            const sortedAssessments = assessments.sort((a, b) => {
+                if (a.compliance_rating === undefined) return 1; // Push 'undefined' to the bottom
+                if (b.compliance_rating === undefined) return -1; // Push 'undefined' to the bottom
+                return a.compliance_rating - b.compliance_rating; // Normal numeric sorting
+            });
             setAllAssessmentsSorted(sortedAssessments);
         }
     }, [reports]);
@@ -84,14 +89,14 @@ const Page = () => {
             title: 'Compliance Rating',
             dataIndex: 'compliance_rating',
             key: 'compliance_rating',
-            render: (compliance_rating: number) => (
+            render: (compliance_rating: number | undefined) => (
                 <div className="flex justify-center">
-                    <Progress
+                    {compliance_rating ? <Progress
                         type="circle"
                         percent={compliance_rating}
                         strokeColor={getComplianceColorCode(compliance_rating)}
                         width={50} // Adjust size as needed
-                    />
+                    /> : <NATag />}
                 </div>
             ),
         },

@@ -93,11 +93,11 @@ const traverseRequirementGroupForComplianceRatings = (
     complianceRatings: number[]
 ) => {
     // Add compliance rating for the requirement group
-    complianceRatings.push(requirementGroup.compliance_rating);
+    requirementGroup.compliance_rating && complianceRatings.push(requirementGroup.compliance_rating);
 
     if (requirementGroup.sub_assessments) {
         for (const [, assessment] of requirementGroup.sub_assessments) {
-            if ("requirement_assessment" in assessment) {
+            if ("requirement_assessment" in assessment && assessment.requirement_assessment.compliance_rating) {
                 complianceRatings.push(assessment.requirement_assessment.compliance_rating);
             } else if ("requirement_group_assessment" in assessment) {
                 traverseRequirementGroupForComplianceRatings(assessment.requirement_group_assessment, complianceRatings);
@@ -118,11 +118,11 @@ export const generateWaffleDataFromReports = (reports: Report[]): ComplianceData
         if (report.section_assessments) {
             for (const [, section] of report.section_assessments) {
                 // Add compliance rating for the section
-                complianceRatings.push(section.compliance_rating);
+                section.compliance_rating && complianceRatings.push(section.compliance_rating);
 
                 if (section.sub_assessments) {
                     for (const [, assessment] of section.sub_assessments) {
-                        if ("requirement_assessment" in assessment) {
+                        if ("requirement_assessment" in assessment && assessment.requirement_assessment.compliance_rating) {
                             complianceRatings.push(assessment.requirement_assessment.compliance_rating);
                         } else if ("requirement_group_assessment" in assessment) {
                             traverseRequirementGroupForComplianceRatings(assessment.requirement_group_assessment, complianceRatings);
@@ -183,7 +183,7 @@ export const generateNetworkDataFromReports = (
         if (report.section_assessments) {
             Array.from(report.section_assessments).forEach(([sectionId, section]) => {
                 const sectionNodeId = generateUniqueId('Section', sectionId);
-                nodes.push({
+                section.compliance_rating && nodes.push({
                     id: sectionNodeId,
                     color: getComplianceColorCode(section.compliance_rating), // Color based on compliance rating
                     size: 15,
