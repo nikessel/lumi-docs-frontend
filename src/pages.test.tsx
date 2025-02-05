@@ -41,6 +41,11 @@ const UserSignup = dynamic(() => import("@/components/test/UserSignup"), {
   loading: () => <div>Loading User Signup component...</div>,
 });
 
+const DeviceList = dynamic(() => import("@/components/test/DeviceList"), {
+  ssr: false,
+  loading: () => <div>Loading Device List component...</div>,
+});
+
 // Protected content wrapper
 type ProtectedContentProps = {
   children: ReactNode;

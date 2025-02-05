@@ -73,6 +73,12 @@ const UserProfile = dynamic(() => import("@/components/test/UserProfile"), {
   loading: () => <div>Loading User Profile component...</div>,
 });
 
+const DeviceList = dynamic(() => import("@/components/test/DeviceList"), {
+  ssr: false,
+  loading: () => <div>Loading DeviceList component...</div>,
+});
+
+
 interface ProtectedContentProps {
   children: ReactNode;
 }
@@ -219,6 +225,10 @@ export default function TestPage() {
 
                 <TestComponent title="Reports">
                   <ReportList />
+                </TestComponent>
+
+                <TestComponent title="Device List">
+                  <DeviceList />
                 </TestComponent>
 
                 <TestComponent title="Files">
