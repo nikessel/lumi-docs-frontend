@@ -8,6 +8,7 @@ interface DocumentTaskCardProps {
     number_of_associated_tasks: number;
     document_icon_letters: string;
     isLoading: boolean;
+    isEmpty?: boolean;
     onView: () => void;
 }
 
@@ -16,6 +17,7 @@ const DocumentTaskCard: React.FC<DocumentTaskCardProps> = ({
     number_of_associated_tasks,
     document_icon_letters,
     isLoading,
+    isEmpty,
     onView,
 }) => {
     if (isLoading) {
@@ -32,6 +34,16 @@ const DocumentTaskCard: React.FC<DocumentTaskCardProps> = ({
                 </div>
                 {/* Button Skeleton */}
                 <Skeleton.Button active size="small" />
+            </div>
+        );
+    }
+
+    if (isEmpty) {
+        return (
+            <div className="p-4 bg-gray-50 rounded-lg flex items-center justify-center">
+                <Typography textSize="small" color="secondary">
+                    Tasks are automatically generated when you create reports
+                </Typography>
             </div>
         );
     }

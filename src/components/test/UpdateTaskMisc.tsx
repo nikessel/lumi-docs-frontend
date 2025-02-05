@@ -50,7 +50,6 @@ export default function TaskMiscTest() {
       // Create updated task by spreading the existing task and updating misc
       const task: Task = {
         ...taskResponse.output.output,
-        misc: jsonInput // Update the misc field with new JSON
       };
 
       // Send the update
@@ -78,7 +77,7 @@ export default function TaskMiscTest() {
     <div className="space-y-4 p-4 max-w-2xl mx-auto">
       <div className="space-y-2">
         <h2 className="text-lg font-semibold">Update Task Misc Field</h2>
-        
+
         <div className="space-y-2">
           <label htmlFor="taskId" className="block text-sm font-medium">
             Task ID

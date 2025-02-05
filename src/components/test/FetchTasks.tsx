@@ -1,15 +1,15 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useWasm } from "@/components/WasmProvider";
-import { 
+import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle 
+  CardTitle
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import type { 
+import type {
   Task,
   Report,
   GetAllReportsResponse,
@@ -30,7 +30,7 @@ function TaskTest() {
   useEffect(() => {
     async function fetchReports() {
       if (!wasmModule) return;
-      
+
       try {
         const response: GetAllReportsResponse = await wasmModule.get_all_reports();
         if (response.error) {
@@ -45,7 +45,7 @@ function TaskTest() {
         setError(err instanceof Error ? err.message : "Error fetching reports");
       }
     }
-    
+
     fetchReports();
   }, [wasmModule]);
 
@@ -53,7 +53,7 @@ function TaskTest() {
     if (!wasmModule || !selectedReport) return;
     setIsFetching(true);
     setError(undefined);
-    
+
     try {
       // Reset all task states
       setTasks([]);
@@ -61,7 +61,7 @@ function TaskTest() {
       setDocumentTasks([]);
 
       // Fetch tasks by report
-      const reportTasksResponse: GetTasksByReportResponse = 
+      const reportTasksResponse: GetTasksByReportResponse =
         await wasmModule.get_tasks_by_report({ input: selectedReport.id });
       if (reportTasksResponse.error) {
         setError(`${reportTasksResponse.error.kind} error: ${reportTasksResponse.error.message}`);
@@ -74,11 +74,11 @@ function TaskTest() {
       // Get first requirement ID from section assessments if available
       const firstSectionId = Array.from(selectedReport.section_assessments.keys())[0];
       const firstSection = firstSectionId ? selectedReport.section_assessments.get(firstSectionId) : undefined;
-      const firstRequirementId = firstSection?.requirement_assessments ? 
-        Array.from(firstSection.requirement_assessments.keys())[0] : undefined;
+      const firstRequirementId = firstSection?.sub_assessments ?
+        Array.from(firstSection.sub_assessments.keys())[0] : undefined;
 
       if (firstRequirementId) {
-        const requirementTasksResponse: GetTasksByReportAndRequirementResponse = 
+        const requirementTasksResponse: GetTasksByReportAndRequirementResponse =
           await wasmModule.get_tasks_by_report_and_requirement({
             report_id: selectedReport.id,
             requirement_id: firstRequirementId
@@ -91,7 +91,7 @@ function TaskTest() {
       // If we have tasks and one has an associated document, fetch by document
       const taskWithDoc = reportTasksResponse.output?.output.find(t => t.associated_document);
       if (taskWithDoc?.associated_document) {
-        const documentTasksResponse: GetTasksByDocumentResponse = 
+        const documentTasksResponse: GetTasksByDocumentResponse =
           await wasmModule.get_tasks_by_document({
             report_id: selectedReport.id,
             document: taskWithDoc.associated_document
@@ -151,8 +151,8 @@ function TaskTest() {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="flex items-center gap-4">
-          <Button 
-            onClick={handleFetchTasks} 
+          <Button
+            onClick={handleFetchTasks}
             disabled={isFetching}
           >
             {isFetching ? "Fetching Tasks..." : "Fetch Tasks"}

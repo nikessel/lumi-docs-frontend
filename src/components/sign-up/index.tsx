@@ -3,6 +3,7 @@ import { useWasm } from "@/components/WasmProvider";
 import { useStorage } from "@/storage";
 import { Card, Form, Input, Button, Typography, Spin, message, Alert } from "antd";
 import { UserSignupForm } from "@wasm";
+import { ClientSideError } from "@wasm";
 
 const { Title } = Typography;
 
@@ -61,14 +62,16 @@ const UserSignup: React.FC<UserSignupProps> = ({ onProfileUpdate }) => {
 
         try {
             const response = await wasmModule.create_user({ input: { ...values, config: {} } });
+            console.log("SUBMITTING", response);
 
-            if (response.output) {
+            if (response.output || response?.error?.kind === "AlreadyExists") {
                 // setSuccess(true);
                 // setUserExists(true);
                 messageApi.success("Profile created successfully!");
                 onProfileUpdate();
             }
         } catch (err) {
+
             setError("Failed to create user.");
             messageApi.error("Failed to create user. Please try again.");
             console.error("Error creating user:", err);
@@ -94,6 +97,7 @@ const UserSignup: React.FC<UserSignupProps> = ({ onProfileUpdate }) => {
     }
 
     return (
+
         <Card className="w-full max-w-2xl mx-auto">
             {contextHolder}
             <Title level={3} style={{ textAlign: "center" }}>

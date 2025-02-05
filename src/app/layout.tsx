@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import type { ReactNode } from "react";
 import { AuthProvider } from "@/components/Auth0";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
@@ -27,6 +27,10 @@ import { SearchParamsProvider } from "@/contexts/search-params-context";
 import { FilteredRequirementsProvider } from "@/contexts/requirement-context/filtered-report-requirement-context";
 import { useSelectedFilteredReportsContext } from "@/contexts/reports-context/selected-filtered-reports";
 import { SelectedFilteredReportsProvider } from "@/contexts/reports-context/selected-filtered-reports";
+import TourComponent from "@/components/user-guide-components/tour";
+import { useUserContext } from "@/contexts/user-context";
+import LoginPrompt from "@/components/login-prompt";
+import { useRouter } from "next/navigation";
 
 const { Content } = Layout;
 
@@ -36,41 +40,75 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
   const [globalLoading, setGlobalLoading] = useState(true)
   const [initialLoadCompleted, setInitialLoadCompleted] = useState(false)
   const { isLoading: wasmLoading } = useWasm(); // Now inside the provider context
-  const { isLoading: AuthLoading } = useAuth()
+  const { isLoading: AuthLoading, login, isAuthenticated } = useAuth()
   const { loading: reportsLoading } = useAllReports()
   const loadingComponents = useLoadingStore((state) => state.loadingComponents)
   const { reports } = useSelectedFilteredReportsContext()
-  const noLayout = typeof window !== "undefined" && (window.location.pathname === "/documentation" || window.location.pathname === "/logout" || window.location.pathname === "/signup" || window.location.pathname === "/verify-email");
+  const { user, loading: userLoading, error: userError } = useUserContext()
+  // const [enableTour, setEnableTour] = useState(false)
+  // const [initialTourStarted, setInitialTourStarted] = useState(false)
+  const router = useRouter()
+  const routesWithoutAuth = ["/verify-email", "/callback", "/documentation", "/signup", "/logout"]
+  const routesWithoutLayout = ["/documentation", "/logout", "/signup", "/verify-email", "/callback"]
+  const adminRoutes = ["/test"]
+
+  const noLayout = typeof window !== "undefined" && (routesWithoutLayout.indexOf(window.location.pathname) > -1);
+
+  // Create refs for the tour
+  const reportsRef = useRef(null);
+  const regulatoryFrameworksRef = useRef(null);
+  const filesRef = useRef(null)
+  const tasksRef = useRef(null)
+  const newReportButtonRef = useRef(null);
 
   useEffect(() => {
-    if (!wasmLoading && !AuthLoading && !reportsLoading && window.location.pathname !== "/callback" && loadingComponents.indexOf("wasmprovider") < 0 && !initialLoadCompleted) {
+    if (!wasmLoading && !AuthLoading && !reportsLoading && !userLoading && window.location.pathname !== "/callback" && loadingComponents.indexOf("wasmprovider") < 0 && !initialLoadCompleted) {
       setGlobalLoading(false)
       setInitialLoadCompleted(true)
     }
   }, [wasmLoading, AuthLoading, reportsLoading, window.location.pathname, loadingComponents.length])
 
+  useEffect(() => {
+    if (adminRoutes.indexOf(window.location.pathname) && user && !user.config?.admin) {
+      router.push("/dashboard")
+    }
+  }, [window.location.pathname])
+
+  // useEffect(() => {
+  //   if (user?.preferences?.tour_enabled && window.location.pathname === "/dashboard" && !initialTourStarted) {
+  //     setInitialTourStarted(true)
+  //     setEnableTour(true)
+  //   } else {
+  //     enableTour && setEnableTour(false)
+  //   }
+  // }, [user, window.location.pathname])
+
   if (globalLoading) {
     return <LoadingLogoScreen>{window.location.pathname === "/callback" ? children : ""}</LoadingLogoScreen>;
   }
+
+  if (!globalLoading && !isAuthenticated && routesWithoutAuth.indexOf(window.location.pathname) < 0) {
+    return <LoginPrompt />
+  }
+
 
   return (
     <AntdRegistry>
       <Elements stripe={stripePromise}>
         <ConfigProvider theme={antdconfig}>
           <Layout className="h-full" style={{ minWidth: 1200 }}>
-            {!noLayout ? <AppSider /> : ""}
+            {!noLayout ? <AppSider reportsRef={reportsRef} regulatoryFrameworksRef={regulatoryFrameworksRef} filesRef={filesRef} tasksRef={tasksRef} /> : ""}
             <Layout className="h-full">
               <FilteredRequirementsProvider reports={reports}>
                 <AllReportsProvider>
                   <RegulatoryFrameworksProvider>
                     <FilesProvider>
-                      <UserProvider>
-                        <Content className="pt-8 pb-8 px-4 sm:px-8 container h-full">
-                          <div className="bg-white p-6 rounded shadow-sm h-full overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-                            {children}
-                          </div>
-                        </Content>
-                      </UserProvider>
+                      <TourComponent startTour={user?.preferences?.tour_enabled || false} reportsRef={reportsRef} regulatoryFrameworksRef={regulatoryFrameworksRef} filesRef={filesRef} tasksRef={tasksRef} newReportButtonRef={newReportButtonRef} />
+                      <Content className="pt-8 pb-8 px-4 sm:px-8 container h-full">
+                        <div className="bg-white p-6 rounded shadow-sm h-full overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                          {children}
+                        </div>
+                      </Content>
                     </FilesProvider>
                   </RegulatoryFrameworksProvider>
                 </AllReportsProvider>
@@ -92,15 +130,19 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className="h-full">
-        <WasmProviderComponent>
-          <AuthProvider>
-            <SearchParamsProvider>
-              <SelectedFilteredReportsProvider>
-                <LayoutWithWasm>{children}</LayoutWithWasm>
-              </SelectedFilteredReportsProvider>
-            </SearchParamsProvider>
-          </AuthProvider>
-        </WasmProviderComponent>
+        <Suspense fallback={<LoadingLogoScreen />}>
+          <WasmProviderComponent>
+            <AuthProvider>
+              <UserProvider>
+                <SearchParamsProvider>
+                  <SelectedFilteredReportsProvider>
+                    <LayoutWithWasm>{children}</LayoutWithWasm>
+                  </SelectedFilteredReportsProvider>
+                </SearchParamsProvider>
+              </UserProvider>
+            </AuthProvider>
+          </WasmProviderComponent>
+        </Suspense>
       </body>
     </html>
   );

@@ -8,9 +8,10 @@ import type { SavedView } from "@wasm";
 interface SavedViewRenderProps {
     view?: SavedView; // Made optional for loading state
     isLoading: boolean;
+    isEmpty?: boolean;
 }
 
-const SavedViewRender: React.FC<SavedViewRenderProps> = ({ view, isLoading }) => {
+const SavedViewRender: React.FC<SavedViewRenderProps> = ({ view, isLoading, isEmpty }) => {
     const router = useRouter();
 
     if (isLoading) {
@@ -30,6 +31,21 @@ const SavedViewRender: React.FC<SavedViewRenderProps> = ({ view, isLoading }) =>
             </div>
         );
     }
+
+
+    if (isEmpty) {
+        return (
+            <div className="p-4 bg-gray-50 rounded-lg flex items-center justify-center">
+                <Typography textSize="small" color="secondary">
+                    Saved views will be shown here for easy navigation
+                </Typography>
+            </div>
+        );
+    }
+
+
+
+
 
     return (
         <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg shadow-sm">

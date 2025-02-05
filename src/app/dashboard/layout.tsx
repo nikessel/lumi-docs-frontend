@@ -1,5 +1,5 @@
 'use client';
-import React from "react";
+import React, { useEffect } from "react";
 import Typography from "@/components/typography";
 import { Divider } from "antd";
 import "@/styles/globals.css";
@@ -18,6 +18,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     const { reports, loading, error } = useAllReportsContext();
 
+    useEffect(() => {
+        console.log("USDASDASD", user)
+    }, [user, userLoading])
+
     return (
         <ReportStateHandler loading={loading} error={error} reports={reports} expectReports={false}>
             <div>
@@ -27,11 +31,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                         <Typography textSize="h4">Dashboard </Typography>
                     </div>
                     <Divider className="border-thin mt-2 mb-2" />
-                    <div className="flex justify-between items-center">
+                    {/* <div className="flex justify-between items-center">
                         <Typography color="secondary">
                             Welcome back, {user?.first_name}
                         </Typography>
-                    </div>
+                    </div> */}
                     <div className="mt-4">
                         {children}
                     </div>

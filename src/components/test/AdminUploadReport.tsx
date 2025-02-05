@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useWasm } from "@/components/WasmProvider";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { AdminUploadReportInput, Report } from "@wasm";
@@ -31,7 +31,7 @@ const ReportUploader = () => {
     try {
       const fileContent = await file.text();
       const reportData = JSON.parse(fileContent) as Report;
-      
+
       const input: AdminUploadReportInput = {
         input: reportData
       };
@@ -54,7 +54,7 @@ const ReportUploader = () => {
     <div className="space-y-4">
       <div className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold">Upload Report JSON</h2>
-        
+
         <input
           type="file"
           accept="application/json"
@@ -67,7 +67,7 @@ const ReportUploader = () => {
             hover:file:bg-blue-100"
           disabled={isLoading}
         />
-        
+
         {isLoading && (
           <div className="text-blue-600 font-medium">
             Loading WASM module...

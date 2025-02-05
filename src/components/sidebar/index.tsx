@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, MutableRefObject } from "react";
 import { Layout, Menu, Divider, message } from "antd";
 import { FilePdfOutlined, FileDoneOutlined, ProjectOutlined, BarChartOutlined, FileSearchOutlined, SettingOutlined, CreditCardOutlined, LogoutOutlined } from "@ant-design/icons";
 import SidebarToggleButton from "./sider-toggle-button";
@@ -12,7 +12,7 @@ import HelpCard from "../help-card";
 
 const { Sider } = Layout;
 
-const AppSiderComponent: React.FC = () => {
+const AppSiderComponent: React.FC<{ reportsRef: MutableRefObject<null>; regulatoryFrameworksRef: MutableRefObject<null>; filesRef: MutableRefObject<null>, tasksRef: MutableRefObject<null> }> = ({ reportsRef, regulatoryFrameworksRef, filesRef, tasksRef }) => {
     const [collapsed, setCollapsed] = useState(false);
     const [showToggleButton, setShowToggleButton] = useState(true);
     const pathname = usePathname();
@@ -64,21 +64,25 @@ const AppSiderComponent: React.FC = () => {
             key: "/reports",
             icon: <FileDoneOutlined />,
             label: <Link href="/reports">Reports</Link>,
+            ref: reportsRef
         },
         {
             key: "/tasks",
             icon: <ProjectOutlined />,
             label: <Link href="/tasks">Tasks</Link>,
+            ref: tasksRef
         },
         {
             key: "/files",
             icon: <FilePdfOutlined />,
             label: <Link href="/files">Files</Link>,
+            ref: filesRef
         },
         {
             key: "/standards",
             icon: <FileSearchOutlined />,
             label: <Link href="/standards">Regulatory Frameworks</Link>,
+            ref: regulatoryFrameworksRef
         },
         {
             key: "/",

@@ -1,21 +1,17 @@
 'use client';
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Typography from "@/components/typography";
 import { Button, Divider, Input, Tooltip } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import "@/styles/globals.css";
 import ReportMetaView from "@/components/report-meta-view";
 import { useRouter } from "next/navigation";
-// import { useAllReports } from '@/hooks/report-hooks';
 import { useUrlSelectedReports } from '@/hooks/url-hooks';
 import CreateReportModal from "@/components/create-report/create-report-modal";
 import { useWasm } from '@/components/WasmProvider';
 import { isArchived } from "@/utils/report-utils";
 import { useAllReportsContext } from "@/contexts/reports-context/all-reports-context";
 import PaymentChecker from "@/components/payment/payment-checker";
-// import { ReportsByIdsProvider } from "@/contexts/reports-context/reports-by-id";
-// import useCacheInvalidationStore from "@/stores/cache-validation-store";
-// import { fetchReportsByIds } from "@/utils/report-utils";
 import { message } from "antd";
 import ReportStateHandler from "@/components/report-state-handler";
 
@@ -33,6 +29,8 @@ const Page = () => {
     const [actionLoading, setActionLoading] = useState(false)
 
     const [messageApi, contextHolder] = message.useMessage()
+
+    const newReportButtonRef = useRef(null)
 
     const filteredReports = reports.filter(
         (report) =>
@@ -64,6 +62,7 @@ const Page = () => {
                         <Button size="small" type="primary" icon={<PlusOutlined />}>
                             New
                         </Button>
+
                     </div>
                 </div>
                 <Divider className="border-thin mt-2 mb-2" />
@@ -92,19 +91,19 @@ const Page = () => {
 
     // Render reports
     return (
-        <ReportStateHandler expectReports={true} loading={false} reports={reports} error={error}>
+        <ReportStateHandler expectReports={false} loading={false} reports={reports} error={error}>
             <div>
                 <PaymentChecker />
                 {/* Header Section */}
                 <div className="flex justify-between items-center">
                     <Typography textSize="h4">Reports</Typography>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-2" data-tour="new-report-button">
                         {/* New Button */}
                         <CreateReportModal />
                     </div>
                 </div>
                 <Divider className="border-thin mt-2 mb-2" />
-                <div className="flex justify-between items-center">
+                {reports.length > 0 ? <div className="flex justify-between items-center">
                     <Typography color="secondary">
                         Open a single report or check more for merged view
                     </Typography>
@@ -130,7 +129,11 @@ const Page = () => {
                             {selectedCount === 0 ? "Select reports" : selectedCount === 1 ? `Open ${selectedCount} report` : `Open ${selectedCount} reports`}
                         </Button>
                     </div>
-                </div>
+                </div> :
+                    <div className="mt-4 bg-gray-50 w-full flex items-center justify-center" style={{ height: "78vh" }}>
+                        <Typography color="secondary">Create your first report to simplify your compliance journey</Typography>
+                    </div>
+                }
 
                 <div className="flex flex-col mt-4">
                     {sortedReports.filter((report) => !isArchived(report.status)).map((report) => (

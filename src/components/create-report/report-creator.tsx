@@ -91,6 +91,9 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
         }
     }, [sections]);
 
+
+    console.log("asda324eas234", sections)
+
     useEffect(() => {
         if (requirementGroups && !arraysAreEqual(groupsSetForSections, selectedSections)) {
             setSelectedRequirementGroups(requirementGroups.map((group) => group.id));

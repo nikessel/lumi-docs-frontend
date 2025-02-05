@@ -75,15 +75,14 @@ const Page = () => {
 
     // Render reports
     return (
-        <ReportStateHandler expectReports={true} loading={false} reports={reports} error={error}>
-
+        <ReportStateHandler expectReports={false} loading={false} reports={reports} error={error}>
             <div>
                 {/* Header Section */}
                 <div className="flex justify-between items-center">
                     <Typography textSize="h4">Tasks</Typography>
                 </div>
                 <Divider className="border-thin mt-2 mb-2" />
-                <div className="flex justify-between items-center">
+                {reports.length > 0 ? <div className="flex justify-between items-center">
                     <Typography color="secondary">
                         Select one or multiple reports to view associated tasks
                     </Typography>
@@ -109,7 +108,16 @@ const Page = () => {
                             {selectedCount === 0 ? "Select reports" : selectedCount === 1 ? `Open ${selectedCount} report` : `Open ${selectedCount} reports`}
                         </Button>
                     </div>
-                </div>
+                </div> :
+                    <div className="mt-4 bg-gray-50 w-full flex items-center justify-center" style={{ height: "78vh" }}>
+                        <div className="">
+                            <Typography color="secondary">Create your first report to simplify your compliance journey</Typography>
+                            <div className="mt-4 flex w-full items-center justify-center">
+                                <Button type="primary" onClick={() => router.push("/reports")}>Go to Reports</Button>
+                            </div>
+                        </div>
+                    </div>
+                }
 
                 <div className="flex flex-col mt-4">
                     {sortedReports.filter((report) => !isArchived(report.status)).map((report) => (

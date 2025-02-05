@@ -14,6 +14,7 @@ import { useFilesContext } from '@/contexts/files-context';
 import ReportStateHandler from '@/components/report-state-handler';
 import useCacheInvalidationStore from '@/stores/cache-validation-store';
 import { viewFile, downloadFile, fetchFileData } from '@/utils/files-utils';
+import { useSearchParams, useRouter } from "next/navigation";
 
 const Page = () => {
     const { files, isLoading, error } = useFilesContext();
@@ -27,77 +28,21 @@ const Page = () => {
     const [isModalVisible, setIsModalVisible] = useState(false); // State for modal visibility
     const addStaleFileId = useCacheInvalidationStore((state) => state.addStaleFileId)
 
-    // // Function to fetch file data
-    // const fetchFileData = useCallback(async (fileId: string) => {
-    //     if (!wasmModule) {
-    //         return null;
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const isModalOpenInitially = searchParams.get("open_modal") === "true";
+
+    // useEffect(() => {
+    //     if (isModalOpenInitially) {
+    //         setIsModalVisible(true);
+    //         // Remove open_modal=true from URL
+    //         const newUrl = new URL(window.location.href);
+    //         newUrl.searchParams.delete("open_modal");
+    //         window.history.replaceState({}, "", newUrl.toString());
     //     }
+    // }, [isModalOpenInitially]);
 
-    //     if (fileData[fileId]) {
-    //         return fileData[fileId];
-    //     }
 
-    //     try {
-    //         const response = await wasmModule.get_file_data({ input: fileId });
-
-    //         if (response.output) {
-    //             const data = response.output.output;
-    //             setFileData((prev) => ({ ...prev, [fileId]: data }));
-    //             return data;
-    //         } else if (response.error) {
-    //             console.error(`Error fetching data for file ${fileId}:`, response.error.message);
-    //         }
-    //     } catch (err) {
-    //         console.error("Error fetching file data:", err);
-    //     }
-    //     return null;
-    // }, [wasmModule, fileData]);
-
-    // // View file
-    // const viewFile = useCallback(async (fileId: string) => {
-    //     setViewLoading((prev) => ({ ...prev, [fileId]: true }));
-    //     try {
-    //         if (blobUrls[fileId]) {
-    //             window.open(blobUrls[fileId], "_blank", "noopener,noreferrer");
-    //             return;
-    //         }
-
-    //         const data = await fetchFileData(fileId);
-    //         if (data) {
-    //             const bytes = new Uint8Array(data);
-    //             const blob = new Blob([bytes], { type: "application/pdf" });
-    //             const url = URL.createObjectURL(blob);
-    //             setBlobUrls((prev) => ({ ...prev, [fileId]: url }));
-    //             window.open(url, "_blank", "noopener,noreferrer");
-    //         }
-    //     } finally {
-    //         setViewLoading((prev) => ({ ...prev, [fileId]: false }));
-    //     }
-    // }, [blobUrls, fetchFileData]);
-
-    // // Download file
-    // const downloadFile = useCallback(async (fileId: string, fileName: string, mimeType: string) => {
-    //     setDownloadLoading((prev) => ({ ...prev, [fileId]: true }));
-    //     try {
-    //         const data = await fetchFileData(fileId);
-    //         if (data) {
-    //             const bytes = new Uint8Array(data);
-    //             const blob = new Blob([bytes], { type: mimeType });
-    //             const url = URL.createObjectURL(blob);
-    //             const link = document.createElement("a");
-    //             link.href = url;
-    //             link.download = fileName;
-    //             document.body.appendChild(link);
-    //             link.click();
-    //             document.body.removeChild(link);
-    //             URL.revokeObjectURL(url);
-    //         }
-    //     } finally {
-    //         setDownloadLoading((prev) => ({ ...prev, [fileId]: false }));
-    //     }
-    // }, [fetchFileData]);
-
-    // console.log("files", files)
 
     if (isLoading || wasmLoading) {
         return (
@@ -121,6 +66,8 @@ const Page = () => {
             </div>
         );
     }
+
+
 
     const handleUploadComplete = (uploadedFiles: File[]) => {
         addStaleFileId("all")
@@ -162,57 +109,11 @@ const Page = () => {
                             downloadFile(fileId, fileName, mimeType, (id) => fetchFileData(id, wasmModule, fileData, setFileData), setDownloadLoading)
                         }
                     />
-
-
-                    // <List
-                    //     dataSource={files}
-                    //     renderItem={(file) => (
-                    //         <List.Item>
-                    //             <div className="w-full flex justify-between items-center">
-                    //                 <div className="flex gap-8">
-                    //                     <Typography>
-                    //                         {file.title || file.path || file.id}
-                    //                     </Typography>
-
-                    //                     <Typography color="secondary" textSize="small">
-                    //                         {new Date(file.created_date).toLocaleDateString() || 'N/A'}
-                    //                     </Typography>
-                    //                 </div>
-                    //                 <div className="flex gap-4">
-                    //                     <Button
-                    //                         size="small"
-                    //                         loading={viewLoading[file.id]}
-                    //                         onClick={() => viewFile(file.id)}
-                    //                         disabled={viewLoading[file.id]}
-                    //                     >
-                    //                         View
-                    //                     </Button>
-                    //                     <Button
-                    //                         size="small"
-                    //                         loading={downloadLoading[file.id]}
-                    //                         onClick={() => downloadFile(file.id, file.title || file.path || file.id, "application/pdf")}
-                    //                         disabled={downloadLoading[file.id]}
-                    //                     >
-                    //                         Download
-                    //                     </Button>
-                    //                     <Button
-                    //                         type="default"
-                    //                         size="small"
-                    //                         danger
-                    //                         onClick={() => handleDelete(file.id)}
-                    //                     >
-                    //                         Delete
-                    //                     </Button>
-                    //                 </div>
-                    //             </div>
-                    //         </List.Item>
-                    //     )}
-                    // />
                 )}
                 <FileUploadModal
                     visible={isModalVisible}
                     onClose={handleCloseModal}
-                    onUploadComplete={handleUploadComplete}
+                // onUploadComplete={handleUploadComplete}
                 />
             </div>
         </ReportStateHandler>

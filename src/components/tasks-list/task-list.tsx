@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, Input } from "antd";
+import { Button, Input, Card } from "antd";
 import DocumentTaskCard from "./task-card";
 import Typography from "@/components/typography";
 import { Task } from "@wasm";
@@ -14,39 +14,36 @@ interface TaskListProps {
 const TaskList: React.FC<TaskListProps> = ({ tasks, isLoading, onViewAll }) => {
     const [searchTerm, setSearchTerm] = useState("");
 
-    // Group tasks by `associated_document`
     const groupedTasks = tasks.reduce((acc, task) => {
         const doc = task.associated_document || "Unassigned";
-        if (!acc[doc]) {
-            acc[doc] = [];
-        }
+        if (!acc[doc]) acc[doc] = [];
         acc[doc].push(task);
         return acc;
     }, {} as Record<string, Task[]>);
 
-    // Convert grouped tasks into an array and sort by the number of tasks
     const sortedDocuments = Object.entries(groupedTasks)
         .map(([document, tasks]) => ({
             document,
             tasks,
             taskCount: tasks.length,
         }))
-        .sort((a, b) => {
-            if (a.document === "Unassigned") return 1; // Move "Unassigned" to the bottom
-            if (b.document === "Unassigned") return -1; // Ensure "Unassigned" stays at the bottom
-            return b.taskCount - a.taskCount; // Sort by task count for other documents
-        });
+        .sort((a, b) => b.taskCount - a.taskCount);
 
-    // Filter documents based on search term
-    const filteredDocuments = sortedDocuments.filter(({ document, tasks }) => {
-        const lowerSearchTerm = searchTerm.toLowerCase();
+    if (tasks.length === 0) {
         return (
-            document.toLowerCase().includes(lowerSearchTerm) ||
-            tasks.some((task) =>
-                task.title.toLowerCase().includes(lowerSearchTerm)
-            )
+            <div className="flex flex-col h-full">
+                <div className="flex gap-4 items-center mb-4">
+                    <Typography textSize="h3">Document Tasks</Typography>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-lg flex items-center justify-center h-full">
+                    <Typography textSize="small" color="secondary">
+                        Tasks are automatically generated when you create reports
+                    </Typography>
+                </div>
+
+            </div>
         );
-    });
+    }
 
     return (
         <div className="flex flex-col h-full">
@@ -63,30 +60,16 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, isLoading, onViewAll }) => {
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
             <div className="flex-1 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-                {/* Render DocumentTaskCards */}
-                {isLoading ? (
-                    Array.from({ length: 20 }).map((_, index) => (
-                        <DocumentTaskCard
-                            key={`loading-${index}`}
-                            document_title=""
-                            number_of_associated_tasks={0}
-                            document_icon_letters=""
-                            onView={() => { }}
-                            isLoading={true}
-                        />
-                    ))
-                ) : (
-                    filteredDocuments.map(({ document, tasks, taskCount }) => (
-                        <DocumentTaskCard
-                            key={document}
-                            document_title={document}
-                            number_of_associated_tasks={taskCount}
-                            document_icon_letters={getDocumentIconLetters(document)}
-                            onView={() => console.log(`View tasks for document: ${document}`, tasks)}
-                            isLoading={false}
-                        />
-                    ))
-                )}
+                {sortedDocuments.map(({ document, tasks, taskCount }) => (
+                    <DocumentTaskCard
+                        key={document}
+                        document_title={document}
+                        number_of_associated_tasks={taskCount}
+                        document_icon_letters={getDocumentIconLetters(document)}
+                        onView={() => console.log(`View tasks for document: ${document}`, tasks)}
+                        isLoading={false}
+                    />
+                ))}
             </div>
         </div>
     );

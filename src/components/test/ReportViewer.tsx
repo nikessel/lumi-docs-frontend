@@ -444,7 +444,7 @@ const RequirementCard: React.FC<{
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
-              <ComplianceIndicator rating={req.content.compliance_rating} />
+              <ComplianceIndicator rating={req.content.compliance_rating || 0} />
             </div>
           </div>
         </div>
@@ -535,14 +535,14 @@ const RequirementGroupCard: React.FC<RequirementGroupCardProps> = ({
     }
 
     console.log('Group assessments:', Array.from(group.content.sub_assessments.entries()));
-    
+
     return (
       <div className="mt-6 space-y-4">
         <h4 className="font-medium">Requirements</h4>
-<Accordion 
-  type="multiple" 
-  className="space-y-4"
->
+        <Accordion
+          type="multiple"
+          className="space-y-4"
+        >
           {Array.from(group.content.sub_assessments.entries() as IterableIterator<[string, RequirementAssessmentOrRequirementGroupAssessment]>)
             .map(([key, assessment], i) => {
               console.log('Processing nested assessment:', { key, assessment });
@@ -587,7 +587,7 @@ const RequirementGroupCard: React.FC<RequirementGroupCardProps> = ({
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
-              <ComplianceIndicator rating={group.content.compliance_rating} />
+              <ComplianceIndicator rating={group.content.compliance_rating || 0} />
             </div>
           </div>
         </div>
@@ -678,19 +678,19 @@ const SectionHeader: React.FC<{
 };
 
 
-const getStatusBadge = (status: ReportStatus) => {
-  const statusStyles: Record<ReportStatus, string> = {
-    processing: 'bg-yellow-100 text-yellow-800',
-    ready: 'bg-green-100 text-green-800',
-    partially_failed: 'bg-red-100 text-red-800'
-  };
+// const getStatusBadge = (status: ReportStatus) => {
+//   const statusStyles: Record<ReportStatus, string> = {
+//     processing: 'bg-yellow-100 text-yellow-800',
+//     ready: 'bg-green-100 text-green-800',
+//     partially_failed: 'bg-red-100 text-red-800'
+//   };
 
-  return (
-    <Badge className={statusStyles[status]}>
-      {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
-    </Badge>
-  );
-};
+//   return (
+//     <Badge className={statusStyles[status]}>
+//       {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
+//     </Badge>
+//   );
+// };
 
 const ReportViewer = () => {
   const params = useParams();
@@ -748,7 +748,7 @@ const ReportViewer = () => {
         <AccordionTrigger className="px-4 py-2 hover:no-underline">
           <SectionHeader
             sectionId={sectionId}
-            complianceRating={section.compliance_rating}
+            complianceRating={section.compliance_rating || 0}
             index={index}
             reportId={reportId}
           />
@@ -756,25 +756,25 @@ const ReportViewer = () => {
         <AccordionContent className="px-4 py-2">
           <div className="space-y-4">
             <p className="text-gray-700">{section.abstract_text}</p>
-            
-{section.sub_assessments && Array.from(section.sub_assessments.entries()).map(([reqId, req], reqIndex) => {
-  const wrapper = createAssessmentWrapper(req, reqId);
-  return isRequirementAssessment(wrapper) ? (
-    <RequirementCard
-      key={reqId}
-      req={wrapper}
-      index={reqIndex}
-      reportId={reportId}
-    />
-  ) : (
-    <RequirementGroupCard
-      key={reqId}
-      group={wrapper}
-      reportId={reportId}
-      index={reqIndex}
-    />
-  );
-})}
+
+            {section.sub_assessments && Array.from(section.sub_assessments.entries()).map(([reqId, req], reqIndex) => {
+              const wrapper = createAssessmentWrapper(req, reqId);
+              return isRequirementAssessment(wrapper) ? (
+                <RequirementCard
+                  key={reqId}
+                  req={wrapper}
+                  index={reqIndex}
+                  reportId={reportId}
+                />
+              ) : (
+                <RequirementGroupCard
+                  key={reqId}
+                  group={wrapper}
+                  reportId={reportId}
+                  index={reqIndex}
+                />
+              );
+            })}
           </div>
         </AccordionContent>
       </AccordionItem>
@@ -801,7 +801,7 @@ const ReportViewer = () => {
             <CardTitle>{report.title}</CardTitle>
             <div className="flex items-center gap-4">
               <ThreadViewButton reportId={report.id} />
-              {getStatusBadge(report.status)}
+              {/* {getStatusBadge(report.status)} */}
             </div>
           </div>
         </CardHeader>
@@ -814,7 +814,7 @@ const ReportViewer = () => {
             <div className="flex items-center gap-2">
               <span className="font-medium">Overall Compliance:</span>
               <div className="flex items-center gap-1">
-                <ComplianceIndicator rating={report.compliance_rating} />
+                <ComplianceIndicator rating={report.compliance_rating || 0} />
               </div>
             </div>
           </div>

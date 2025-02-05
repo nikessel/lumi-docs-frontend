@@ -23,7 +23,7 @@ export default function UserPreferences() {
 
   const fetchCurrentUser = useCallback(async () => {
     if (!wasmModule) return;
-    
+
     try {
       const response = await wasmModule.get_user();
       if (response.error) {
@@ -63,7 +63,7 @@ export default function UserPreferences() {
         setError(`${userResponse.error.kind} error: ${userResponse.error.message}`);
         return;
       }
-      
+
       if (!userResponse.output) {
         setError("No user data received");
         return;
@@ -76,21 +76,21 @@ export default function UserPreferences() {
       };
 
       // Send the update
-      const updateResponse = await wasmModule.update_user({
-        input: updatedUser
-      });
+      // const updateResponse = await wasmModule.update_user({
+      //   input: updatedUser
+      // });
 
-      if (updateResponse.error) {
-        setError(`${updateResponse.error.kind} error: ${updateResponse.error.message}`);
-        return;
-      }
+      // if (updateResponse.error) {
+      //   setError(`${updateResponse.error.kind} error: ${updateResponse.error.message}`);
+      //   return;
+      // }
 
       setStatus("Preferences updated successfully!");
       setError(undefined);
-      
+
       // Refresh the display
       fetchCurrentUser();
-      
+
     } catch (err) {
       if (err instanceof SyntaxError) {
         setError("Invalid JSON format: " + err.message);
