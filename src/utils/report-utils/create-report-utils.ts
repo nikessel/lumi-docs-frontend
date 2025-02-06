@@ -4,8 +4,7 @@ import type * as WasmModule from "@wasm";
 import { CreateReportInput } from "@wasm";
 import { fetchReportsByIds } from ".";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
-
-export const PRICE_PER_REQUIREMENT_IN_EURO = 5;
+import { PRICE_PER_REQUIREMENT_IN_EURO } from "../payment";
 
 export const calculateReportPrice = (): number => {
     const { selectedRequirements } = useCreateReportStore.getState();
@@ -78,6 +77,7 @@ export const createReport = async (wasmModule: typeof WasmModule | null, input: 
 
     // Call the WASM module's create report function
     const response = await wasmModule.create_report(input);
+
     const newReportId = response.output?.output
     const cacheStore = useCacheInvalidationStore.getState();
     const createReportStore = useCreateReportStore.getState()
@@ -86,10 +86,9 @@ export const createReport = async (wasmModule: typeof WasmModule | null, input: 
     newReportId && createReportStore.setNewReportCreated({ id: newReportId, status: "pending" })
 
     if (response.error) {
+        createReportStore.setNewReportCreated({ id: undefined, status: "error", message: response.error.message })
         throw new Error(response.error.message);
     }
-
-    // Reset the state after successful report creation
 
     return response;
 };

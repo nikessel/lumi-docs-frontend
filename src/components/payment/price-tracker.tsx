@@ -3,15 +3,7 @@ import { Tooltip } from "antd";
 import { useCreateReportStore } from "@/stores/create-report-store";
 import { calculateReportPrice } from "@/utils/report-utils/create-report-utils";
 import { useSpring, animated } from "@react-spring/web";
-
-// Format the price for EU locale
-export const formatPrice = (value: number) =>
-    new Intl.NumberFormat("de-DE", {
-        style: "currency",
-        currency: "EUR",
-        minimumFractionDigits: 0, // No decimal places
-        maximumFractionDigits: 0,
-    }).format(value);
+import { formatPrice } from "@/utils/payment";
 
 const PriceTracker: React.FC = () => {
     const { selectedSections, selectedRequirementGroups, selectedRequirements } = useCreateReportStore(); // Access Zustand store

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { List, Checkbox, Button } from "antd";
 import { useCreateReportStore } from "@/stores/create-report-store";
-import { formatPrice } from "../payment/price-tracker";
+import { formatPrice } from "@/utils/payment";
 
 interface RequirementGroupDisplay {
     id: string;

@@ -86,7 +86,7 @@ interface UseRequirementsForGroupIds {
 }
 
 // Extend Requirement to include `group_id`
-interface RequirementWithGroupId extends Requirement {
+export interface RequirementWithGroupId extends Requirement {
     group_id: string;
 }
 

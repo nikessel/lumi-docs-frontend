@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { message } from "antd"; // Import Ant Design notification
 import { ConfigProvider } from "antd"; // Context holder for Ant Design
@@ -13,9 +13,11 @@ export default function PaymentChecker() {
     const sessionId = searchParams.get("session_id");
     const { wasmModule } = useWasm()
     const [api, contextHolder] = message.useMessage(); // Ant Design notification context
-    const [creatingReport, setCreatingReport] = useState(false)
+    // const [creatingReport, setCreatingReport] = useState(false)
     const newReportCreated = useCreateReportStore((state) => state.newReportCreated)
     const setNewReportCreated = useCreateReportStore((state) => state.setNewReportCreated)
+
+    const creatingReportRef = useRef<boolean>(false);
 
     const key = "creating-report";
 
@@ -32,6 +34,14 @@ export default function PaymentChecker() {
                 key,
                 type: "success",
                 content: "Report is being generated.",
+                duration: 3,
+            });
+            setNewReportCreated({ id: "", status: undefined })
+        } else if (newReportCreated.status === "error") {
+            api.open({
+                key,
+                type: "error",
+                content: newReportCreated.message || "An error occurred creating the report. ",
                 duration: 3,
             });
             setNewReportCreated({ id: "", status: undefined })
@@ -62,9 +72,11 @@ export default function PaymentChecker() {
 
 
     useEffect(() => {
-        if (!sessionId || !wasmModule || creatingReport) return;
+
+        if (!sessionId || !wasmModule || creatingReportRef.current) return;
         // Show "Checking payment..." loading notification
-        setCreatingReport(true)
+        creatingReportRef.current = true;
+
         const key = "payment-check";
 
         // api.open({
@@ -103,8 +115,9 @@ export default function PaymentChecker() {
 
                     if (createReportInput) {
                         createReport(wasmModule, createReportInput)
+
                         // setSuccessfulResponseRecieved(true)
-                    } else if (!createReportInput && selectedSections.length > 0) {
+                    } else {
                         api.error("An input error ocurred when creating the report")
                     }
 

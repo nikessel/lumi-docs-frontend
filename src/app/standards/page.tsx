@@ -10,14 +10,19 @@ import { Section, RequirementGroup, Requirement } from '@wasm';
 import RegulatoryFrameworkTag from '@/components/regulatory-framework-tag';
 import { useRegulatoryFrameworksContext } from '@/contexts/regulatory-frameworks-context';
 import ReportStateHandler from '@/components/report-state-handler';
+import { getPriceForGroup, getPriceForSection, getPriceForFramework, PRICE_PER_REQUIREMENT_IN_EURO } from '@/utils/payment';
+import { formatPrice } from '@/utils/payment';
 
 const RegulatoryFrameworksTable: React.FC = () => {
     const { frameworks, loading: frameworksLoading } = useRegulatoryFrameworksContext();
     const frameworkIds = useMemo(() => frameworks.map(f => f.id), [frameworks]);
+
     const { sections, loading: sectionsLoading, error } = useSectionsForRegulatoryFrameworks(frameworkIds);
     const sectionIds = useMemo(() => sections.map(section => section.id), [sections]);
+
     const { requirementGroups, loading: groupsLoading } = useRequirementGroupsForSectionIds(sectionIds);
     const groupIds = useMemo(() => requirementGroups.map(group => group.id), [requirementGroups]);
+
     const { requirements, loading: requirementsLoading } = useRequirementsForGroupIds(groupIds);
 
     const [isLoading, setIsLoading] = useState(true);
@@ -91,10 +96,6 @@ const RegulatoryFrameworksTable: React.FC = () => {
                     dataIndex: 'documents',
                     key: 'documents',
                 },
-                {
-                    key: 'actions',
-                    render: () => <Button type="primary">Create Report</Button>,
-                },
             ];
         } else if (view === 'sections') {
             return [
@@ -104,18 +105,14 @@ const RegulatoryFrameworksTable: React.FC = () => {
                     key: 'name',
                 },
                 {
-                    title: 'Description',
-                    dataIndex: 'description',
-                    key: 'description',
-                },
-                {
                     title: 'Number of Groups',
                     dataIndex: 'groupCount',
                     key: 'groupCount',
                 },
                 {
-                    key: 'actions',
-                    render: () => <Button type="primary">Create Report</Button>,
+                    title: 'Price',
+                    dataIndex: 'price',
+                    key: 'price',
                 },
             ];
         } else if (view === 'groups') {
@@ -135,6 +132,11 @@ const RegulatoryFrameworksTable: React.FC = () => {
                     dataIndex: 'requirementCount',
                     key: 'requirementCount',
                 },
+                {
+                    title: 'Price',
+                    dataIndex: 'price',
+                    key: 'price',
+                },
             ];
         } else {
             return [
@@ -147,6 +149,11 @@ const RegulatoryFrameworksTable: React.FC = () => {
                     title: 'Description',
                     dataIndex: 'description',
                     key: 'description',
+                },
+                {
+                    title: 'Price',
+                    dataIndex: 'price',
+                    key: 'price',
                 },
             ];
         }
@@ -170,7 +177,7 @@ const RegulatoryFrameworksTable: React.FC = () => {
                 name: f.id,
                 description: f.description || 'No description available',
                 sectionCount: sections.filter(section => section.regulatory_framework === f.id).length,
-                price: '€1,500',
+                price: formatPrice(getPriceForFramework(f.id, sections, requirementGroups, requirements)),
                 documents: 1000,
             }));
         } else if (view === 'sections') {
@@ -181,6 +188,7 @@ const RegulatoryFrameworksTable: React.FC = () => {
                     name: section.name,
                     description: section.description || 'No description available',
                     groupCount: requirementGroups.filter(group => group.section_id === section.id).length,
+                    price: formatPrice(getPriceForSection(section.id, requirementGroups, requirements))
                 }));
         } else if (view === 'groups') {
             return requirementGroups
@@ -190,6 +198,8 @@ const RegulatoryFrameworksTable: React.FC = () => {
                     name: group.name,
                     description: group.description || 'No description available',
                     requirementCount: requirements.filter(req => req.group_id === group.id).length,
+                    price: formatPrice(getPriceForGroup(group.id, requirements))
+
                 }));
         } else {
             return requirements
@@ -198,6 +208,7 @@ const RegulatoryFrameworksTable: React.FC = () => {
                     key: req.id,
                     name: req.name,
                     description: req.description || 'No description available',
+                    price: formatPrice(PRICE_PER_REQUIREMENT_IN_EURO)
                 }));
         }
     }, [isLoading, view, frameworks, sections, requirementGroups, requirements, selectedId]);

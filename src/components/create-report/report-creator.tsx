@@ -5,7 +5,7 @@ import SelectDocuments from "./document-selector";
 import Typography from "../typography";
 import { getSupportedFrameworks } from "@/utils/regulatory-frameworks-utils";
 import { formatRegulatoryFramework } from "@/utils/helpers";
-import type { RegulatoryFramework } from "@wasm";
+import type { RegulatoryFramework, RequirementGroup, Requirement } from "@wasm";
 import { useWasm } from '@/components/WasmProvider';
 import { useSectionsForRegulatoryFrameworks } from "@/hooks/section-hooks";
 import { useFiles } from '@/hooks/files-hooks';
@@ -16,7 +16,7 @@ import SelectRequirementGroups from "./requirement-group-selector";
 import { useCreateReportStore } from "@/stores/create-report-store";
 import EmbeddedPaymentForm from "../payment/embedded-payment-form";
 import { validateReportInput } from "@/utils/report-utils/create-report-utils";
-import { PRICE_PER_REQUIREMENT_IN_EURO } from "@/utils/report-utils/create-report-utils";
+import { getPriceForSection, getPriceForGroup } from "@/utils/payment";
 
 const { Step } = Steps;
 
@@ -112,21 +112,21 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
         }
     }, [files]);
 
-    const getPriceForSection = (sectionId: string): number => {
-        const relatedGroups = allRequirementGroups.filter((group) => group.section_id === sectionId);
-        const relatedRequirements = allRequirements.filter((requirement) =>
-            relatedGroups.some((group) => group.id === requirement.group_id)
-        );
-        return PRICE_PER_REQUIREMENT_IN_EURO * relatedRequirements.length;
-    };
+    // const getPriceForSection = (sectionId: string, allGroups: RequirementGroupWithSectionId[], allRequirements: RequirementWithGroupId[]): number => {
+    //     const relatedGroups = allGroups.filter((group) => group.section_id === sectionId);
+    //     const relatedRequirements = allRequirements.filter((requirement) =>
+    //         relatedGroups.some((group) => group.id === requirement.group_id)
+    //     );
+    //     return PRICE_PER_REQUIREMENT_IN_EURO * relatedRequirements.length;
+    // };
 
-    const getPriceForGroup = (groupId: string): number => {
-        const relatedRequirements = allRequirements.filter(
-            (requirement) => requirement.group_id === groupId
-        );
+    // const getPriceForGroup = (groupId: string, allRequirements: RequirementWithGroupId[]): number => {
+    //     const relatedRequirements = allRequirements.filter(
+    //         (requirement) => requirement.group_id === groupId
+    //     );
 
-        return PRICE_PER_REQUIREMENT_IN_EURO * relatedRequirements.length;
-    };
+    //     return PRICE_PER_REQUIREMENT_IN_EURO * relatedRequirements.length;
+    // };
 
     const steps = [
         {
@@ -160,7 +160,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                         sections={sections.map((section) => ({
                             id: section.id,
                             name: section.description,
-                            price_for_section: getPriceForSection(section.id),
+                            price_for_section: getPriceForSection(section.id, allRequirementGroups, allRequirements),
                         }))}
                     />
                 </div>
@@ -178,7 +178,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                         requirementGroups={requirementGroups.map((group) => ({
                             id: group.id,
                             name: group.name,
-                            price_for_group: getPriceForGroup(group.id)
+                            price_for_group: getPriceForGroup(group.id, allRequirements)
                         }))}
                     />
                 </div>

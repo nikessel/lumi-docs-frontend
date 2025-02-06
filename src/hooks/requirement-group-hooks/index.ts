@@ -89,7 +89,7 @@ interface UseRequirementGroupsForSections {
 }
 
 // Extend RequirementGroup to include `section_id`
-interface RequirementGroupWithSectionId extends RequirementGroup {
+export interface RequirementGroupWithSectionId extends RequirementGroup {
     section_id: string;
 }
 

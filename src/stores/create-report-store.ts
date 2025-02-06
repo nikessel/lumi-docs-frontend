@@ -8,7 +8,7 @@ interface ReportState {
     selectedDocumentNumbers: number[];
     selectedRequirementGroups: string[];
     selectedRequirements: string[];
-    newReportCreated: { id: string, status: "pending" | "processing" | undefined },
+    newReportCreated: { id: string | undefined, status: "pending" | "processing" | "error" | undefined, message?: string },
 
     sectionsSetForFramework: string;
     groupsSetForSections: string[];
@@ -25,7 +25,7 @@ interface ReportState {
     setGroupsSetForSections: (sections: string[]) => void;
     setRequirementsSetForGroups: (groups: string[]) => void;
 
-    setNewReportCreated: (input: { id: string, status: "pending" | "processing" | undefined }) => void
+    setNewReportCreated: (input: { id: string | undefined, status: "pending" | "processing" | "error" | undefined, message?: string }) => void
 
     resetState: () => void;
 }
@@ -69,6 +69,7 @@ export const useCreateReportStore = create<ReportState>()(
                     newReportCreated: {
                         id: input.id,
                         status: input.status,
+                        message: input.message || undefined
                     },
                 })),
 

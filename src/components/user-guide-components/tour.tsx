@@ -32,8 +32,9 @@ const TourComponent: React.FC<TourComponentProps> = ({ startTour, reportsRef, re
     const { wasmModule } = useWasm()
 
     const handleDoNotShowAgain = async () => {
+        console.log("DONTSHOWASGIN", user, wasmModule)
         if (user && wasmModule) {
-            await updateUserTourPreference(wasmModule, user.id, true);
+            await updateUserTourPreference(wasmModule, user.id, false);
         }
         setShowTourEndModal(false);
     };
@@ -128,9 +129,7 @@ const TourComponent: React.FC<TourComponentProps> = ({ startTour, reportsRef, re
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            // Check if the tour is open and we're on the last step
             if (open && currentStep === steps.length - 1) {
-                // Get the active tour element
                 const tourElements = document.querySelectorAll(".ant-tour");
 
                 let isClickInside = false;
@@ -140,25 +139,21 @@ const TourComponent: React.FC<TourComponentProps> = ({ startTour, reportsRef, re
                     }
                 });
 
-                // If click is outside, trigger handleDoNotShowAgain
                 if (!isClickInside) {
                     handleDoNotShowAgain();
                 }
             }
         };
 
-        // Add event listener
         document.addEventListener("mousedown", handleClickOutside);
 
         return () => {
-            // Cleanup event listener
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, [open, currentStep]);
 
     const handleStepChange = (newStep: number) => {
         setCurrentStep(newStep);
-        // localStorage.setItem("tourStep", newStep.toString()); // ✅ Save progress
     };
 
 
