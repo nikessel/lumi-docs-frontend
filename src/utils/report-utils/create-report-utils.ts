@@ -5,7 +5,7 @@ import { CreateReportInput } from "@wasm";
 import { fetchReportsByIds } from ".";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
 
-export const PRICE_PER_REQUIREMENT_IN_EURO = 3;
+export const PRICE_PER_REQUIREMENT_IN_EURO = 5;
 
 export const calculateReportPrice = (): number => {
     const { selectedRequirements } = useCreateReportStore.getState();

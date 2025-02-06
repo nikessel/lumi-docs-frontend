@@ -19,6 +19,7 @@ const SelectSections: React.FC<SelectSectionsProps> = ({ sections }) => {
         setSelectedSections,
     } = useCreateReportStore(); // Zustand store access
 
+
     const [allSectionsSelected, setAllSectionsSelected] = useState(true);
 
     const [showSections, setShowSections] = useState(false);

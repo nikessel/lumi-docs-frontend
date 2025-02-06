@@ -68,6 +68,8 @@ export const useSectionsForRegulatoryFrameworks = (
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        console.log("TESTasdasd RESPONSE useffect")
+
         const fetchSections = async () => {
             if (!wasmModule || frameworks.length === 0) {
                 setLoading(false);
@@ -80,6 +82,8 @@ export const useSectionsForRegulatoryFrameworks = (
                 const allSections: Section[] = [];
                 for (const framework of frameworks) {
                     const response = await wasmModule.get_sections_by_regulatory_framework({ input: framework });
+                    console.log("TESTasdasd RESPONSE", response)
+
                     if (response.error) {
                         throw new Error(response.error.message);
                     }

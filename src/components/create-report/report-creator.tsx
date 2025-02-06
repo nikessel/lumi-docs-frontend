@@ -91,9 +91,6 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
         }
     }, [sections]);
 
-
-    console.log("asda324eas234", sections)
-
     useEffect(() => {
         if (requirementGroups && !arraysAreEqual(groupsSetForSections, selectedSections)) {
             setSelectedRequirementGroups(requirementGroups.map((group) => group.id));
@@ -131,7 +128,6 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
         return PRICE_PER_REQUIREMENT_IN_EURO * relatedRequirements.length;
     };
 
-
     const steps = [
         {
             title: "Regulatory Framework",
@@ -163,7 +159,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                     <SelectSections
                         sections={sections.map((section) => ({
                             id: section.id,
-                            name: section.name,
+                            name: section.description,
                             price_for_section: getPriceForSection(section.id),
                         }))}
                     />
