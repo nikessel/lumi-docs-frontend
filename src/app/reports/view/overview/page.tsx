@@ -22,19 +22,9 @@ const Page = () => {
 
     const analyzedReports = analyzeReports(reports);
 
-    const averageCompliance = reports.length > 0
-        ? reports.reduce((total, report) => {
-            const sectionRatings = Array.from(report.section_assessments || [])
-                .map(([, section]) => section.compliance_rating)
-                .filter((rating): rating is number => rating !== undefined); // Ignore undefined values
-
-            const reportComplianceSum = sectionRatings.reduce((sum, rating) => sum + rating, 0);
-            const numSections = sectionRatings.length;
-
-            return total + (numSections > 0 ? reportComplianceSum / numSections : 0);
-        }, 0) / reports.length
+    const averageCompliance = reports.length
+        ? reports.reduce((sum, report) => sum + (report.compliance_rating || 0), 0) / reports.length
         : 0;
-
 
     const analyzedTasks = analyzeTasks(tasks);
 
@@ -80,7 +70,7 @@ const Page = () => {
                             title="Reports (requirements)"
                             value={reports.length}
                             precision={0}
-                            formatter={(value) => `${value} (${analyzedReports.numberOfRequirementAssessments + analyzedReports.numberOfRequirementGroupAssessments})`}
+                            formatter={(value) => `${value} (${analyzedReports.numberOfRequirementAssessments})`}
                         />
                     </Card>
                 </div>

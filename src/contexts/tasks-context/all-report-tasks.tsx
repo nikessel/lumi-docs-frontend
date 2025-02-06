@@ -1,9 +1,10 @@
 import React, { createContext, useContext } from 'react';
 import { useAllReportsTasks } from '@/hooks/tasks-hooks'; // Import the hook
 import { Report, Task } from '@wasm';
+import { TaskWithReportId } from '@/hooks/tasks-hooks';
 
 interface AllReportsTasksContextType {
-    tasks: Task[];
+    tasks: TaskWithReportId[];
     loading: boolean;
     error: string | null;
 }

@@ -42,7 +42,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     const router = useRouter();
 
     const handleGoToTasks = () => {
-        const tasksUrl = createUrlWithParams('/tasks/view', searchParams);
+        const tasksUrl = createUrlWithParams('/tasks/view/overview', searchParams);
         router.push(tasksUrl);
     };
 

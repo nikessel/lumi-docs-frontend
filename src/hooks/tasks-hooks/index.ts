@@ -10,15 +10,19 @@ import { useFilesContext } from "@/contexts/files-context";
 import { useFilteredRequirementsContext } from '@/contexts/requirement-context/filtered-report-requirement-context';
 import { useSelectedFilteredReports } from "../report-hooks";
 
+export interface TaskWithReportId extends Task {
+    reportId: string;
+}
+
 interface UseAllReportsTasks {
-    tasks: Task[];
+    tasks: TaskWithReportId[];
     loading: boolean;
     error: string | null;
 }
 
 export const useAllReportsTasks = (reports: Report[]): UseAllReportsTasks => {
     const { wasmModule } = useWasm();
-    const [tasks, setTasks] = useState<Task[]>([]);
+    const [tasks, setTasks] = useState<TaskWithReportId[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -37,10 +41,15 @@ export const useAllReportsTasks = (reports: Report[]): UseAllReportsTasks => {
                 }
 
                 const allTasks = await Promise.all(
-                    reports.map(report => fetchTasksByReport(wasmModule, report.id))
+                    reports.map(report =>
+                        fetchTasksByReport(wasmModule, report.id).then(tasks =>
+                            tasks.map(task => ({ ...task, reportId: report.id }))
+                        )
+                    )
                 );
 
                 setTasks(allTasks.flat());
+
             } catch (err: any) {
                 setError(err.message || "Failed to fetch tasks");
             } finally {

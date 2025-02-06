@@ -74,7 +74,12 @@ export async function saveViewToUser(
             task_management: updatedTaskManagement,
         };
 
-        await wasmModule.update_user({ input: updatedUser });
+        console.log("ASdasdad234asc", updatedUser)
+
+        const res = await wasmModule.update_user({ input: updatedUser });
+
+        console.log("ASdasdad234asc", res)
+
 
         return { success: true, message: "Saved view successfully added to user preferences." };
     } catch (error) {

@@ -17,8 +17,6 @@ interface EmbeddedPaymentFormProps {
     quantity: number;
 }
 
-console.log("stripePromise", stripePromise)
-
 const EmbeddedPaymentForm: React.FC<EmbeddedPaymentFormProps> = ({ quantity }) => {
     const fetchClientSecret = useCallback(() => {
         return fetch("/api/checkout_sessions", {

@@ -21,9 +21,10 @@ export async function fetchTasksByReport(
     const { staleIds } = useCacheInvalidationStore.getState();
 
     const cachedTasks = await getData<CachedTask>(dbName, TASKS_STORE_NAME, dbVersion);
-    const cachedReportTasks = cachedTasks.filter(task => task.id === reportId);
-    const cachedIds = cachedReportTasks.map((task) => task.id);
-    const hasStaleIds = staleIds.some((id) => cachedIds.includes(id));
+    const cachedReportTasks = cachedTasks.filter(task => task.reportId === reportId);
+    const cachedIds = cachedReportTasks.map((task) => task.reportId);
+    const hasStaleIds = staleIds.includes(reportId);
+
 
     const isExpired = cachedReportTasks[0]?.timestamp
         ? Date.now() - cachedReportTasks[0].timestamp > TASKS_CACHE_TTL
@@ -38,9 +39,12 @@ export async function fetchTasksByReport(
     if (response.output) {
         const tasks = response.output.output.map(task => ({
             ...task,
+            reportId,
             timestamp: Date.now(),
         }));
+
         await saveData(dbName, TASKS_STORE_NAME, tasks, dbVersion);
+
         return tasks;
     }
 

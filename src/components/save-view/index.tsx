@@ -6,6 +6,9 @@ import { saveViewToUser } from "@/utils/user-utils";
 import type * as WasmModule from "@wasm";
 import { useWasm } from "../WasmProvider";
 import Typography from "../typography";
+import useCacheInvalidationStore from "@/stores/cache-validation-store";
+import { useUserContext } from "@/contexts/user-context";
+import { useUser } from "@/hooks/user-hooks";
 
 const SaveViewButton: React.FC = () => {
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -15,6 +18,7 @@ const SaveViewButton: React.FC = () => {
     const router = useRouter();
     const [messageApi, contextHolder] = message.useMessage();
     const { wasmModule, isLoading } = useWasm()
+    const { user } = useUserContext()
 
     const handleOpenModal = () => {
         setIsModalVisible(true);
@@ -42,6 +46,8 @@ const SaveViewButton: React.FC = () => {
 
         try {
             const result = await saveViewToUser(wasmModule, savedView);
+            user?.id && useCacheInvalidationStore.getState().addStaleId(user?.id)
+            useCacheInvalidationStore.getState().triggerUpdate("user")
 
             if (result.success) {
                 messageApi.open({

@@ -74,11 +74,9 @@ const FilterBar: React.FC<FilterBarProps> = ({ reports }) => {
     return (
         <>
             {/* Button to open the drawer */}
-            <Badge count={4}>
-                <Button size="small" icon={<SlidersOutlined />} onClick={showDrawer} type="primary">
-                    Filters
-                </Button>
-            </Badge>
+            <Button size="small" icon={<SlidersOutlined />} onClick={showDrawer} type="primary">
+                Filters
+            </Button>
             {/* Drawer containing the filter controls */}
             <Drawer
                 title="Filters"

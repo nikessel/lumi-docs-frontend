@@ -31,10 +31,11 @@ import TourComponent from "@/components/user-guide-components/tour";
 import { useUserContext } from "@/contexts/user-context";
 import LoginPrompt from "@/components/login-prompt";
 import { useRouter } from "next/navigation";
+import { Alert } from "antd";
 
 const { Content } = Layout;
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '');
+const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) : null;
 
 function LayoutWithWasm({ children }: { children: ReactNode }) {
   const [globalLoading, setGlobalLoading] = useState(true)
@@ -52,6 +53,8 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
   const routesWithoutLayout = ["/documentation", "/logout", "/signup", "/verify-email", "/callback"]
   const adminRoutes = ["/test"]
 
+  const [showNoPaymentWarning, setShowNoPaymentWarning] = useState(false)
+
   const noLayout = typeof window !== "undefined" && (routesWithoutLayout.indexOf(window.location.pathname) > -1);
 
   // Create refs for the tour
@@ -60,6 +63,15 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
   const filesRef = useRef(null)
   const tasksRef = useRef(null)
   const newReportButtonRef = useRef(null);
+
+  useEffect(() => {
+    if (!stripePromise) {
+      setShowNoPaymentWarning(true)
+    } else {
+      setShowNoPaymentWarning(false)
+
+    }
+  }, [stripePromise])
 
   useEffect(() => {
     if (!wasmLoading && !AuthLoading && !reportsLoading && !userLoading && window.location.pathname !== "/callback" && loadingComponents.indexOf("wasmprovider") < 0 && !initialLoadCompleted) {
@@ -96,6 +108,7 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
     <AntdRegistry>
       <Elements stripe={stripePromise}>
         <ConfigProvider theme={antdconfig}>
+          {showNoPaymentWarning ? <Alert message="WARNING: PAYMENT API IS NOT ENABLED" type="warning" showIcon closable /> : ""}
           <Layout className="h-full" style={{ minWidth: 1200 }}>
             {!noLayout ? <AppSider reportsRef={reportsRef} regulatoryFrameworksRef={regulatoryFrameworksRef} filesRef={filesRef} tasksRef={tasksRef} /> : ""}
             <Layout className="h-full">

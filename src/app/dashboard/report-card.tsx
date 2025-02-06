@@ -1,15 +1,19 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Progress } from "antd";
 import Typography from "@/components/typography";
 import { getComplianceColorCode } from "@/utils/formating";
 import RegulatoryFrameworkTag from "@/components/regulatory-framework-tag";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { Report } from "@wasm";
 import { Skeleton } from "antd";
-
+import { TaskWithReportId } from "@/hooks/tasks-hooks";
+import { useSearchParamsState } from "@/contexts/search-params-context";
+import { createUrlWithParams } from "@/utils/url-utils";
+import { LinkOutlined } from "@ant-design/icons";
 
 interface ReportCardProps {
     report: Report | undefined
+    tasks: TaskWithReportId[] | null,
     isLoading: boolean,
     isEmpty?: boolean;
 }
@@ -17,9 +21,32 @@ interface ReportCardProps {
 const ReportCard: React.FC<ReportCardProps> = ({
     report,
     isLoading,
-    isEmpty
+    isEmpty,
+    tasks
 }) => {
     const router = useRouter()
+    const [unresolvedTasks, setUnresolvedTasks] = useState<TaskWithReportId[] | null>(null)
+    const { toggleSelectedReport } = useSearchParamsState()
+
+    useEffect(() => {
+        const unresolvedTasks = tasks?.filter((task) => task.status !== "open")
+        unresolvedTasks && setUnresolvedTasks(unresolvedTasks)
+    }, [tasks])
+
+    const handleClickReportTitle = async () => {
+        router.push(`/reports/view/overview?selectedReports=${report?.id}`)
+        // report?.id && await toggleSelectedReport(report?.id)
+        // const updatedSearchParams = new URLSearchParams(window.location.search);
+        // const newUrl = createUrlWithParams("/reports/view/overview", updatedSearchParams);
+        // router.push(newUrl);
+    }
+
+    const handleClickUnresolvedTasks = async () => {
+        router.push(`/tasks/view/overview?selectedReports=${report?.id}`)        // report?.id && await toggleSelectedReport(report?.id)
+        // const updatedSearchParams = new URLSearchParams(window.location.search);
+        // const newUrl = createUrlWithParams("/tasks/view/overview", updatedSearchParams);
+        // router.push(newUrl);
+    }
 
     if (isLoading) {
         return (
@@ -48,18 +75,21 @@ const ReportCard: React.FC<ReportCardProps> = ({
     if (!report) return null;
 
     return (
-        <div onClick={() => router.push(`/reports/view/overview?selectedReports=${report?.id}`)} className="p-4 bg-gray-50 rounded-lg cursor-pointer hover:opacity-60 transition-opacity duration-300 ease-in-out" style={{ width: "45%" }}>
-            <div className="flex justify-between">
-                <Typography textSize="h5" className="font-bold text-gray-800">
+        <div className="p-4 bg-gray-50 rounded-lg" style={{ width: "45%" }}>
+            <div className="flex justify-between ">
+                <div onClick={handleClickReportTitle} className="text-md font-bold hover:text-primary cursor-pointer transition-opacity duration-300 ease-in-out">
                     {report.title}
-                </Typography>
+                    <LinkOutlined className="ml-1" />
+                </div>
                 <RegulatoryFrameworkTag standard={report.regulatory_framework} />
             </div>
-            <Typography
-                className="mt-2 text-gray-500"
+            <div
+                onClick={handleClickUnresolvedTasks}
+                className="mt-2 text-gray-500 hover:text-primary cursor-pointer transition-opacity duration-300 ease-in-out"
             >
-                {1000} unresolved tasks
-            </Typography>
+                {unresolvedTasks?.length || 0} unresolved tasks
+                <LinkOutlined className="ml-1" />
+            </div>
             <div className="mt-4">
                 <Progress
                     percent={report.compliance_rating}
