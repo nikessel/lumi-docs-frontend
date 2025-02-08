@@ -39,7 +39,7 @@ export const useUser = (): UseUserReturn => {
                 return;
             }
 
-            if (!user || lastUpdated) {
+            if (isInitialLoad || lastUpdated) {
                 try {
                     if (isInitialLoad) {
                         console.log("🔄 Initial user fetch started...");
@@ -86,7 +86,7 @@ export const useUser = (): UseUserReturn => {
         };
 
         fetchUserData(loading);
-    }, [wasmModule, lastUpdated, loading, setBeingRefetched, triggerUpdate, user, beingRefetched]);
+    }, [wasmModule, lastUpdated, loading, setBeingRefetched, triggerUpdate, beingRefetched]);
 
     return { user, loading, error };
 };

@@ -21,7 +21,7 @@ export interface RequirementGroupWithSectionId extends RequirementGroup {
 export const useRequirementGroups = (): UseRequirementGroups => {
     const { wasmModule } = useWasm();
     const { reports, filteredSelectedReports } = useReportsContext();
-    const { sections } = useSectionsContext();
+    const { sections, loading: sectionsLoading } = useSectionsContext();
 
     const [requirementGroups, setRequirementGroups] = useState<RequirementGroupWithSectionId[]>([]);
     const [loading, setLoading] = useState(true);
@@ -43,6 +43,9 @@ export const useRequirementGroups = (): UseRequirementGroups => {
 
             if (sections.length === 0) {
                 console.warn("⚠️ No sections available, skipping fetch");
+                if (!sectionsLoading) {
+                    setLoading(false)
+                }
                 return;
             }
 
@@ -98,7 +101,7 @@ export const useRequirementGroups = (): UseRequirementGroups => {
         };
 
         fetchRequirementGroups(loading);
-    }, [wasmModule, sections, lastUpdated, loading, setBeingRefetched, triggerUpdate]);
+    }, [wasmModule, sections, sectionsLoading, lastUpdated, loading, setBeingRefetched, triggerUpdate]);
 
     const filteredSelectedRequirementGroups = (() => {
         if (!filteredSelectedReports.length) return requirementGroups;

@@ -35,7 +35,7 @@ export const useTasks = (): UseTasks => {
     const staleTaskIds = useCacheInvalidationStore((state) => state.staleTaskIds);
     const removeStaleTaskIds = useCacheInvalidationStore((state) => state.removeStaleTaskIds)
 
-    const { reports } = useReportsContext();
+    const { reports, loading: reportsLoading } = useReportsContext();
     const { selectedReports, selectedTaskDocuments, searchQuery, compliance } = useSearchParamsState();
     const { requirements } = useRequirementsContext();
     const { files } = useFilesContext();
@@ -50,6 +50,9 @@ export const useTasks = (): UseTasks => {
 
             if (!reports.length) {
                 console.warn("⚠️ No reports available, skipping task fetch");
+                if (!reportsLoading) {
+                    setLoading(false)
+                }
                 return;
             }
 
@@ -142,18 +145,21 @@ export const useTasks = (): UseTasks => {
                 setError(err instanceof Error ? err.message : "Failed to fetch tasks");
             } finally {
                 if (isInitialLoad) {
-                    console.log("✅ Initial task fetch completed");
-                    setLoading(false);
-                } else if (isBeingRefetched) {
-                    console.log("✅ Task refetch completed");
+                    console.log("✅ Initial tasks fetch completed.");
+                    setLoading(false)
+
+                } else {
+                    console.log("✅ Task refresh completed.");
+                    setLoading(false)
                     setBeingRefetched("tasks", false);
                 }
+                setLoading(false);
+                triggerUpdate("tasks", true);
             }
         };
 
         fetchAllTasks(loading);
-    }, [wasmModule, reports, lastUpdated, staleTaskIds, loading, setBeingRefetched, triggerUpdate, isBeingRefetched, removeStaleTaskIds, tasksByReportId]);
-
+    }, [wasmModule, reports, reportsLoading, lastUpdated, staleTaskIds, loading, setBeingRefetched, triggerUpdate, isBeingRefetched, removeStaleTaskIds, tasksByReportId]);
 
 
     /**

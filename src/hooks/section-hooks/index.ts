@@ -17,7 +17,7 @@ interface UseSections {
 export const useSections = (): UseSections => {
     const { wasmModule } = useWasm();
     const { filteredSelectedReports } = useReportsContext();
-    const { frameworks } = useRegulatoryFrameworksContext();
+    const { frameworks, loading: frameWorksLoading } = useRegulatoryFrameworksContext();
 
     const [sections, setSections] = useState<Section[]>([]);
     const [sectionsForRegulatoryFramework, setSectionsForRegulatoryFramework] = useState<Record<string, Section[]>>({});
@@ -40,6 +40,9 @@ export const useSections = (): UseSections => {
 
             if (!frameworks.length) {
                 console.warn("⚠️ No regulatory frameworks available, skipping section fetch");
+                if (!frameWorksLoading) {
+                    setLoading(false)
+                }
                 return;
             }
 
@@ -95,7 +98,7 @@ export const useSections = (): UseSections => {
         };
 
         fetchAllSections(loading);
-    }, [wasmModule, frameworks, lastUpdated, loading, setBeingRefetched, triggerUpdate]);
+    }, [wasmModule, frameworks, frameWorksLoading, lastUpdated, loading, setBeingRefetched, triggerUpdate]);
 
     const filteredSelectedReportsSections = (() => {
         if (!filteredSelectedReports.length) return sections;

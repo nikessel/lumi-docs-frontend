@@ -80,12 +80,16 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  console.log("asdasdasdasdasdasd", !wasmLoading, !AuthLoading, !reportsLoading, !userLoading, window.location.pathname !== "/callback", !initialLoadCompleted, !groupsLoading, !requirementsLoading, !sectionsLoading, !tasksLoading)
+
+  // && !reportsLoading && !userLoading && window.location.pathname !== "/callback" && !initialLoadCompleted && !groupsLoading && !requirementsLoading && !sectionsLoading && !tasksLoading
+
   useEffect(() => {
-    if (!wasmLoading && !AuthLoading && !reportsLoading && !userLoading && window.location.pathname !== "/callback" && !initialLoadCompleted && !groupsLoading && !requirementsLoading && !sectionsLoading && !tasksLoading) {
+    if ((!wasmLoading && !AuthLoading && !reportsLoading && !userLoading && window.location.pathname !== "/callback" && !initialLoadCompleted && !groupsLoading && !requirementsLoading && !sectionsLoading && !tasksLoading) || (routesWithoutAuth.indexOf(window.location.pathname) > -1)) {
       setGlobalLoading(false)
       setInitialLoadCompleted(true)
     }
-  }, [wasmLoading, AuthLoading, reportsLoading, initialLoadCompleted, userLoading, groupsLoading, requirementsLoading, sectionsLoading, tasksLoading])
+  }, [wasmLoading, AuthLoading, reportsLoading, initialLoadCompleted, userLoading, groupsLoading, requirementsLoading, sectionsLoading, tasksLoading, routesWithoutAuth])
 
   useEffect(() => {
     if (adminRoutes.indexOf(window.location.pathname) && user && !user.config?.admin) {
@@ -93,7 +97,7 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
     }
   }, [adminRoutes, router, user])
 
-  if (globalLoading) {
+  if (globalLoading || window.location.pathname === "/callback") {
     return <LoadingLogoScreen>{window.location.pathname === "/callback" ? children : ""}</LoadingLogoScreen>;
   }
 
