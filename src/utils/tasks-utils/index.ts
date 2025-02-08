@@ -6,6 +6,7 @@ export async function fetchTasksByReport(
     wasmModule: typeof WasmModule | null,
     reportId: string
 ): Promise<Task[]> {
+    
     console.log(`📌 Fetching tasks for report ID: ${reportId}...`);
 
     if (!wasmModule) {
@@ -59,8 +60,6 @@ export async function fetchTaskById(
         throw new Error(`Failed to fetch task for ID: ${taskId}`);
     }
 }
-
-
 
 type TaskAnalysisResult = {
     tasksByDocument: Record<string, Task[]>; // Map of document titles with associated tasks
