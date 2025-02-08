@@ -36,138 +36,175 @@ export async function fetchReports(
         error: null,
     };
 
-    const validCachedReports: Report[] = [];
-    const staleReportIdsToFetch: string[] = [];
+    // const validCachedReports: Report[] = [];
+    // const staleReportIdsToFetch: string[] = [];
 
-    const { staleReportIds, removeStaleReportIds } = useCacheInvalidationStore.getState();
-    const cachedReports = await getData<CachedReport>(DB_NAME, STORE_NAME, DB_VERSION);
-    const isFullFetch = await getMetadata(DB_NAME, "fullFetch", DB_VERSION);
+    // const { staleReportIds, removeStaleReportIds } = useCacheInvalidationStore.getState();
+    // const cachedReports = await getData<CachedReport>(DB_NAME, STORE_NAME, DB_VERSION);
+    // const isFullFetch = await getMetadata(DB_NAME, "fullFetch", DB_VERSION);
 
-    if (staleReportIds.length < 1) {
-        if (!wasmModule) {
-            result.error = "WASM module not loaded";
-            return result;
-        }
 
-        try {
-            const response = await wasmModule.get_all_reports();
-            if (response.output) {
-                const reportsData = response.output.output;
-
-                // Add timestamp to each report
-                const reportsWithTimestamps = reportsData.map((report: Report) => ({
-                    ...report,
-                    timestamp: Date.now(),
-                }));
-
-                // Save reports and metadata
-                await saveData(DB_NAME, STORE_NAME, reportsWithTimestamps, DB_VERSION, true);
-                await saveMetadata(DB_NAME, "fullFetch", true, DB_VERSION);
-                await saveMetadata(DB_NAME, "lastFetch", Date.now(), DB_VERSION);
-
-                result.reports = reportsData;
-                return result;
-            } else if (response.error) {
-                result.error = response.error.message;
-                return result;
-            }
-        } catch (err: unknown) {
-            console.error("Error during full fetch:", err);
-            result.error = "Failed to perform full fetch";
-            return result;
-        }
-    } else {
-        cachedReports.forEach((report) => {
-            if (!staleReportIds.includes(report.id) && report.timestamp && Date.now() - report.timestamp <= CACHE_TTL) {
-                validCachedReports.push(report);
-            } else {
-                staleReportIdsToFetch.push(report.id);
-            }
-        });
-
-        staleReportIds.forEach((id) => {
-            if (!staleReportIdsToFetch.includes(id)) {
-                staleReportIdsToFetch.push(id);
-            }
-        });
-
-        result.reports.push(...validCachedReports);
-
-        if (!wasmModule) {
-            result.error = "WASM module not loaded";
-            return result;
-        }
-
-        // if (staleReportIdsToFetch.length > 0) {
-        //     console.log(`create1asdasdasd Fetching stale or missing reports for IDs: ${staleReportIdsToFetch.join(", ")}`);
-        //     const fetchResults = await fetchReportsByIds(wasmModule, staleReportIdsToFetch);
-        //     console.log(`create1asdasdasd  fetchResults`, fetchResults);
-
-        //     result.reports.push(
-        //         ...fetchResults.reports.map((report) => ({
-        //             ...report,
-        //             timestamp: Date.now(), // Add timestamp here
-        //         }))
-        //     );
-
-        //     if (Object.keys(fetchResults.errors).length > 0) {
-        //         console.error("Errors fetching some reports:", fetchResults.errors);
-        //         result.error = "Some reports could not be fetched.";
-        //     } else {
-        //         removeStaleReportIds(staleReportIdsToFetch);
-        //     }
-        // }
-
-        if (staleReportIdsToFetch.length > 0) {
-
-            let fetchResults: { reports: Report[]; errors: { [id: string]: string } } = {
-                reports: [],
-                errors: {},
-            };
-
-            let attempts = 0;
-            const maxAttempts = 5;
-            const retryDelay = 500; // 500ms
-
-            while (attempts < maxAttempts) {
-                try {
-                    fetchResults = await fetchReportsByIds(wasmModule, staleReportIdsToFetch);
-
-                    // If there are no errors, break out of the retry loop
-                    if (Object.keys(fetchResults.errors).length === 0) {
-                        break;
-                    }
-                } catch (err) {
-                    console.error(`Error fetching reports on attempt ${attempts + 1}:`, err);
-                }
-
-                attempts++;
-                if (attempts < maxAttempts) {
-                    await new Promise((resolve) => setTimeout(resolve, retryDelay));
-                }
-            }
-
-            // Add successfully fetched reports to the result
-            result.reports.push(
-                ...fetchResults.reports.map((report) => ({
-                    ...report,
-                    timestamp: Date.now(), // Add timestamp here
-                }))
-            );
-
-            // If there are still errors after retries, handle them
-            if (Object.keys(fetchResults.errors).length > 0) {
-                console.error("Errors fetching some reports after retries:", fetchResults.errors);
-                result.error = "Some reports could not be fetched after retries.";
-            } else {
-                removeStaleReportIds(staleReportIdsToFetch);
-            }
-        }
-
-        if (!result.error) {
-            await saveMetadata(DB_NAME, "lastFetch", Date.now(), DB_VERSION);
-        }
+    if (!wasmModule) {
+        result.error = "WASM module not loaded";
+        return result;
     }
+
+    try {
+        const response = await wasmModule.get_all_reports();
+        if (response.output) {
+            const reportsData = response.output.output;
+
+            // Add timestamp to each report
+            // const reportsWithTimestamps = reportsData.map((report: Report) => ({
+            //     ...report,
+            //     timestamp: Date.now(),
+            // }));
+
+            // // Save reports and metadata
+            // await saveData(DB_NAME, STORE_NAME, reportsWithTimestamps, DB_VERSION, true);
+            // await saveMetadata(DB_NAME, "fullFetch", true, DB_VERSION);
+            // await saveMetadata(DB_NAME, "lastFetch", Date.now(), DB_VERSION);
+
+            result.reports = reportsData;
+            return result;
+        } else if (response.error) {
+            result.error = response.error.message;
+            return result;
+        }
+    } catch (err: unknown) {
+        console.error("Error during full fetch:", err);
+        result.error = "Failed to perform full fetch";
+        return result;
+    }
+
+
+
+
+    // if (staleReportIds.length < 1) {
+    //     if (!wasmModule) {
+    //         result.error = "WASM module not loaded";
+    //         return result;
+    //     }
+
+    //     try {
+    //         const response = await wasmModule.get_all_reports();
+    //         if (response.output) {
+    //             const reportsData = response.output.output;
+
+    //             // Add timestamp to each report
+    //             const reportsWithTimestamps = reportsData.map((report: Report) => ({
+    //                 ...report,
+    //                 timestamp: Date.now(),
+    //             }));
+
+    //             // Save reports and metadata
+    //             await saveData(DB_NAME, STORE_NAME, reportsWithTimestamps, DB_VERSION, true);
+    //             await saveMetadata(DB_NAME, "fullFetch", true, DB_VERSION);
+    //             await saveMetadata(DB_NAME, "lastFetch", Date.now(), DB_VERSION);
+
+    //             result.reports = reportsData;
+    //             return result;
+    //         } else if (response.error) {
+    //             result.error = response.error.message;
+    //             return result;
+    //         }
+    //     } catch (err: unknown) {
+    //         console.error("Error during full fetch:", err);
+    //         result.error = "Failed to perform full fetch";
+    //         return result;
+    //     }
+    // } else {
+    //     cachedReports.forEach((report) => {
+    //         if (!staleReportIds.includes(report.id) && report.timestamp && Date.now() - report.timestamp <= CACHE_TTL) {
+    //             validCachedReports.push(report);
+    //         } else {
+    //             staleReportIdsToFetch.push(report.id);
+    //         }
+    //     });
+
+    //     staleReportIds.forEach((id) => {
+    //         if (!staleReportIdsToFetch.includes(id)) {
+    //             staleReportIdsToFetch.push(id);
+    //         }
+    //     });
+
+    //     result.reports.push(...validCachedReports);
+
+    //     if (!wasmModule) {
+    //         result.error = "WASM module not loaded";
+    //         return result;
+    //     }
+
+    //     // if (staleReportIdsToFetch.length > 0) {
+    //     //     console.log(`create1asdasdasd Fetching stale or missing reports for IDs: ${staleReportIdsToFetch.join(", ")}`);
+    //     //     const fetchResults = await fetchReportsByIds(wasmModule, staleReportIdsToFetch);
+    //     //     console.log(`create1asdasdasd  fetchResults`, fetchResults);
+
+    //     //     result.reports.push(
+    //     //         ...fetchResults.reports.map((report) => ({
+    //     //             ...report,
+    //     //             timestamp: Date.now(), // Add timestamp here
+    //     //         }))
+    //     //     );
+
+    //     //     if (Object.keys(fetchResults.errors).length > 0) {
+    //     //         console.error("Errors fetching some reports:", fetchResults.errors);
+    //     //         result.error = "Some reports could not be fetched.";
+    //     //     } else {
+    //     //         removeStaleReportIds(staleReportIdsToFetch);
+    //     //     }
+    //     // }
+
+    //     if (staleReportIdsToFetch.length > 0) {
+
+    //         let fetchResults: { reports: Report[]; errors: { [id: string]: string } } = {
+    //             reports: [],
+    //             errors: {},
+    //         };
+
+    //         let attempts = 0;
+    //         const maxAttempts = 5;
+    //         const retryDelay = 500; // 500ms
+
+    //         while (attempts < maxAttempts) {
+    //             try {
+    //                 fetchResults = await fetchReportsByIds(wasmModule, staleReportIdsToFetch);
+
+    //                 // If there are no errors, break out of the retry loop
+    //                 if (Object.keys(fetchResults.errors).length === 0) {
+    //                     break;
+    //                 }
+    //             } catch (err) {
+    //                 console.error(`Error fetching reports on attempt ${attempts + 1}:`, err);
+    //             }
+
+    //             attempts++;
+    //             if (attempts < maxAttempts) {
+    //                 await new Promise((resolve) => setTimeout(resolve, retryDelay));
+    //             }
+    //         }
+
+    //         // Add successfully fetched reports to the result
+    //         result.reports.push(
+    //             ...fetchResults.reports.map((report) => ({
+    //                 ...report,
+    //                 timestamp: Date.now(), // Add timestamp here
+    //             }))
+    //         );
+
+    //         // If there are still errors after retries, handle them
+    //         if (Object.keys(fetchResults.errors).length > 0) {
+    //             console.error("Errors fetching some reports after retries:", fetchResults.errors);
+    //             result.error = "Some reports could not be fetched after retries.";
+    //         } else {
+    //             removeStaleReportIds(staleReportIdsToFetch);
+    //         }
+    //     }
+
+    //     if (!result.error) {
+    //         await saveMetadata(DB_NAME, "lastFetch", Date.now(), DB_VERSION);
+    //     }
+    // }
 
     return result;
 }

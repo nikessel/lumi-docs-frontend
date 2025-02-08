@@ -100,6 +100,7 @@ export const useSelectedFilteredReportsTasks = (): UseSelectedFilteredReportsTas
 
                 let allTasks = await Promise.all(
                     reports.map(report => fetchTasksByReport(wasmModule, report.id))
+
                 );
 
                 let flattenedTasks = allTasks.flat();

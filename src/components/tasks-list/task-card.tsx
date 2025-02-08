@@ -12,6 +12,7 @@ interface DocumentTaskCardProps {
     number_of_associated_tasks: number;
     document_icon_letters: string;
     isLoading: boolean;
+    allReportIds: string[]
     isEmpty?: boolean;
 }
 
@@ -20,6 +21,7 @@ const DocumentTaskCard: React.FC<DocumentTaskCardProps> = ({
     number_of_associated_tasks,
     document_icon_letters,
     isLoading,
+    allReportIds,
     isEmpty,
     document_id,
 }) => {
@@ -28,12 +30,25 @@ const DocumentTaskCard: React.FC<DocumentTaskCardProps> = ({
     const router = useRouter()
 
     const handleOnClickDocumentCard = async () => {
-        document_id && await toggleSelectedTaskDocuments(document_id);
-        router.push(`/tasks/view/kanban?selectedTaskDocuments=${document_id}`)
+        console.log("asdasdasdasd", document_id, allReportIds)
+        // document_id && await toggleSelectedTaskDocuments(document_id);
+        // router.push(`/tasks/view/kanban?selectedTaskDocuments=${document_id}`)
         // const updatedSearchParams = new URLSearchParams(window.location.search);
         // const newUrl = createUrlWithParams("/tasks/view/kanban", updatedSearchParams);
         // console.log(newUrl, document_id);
         // router.push(newUrl); // Optionally update the URL
+        if (!document_id) return;
+
+        // await toggleSelectedTaskDocuments(document_id);
+
+        // Set selectedReports to include all report IDs
+        const updatedSearchParams = new URLSearchParams(searchParams.toString());
+        updatedSearchParams.set("selectedReports", allReportIds.join(","));
+        updatedSearchParams.set("selectedTaskDocuments", document_id);
+
+        const newUrl = createUrlWithParams("/tasks/view/kanban", updatedSearchParams);
+
+        router.push(newUrl);
     };
 
     if (isLoading) {

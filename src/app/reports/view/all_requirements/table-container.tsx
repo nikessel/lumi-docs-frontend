@@ -156,7 +156,7 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
             render: (_: unknown, record: TableRow) => {
                 return (
                     <div>
-                        {record.compliance_rating ? <Progress
+                        {record.compliance_rating || record.compliance_rating === 0 ? <Progress
                             percent={Number(record.compliance_rating)}
                             strokeColor={getComplianceColorCode(Number(record.compliance_rating))}
                         /> : <NATag />}

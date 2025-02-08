@@ -49,16 +49,16 @@ const TourComponent: React.FC<TourComponentProps> = ({ startTour, reportsRef, re
         }
     }, [startTour]);
 
-    useEffect(() => {
-        if (!uploadManager.isUploading && (uploadManager.uploadedFiles > 0 || uploadManager.failedFiles.length || uploadManager.filesAlreadyExisted)) {
-            if (uploadManager.uploadedFiles > 0 || uploadManager.filesAlreadyExisted) {
-                setTimeout(() => {
-                    setCurrentStep(currentStep + 1)
-                    router.push("/reports?uploadSuccess=true");
-                }, 100);
-            }
-        }
-    }, [uploadManager, router]);
+    // useEffect(() => {
+    //     if (!uploadManager.isUploading && (uploadManager.uploadedFiles > 0 || uploadManager.failedFiles.length || uploadManager.filesAlreadyExisted)) {
+    //         if (uploadManager.uploadedFiles > 0 || uploadManager.filesAlreadyExisted) {
+    //             setTimeout(() => {
+    //                 setCurrentStep(currentStep + 1)
+    //                 router.push("/reports?uploadSuccess=true");
+    //             }, 100);
+    //         }
+    //     }
+    // }, [uploadManager, router]);
 
     const steps: TourProps["steps"] = [
         {
@@ -111,7 +111,7 @@ const TourComponent: React.FC<TourComponentProps> = ({ startTour, reportsRef, re
         },
         {
             title: "Get started - upload your first documents",
-            description: <div className="pb-4"><FileUploadContent onClose={() => console.log("close")} /></div>,
+            description: <div className="pb-4"><FileUploadContent afterUpload={() => console.log("afterupload")} onClose={() => console.log("close")} /></div>,
             target: null,
         },
         {

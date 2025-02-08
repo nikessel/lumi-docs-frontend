@@ -21,6 +21,7 @@ interface UploadManagerState {
     setUploadedFiles: (uploadedFiles: number) => void;
     setTotalFiles: (totalFiles: number) => void;
     uploadFiles: (files: File[]) => Promise<void>;
+    resetUploadSession: () => void
 }
 
 async function extractFilesFromZip(zipFile: File): Promise<File[]> {
@@ -231,6 +232,19 @@ export const useUploadManager = create<UploadManagerState>()((set, get) => ({
         } finally {
             set({ isUploading: false });
         }
+    },
+    resetUploadSession: () => {
+        set({
+            isUploading: false,
+            progress: 0,
+            uploadedFiles: 0,
+            totalFiles: 0,
+            estimatedTimeRemaining: 0,
+            startTime: null,
+            failedFiles: [],
+            filesAlreadyExisted: 0,
+        });
+        console.debug("Upload session has been reset.");
     },
 }));
 

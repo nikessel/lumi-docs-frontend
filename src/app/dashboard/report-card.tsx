@@ -29,7 +29,7 @@ const ReportCard: React.FC<ReportCardProps> = ({
     const { toggleSelectedReport } = useSearchParamsState()
 
     useEffect(() => {
-        const unresolvedTasks = tasks?.filter((task) => task.status !== "open")
+        const unresolvedTasks = tasks?.filter((task) => task.status === "open")
         unresolvedTasks && setUnresolvedTasks(unresolvedTasks)
     }, [tasks])
 
@@ -42,7 +42,8 @@ const ReportCard: React.FC<ReportCardProps> = ({
     }
 
     const handleClickUnresolvedTasks = async () => {
-        router.push(`/tasks/view/overview?selectedReports=${report?.id}`)        // report?.id && await toggleSelectedReport(report?.id)
+        router.push(`/tasks/view/overview?selectedReports=${report?.id}`)
+        // report?.id && await toggleSelectedReport(report?.id)
         // const updatedSearchParams = new URLSearchParams(window.location.search);
         // const newUrl = createUrlWithParams("/tasks/view/overview", updatedSearchParams);
         // router.push(newUrl);

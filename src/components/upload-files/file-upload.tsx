@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useEffect } from "react";
-import { Upload, Button, List, Progress, message, notification } from "antd";
-import { UploadOutlined, DeleteOutlined, InboxOutlined, FilePdfOutlined, FolderAddOutlined } from "@ant-design/icons";
+import React, { useState, useCallback } from "react";
+import { Upload, Button, List, message } from "antd";
+import { DeleteOutlined, InboxOutlined, FilePdfOutlined, FolderAddOutlined } from "@ant-design/icons";
 import { useUploadManager } from "@/components/upload-files/upload-manager";
 import { File as WasmFile, FileExtension } from "@wasm";
 import { UploadFile } from "antd/es/upload/interface";
@@ -14,44 +14,47 @@ const { Dragger } = Upload;
 
 interface FileUploadContentProps {
     onClose: () => void;
+    afterUpload: () => void;
 }
 
-const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
+const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose, afterUpload }) => {
     const [selectedFiles, setSelectedFiles] = useState<UploadFile[]>([]);
     const uploadManager = useUploadManager();
-    const [api, contextHolder] = notification.useNotification();
+    // const [api, contextHolder] = notification.useNotification();
     const addStaleFileId = useCacheInvalidationStore((state) => state.addStaleFileId);
     const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate);
 
-    useEffect(() => {
-        if (!uploadManager.isUploading && (uploadManager.uploadedFiles > 0 || uploadManager.failedFiles.length || uploadManager.filesAlreadyExisted)) {
-            if (uploadManager.failedFiles.length > 0) {
-                api.error({
-                    message: "Error",
-                    description: `Failed to upload ${uploadManager.failedFiles.length} files`
-                });
-            }
-            if (uploadManager.uploadedFiles > 0 || uploadManager.filesAlreadyExisted) {
-                const lines = [];
+    // useEffect(() => {
+    //     if (!uploadManager.isUploading && (uploadManager.uploadedFiles > 0 || uploadManager.failedFiles.length || uploadManager.filesAlreadyExisted)) {
 
-                if (uploadManager.uploadedFiles > 0) {
-                    lines.push(`Successfully uploaded ${uploadManager.uploadedFiles} files.`);
-                }
+    //         if (uploadManager.failedFiles.length > 0) {
+    //             api.error({
+    //                 message: "Error",
+    //                 description: `Failed to upload ${uploadManager.failedFiles.length} files`
+    //             });
+    //         }
 
-                if (uploadManager.filesAlreadyExisted > 0) {
-                    lines.push(`${uploadManager.filesAlreadyExisted} files already existed.`);
-                }
+    //         if (uploadManager.uploadedFiles > 0 || uploadManager.filesAlreadyExisted) {
+    //             const lines = [];
 
-                api.success({
-                    message: "Success",
-                    description: lines.join("\n"),
-                });
+    //             if (uploadManager.uploadedFiles > 0) {
+    //                 lines.push(`Successfully uploaded ${uploadManager.uploadedFiles} files.`);
+    //             }
 
-                setSelectedFiles([]);
-                onClose();
-            }
-        }
-    }, [uploadManager, api, onClose]);
+    //             if (uploadManager.filesAlreadyExisted > 0) {
+    //                 lines.push(`${uploadManager.filesAlreadyExisted} files already existed.`);
+    //             }
+
+    //             api.success({
+    //                 message: "Success",
+    //                 description: lines.join("\n"),
+    //             });
+
+    //             setSelectedFiles([]);
+    //             onClose();
+    //         }
+    //     }
+    // }, [uploadManager, api, onClose]);
 
     const shouldIgnoreFile = (file: UploadFile): boolean => {
         const webkitPath = file.originFileObj?.webkitRelativePath || "";
@@ -93,9 +96,12 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
 
         try {
             const nativeFiles = selectedFiles.map((file) => file.originFileObj as File);
-            await uploadManager.uploadFiles(nativeFiles);
+            uploadManager.uploadFiles(nativeFiles);
             addStaleFileId("all");
             triggerUpdate("files");
+            setSelectedFiles([]);
+            onClose()
+            // afterUpload()
         } catch (error) {
             console.error("Upload error:", error);
             message.error(error instanceof Error ? error.message : "Failed to upload files");
@@ -108,7 +114,6 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
 
     return (
         <>
-            {contextHolder}
             <Dragger maxCount={100} showUploadList={false} className="w-full" multiple beforeUpload={() => false} onChange={handleFileChange}>
                 <p className="ant-upload-drag-icon">
                     <InboxOutlined />
@@ -158,14 +163,14 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
                 </Button>
             </div>
 
-            {uploadManager.isUploading && (
+            {/* {uploadManager.isUploading && (
                 <div style={{ marginTop: 16 }}>
                     <Progress percent={Math.round(uploadManager.progress * 100)} status={uploadManager.failedFiles.length ? "exception" : "active"} />
                     <p style={{ marginTop: 8, textAlign: "center" }}>
                         {uploadManager.uploadedFiles}/{uploadManager.totalFiles} files uploaded
                     </p>
                 </div>
-            )}
+            )} */}
         </>
     );
 };

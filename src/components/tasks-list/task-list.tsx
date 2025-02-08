@@ -10,9 +10,10 @@ interface TaskListProps {
     tasks: Task[];
     isLoading: boolean;
     onViewAll: () => void;
+    allReportIds: string[]
 }
 
-const TaskList: React.FC<TaskListProps> = ({ tasks, isLoading, onViewAll }) => {
+const TaskList: React.FC<TaskListProps> = ({ tasks, isLoading, onViewAll, allReportIds }) => {
     const [searchTerm, setSearchTerm] = useState("");
     const { files, isLoading: filesLoading } = useFilesContext()
     const [sortedDocuments, setSortedDocuments] = useState<{
@@ -82,6 +83,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, isLoading, onViewAll }) => {
                         document_icon_letters={getDocumentIconLetters(document)}
                         isLoading={false}
                         document_id={document_id}
+                        allReportIds={allReportIds}
                     />
                 ))}
             </div>

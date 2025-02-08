@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button, Modal, Input, Select, message } from 'antd';
 import CustomCard from "./custom-card";
 import ColumnHeader from './column-header';
@@ -27,7 +27,7 @@ export interface KanbanBoardState {
 }
 
 const KanbanBoard: React.FC = () => {
-    const { user, loading, error } = useUserContext();
+    const { user, loading: userLoading, error } = useUserContext();
     const { tasks, loading: tasksLoading, error: tasksError } = useSelectedFilteredReportsTasksContext();
 
     const [board, setBoard] = useState<KanbanBoardState | null>(null);
@@ -41,12 +41,16 @@ const KanbanBoard: React.FC = () => {
 
     const [settingUpBoard, setSettingUpBoard] = useState(false);
 
-    useEffect(() => {
-        if (user?.task_management?.kanban?.columns && user.task_management.kanban.columns.length > 0) {
-            // Map user kanban columns to board state
-            setSettingUpBoard(true)
-            const existingTaskIds = new Set(tasks.map(task => task.id));
+    const initialBoardCreated = useRef<boolean>(false)
 
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+
+    useEffect(() => {
+        if (user?.task_management?.kanban?.columns && user.task_management.kanban.columns.length > 0 && !tasksLoading && !initialBoardCreated.current) {
+            console.log("TETETEETTET", initialBoardCreated.current)
+            // Map user kanban columns to board state
+            initialBoardCreated.current = true
+            const existingTaskIds = new Set(tasks.map(task => task.id));
             const mappedColumns = user.task_management.kanban.columns.map((column) => ({
                 id: column.column_name,
                 title: column.column_name,
@@ -61,12 +65,23 @@ const KanbanBoard: React.FC = () => {
                         };
                     }),
             }));
+            console.log("SETINGUPBOARD", mappedColumns)
+
             setBoard({ columns: mappedColumns });
+            setShowDefaultSetup(false)
             setSettingUpBoard(false)
-        } else {
+        } else if (!tasksLoading && board?.columns?.length === 0) {
+            setSettingUpBoard(false)
             setShowDefaultSetup(true)
         }
     }, [user, tasks]);
+
+    useEffect(() => {
+        if (!userLoading && !tasksLoading && !settingUpBoard) {
+            setIsLoading(false)
+        }
+
+    }, [userLoading, tasksLoading, settingUpBoard])
 
     const handleDefaultSetup = async () => {
         if (!wasmModule) return;
@@ -122,8 +137,8 @@ const KanbanBoard: React.FC = () => {
         }
     };
 
-    if (loading) return <p>Loading Kanban board...</p>;
-    if (error) return <p>Error loading Kanban board: {error}</p>;
+    if (isLoading) return <p>Loading Kanban board...</p>;
+    // if (error) return <p>Error loading Kanban board: {error}</p>;
     if (settingUpBoard) return <p>Setting up Kanban board...</p>;
 
     return (

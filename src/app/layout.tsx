@@ -32,6 +32,7 @@ import { useUserContext } from "@/contexts/user-context";
 import LoginPrompt from "@/components/login-prompt";
 import { useRouter } from "next/navigation";
 import { Alert } from "antd";
+import UploadIndicator from "@/components/upload-files/upload-indicator";
 
 const { Content } = Layout;
 
@@ -69,7 +70,6 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
       setShowNoPaymentWarning(true)
     } else {
       setShowNoPaymentWarning(false)
-
     }
   }, [stripePromise])
 
@@ -112,6 +112,7 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
           <Layout className="h-full" style={{ minWidth: 1200 }}>
             {!noLayout ? <AppSider reportsRef={reportsRef} regulatoryFrameworksRef={regulatoryFrameworksRef} filesRef={filesRef} tasksRef={tasksRef} /> : ""}
             <Layout className="h-full">
+              <UploadIndicator />
               <FilteredRequirementsProvider reports={reports}>
                 <AllReportsProvider>
                   <RegulatoryFrameworksProvider>
@@ -143,19 +144,17 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full">
       <body className="h-full">
-        <Suspense fallback={<LoadingLogoScreen />}>
-          <WasmProviderComponent>
-            <AuthProvider>
-              <UserProvider>
-                <SearchParamsProvider>
-                  <SelectedFilteredReportsProvider>
-                    <LayoutWithWasm>{children}</LayoutWithWasm>
-                  </SelectedFilteredReportsProvider>
-                </SearchParamsProvider>
-              </UserProvider>
-            </AuthProvider>
-          </WasmProviderComponent>
-        </Suspense>
+        <WasmProviderComponent>
+          <AuthProvider>
+            <UserProvider>
+              <SearchParamsProvider>
+                <SelectedFilteredReportsProvider>
+                  <LayoutWithWasm>{children}</LayoutWithWasm>
+                </SelectedFilteredReportsProvider>
+              </SearchParamsProvider>
+            </UserProvider>
+          </AuthProvider>
+        </WasmProviderComponent>
       </body>
     </html>
   );

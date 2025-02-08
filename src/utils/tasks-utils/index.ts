@@ -9,6 +9,7 @@ const TASKS_CACHE_TTL = 60 * 60 * 1000; // 5 minutes
 
 // Extended type for cached reports
 interface CachedTask extends Task {
+    reportId: string,
     timestamp?: number;
 }
 
@@ -22,9 +23,10 @@ export async function fetchTasksByReport(
 
     const cachedTasks = await getData<CachedTask>(dbName, TASKS_STORE_NAME, dbVersion);
     const cachedReportTasks = cachedTasks.filter(task => task.reportId === reportId);
-    const cachedIds = cachedReportTasks.map((task) => task.reportId);
-    const hasStaleIds = staleIds.includes(reportId);
-
+    const cachedTaskIds = cachedReportTasks.map((task) => task.id);
+    const hasStaleIds = cachedTaskIds
+        .filter((id): id is string => id !== undefined)
+        .some(id => staleIds.includes(id));
 
     const isExpired = cachedReportTasks[0]?.timestamp
         ? Date.now() - cachedReportTasks[0].timestamp > TASKS_CACHE_TTL
@@ -161,6 +163,7 @@ export async function updateTask(
 
         // Invalidate cache for the updated task
         const cacheStore = useCacheInvalidationStore.getState();
+
         if (updatedTask?.id) {
             cacheStore.addStaleId(updatedTask.id);
             cacheStore.triggerUpdate("tasks");

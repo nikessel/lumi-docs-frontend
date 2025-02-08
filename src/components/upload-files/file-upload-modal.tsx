@@ -14,7 +14,7 @@ const FileUploadModal: React.FC<{
             onCancel={onClose}
             footer={null}
         >
-            <FileUploadContent onClose={onClose} />
+            <FileUploadContent onClose={onClose} afterUpload={onClose} />
         </Modal>
     );
 };

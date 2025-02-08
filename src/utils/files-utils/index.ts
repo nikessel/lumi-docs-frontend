@@ -18,6 +18,7 @@ interface CachedFile extends File {
 export async function fetchFiles(
     wasmModule: typeof WasmModule | null
 ): Promise<{ files: File[]; error: string | null }> {
+
     const result: { files: File[]; error: string | null } = {
         files: [],
         error: null,
@@ -64,6 +65,7 @@ export async function fetchFiles(
             await saveMetadata(FILES_DB_NAME, "fullFetch", true, FILES_DB_VERSION);
             await saveMetadata(FILES_DB_NAME, "lastFetch", Date.now(), FILES_DB_VERSION);
             clearStaleFileIds()
+
             result.files = filesData;
         } else if (response.error) {
             result.error = response.error.message;
@@ -71,6 +73,7 @@ export async function fetchFiles(
     } catch (err) {
         console.error("Error fetching files:", err);
         result.error = "Failed to fetch files";
+        clearStaleFileIds()
     }
 
     return result;

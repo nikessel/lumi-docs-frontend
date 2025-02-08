@@ -91,7 +91,7 @@ const Page = () => {
             key: 'compliance_rating',
             render: (compliance_rating: number | undefined) => (
                 <div className="flex justify-center">
-                    {compliance_rating ? <Progress
+                    {compliance_rating || compliance_rating === 0 ? <Progress
                         type="circle"
                         percent={compliance_rating}
                         strokeColor={getComplianceColorCode(compliance_rating)}

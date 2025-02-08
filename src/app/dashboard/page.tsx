@@ -24,7 +24,13 @@ const Page = () => {
 
     const isLoading = tasksLoading || reportsLoading || userLoading
     const [isModalVisible, setIsModalVisible] = useState(true);
+    const [allReportIds, setAllReportIds] = useState<string[]>([])
 
+    useEffect(() => {
+        if (reports?.length > 0) {
+            setAllReportIds(reports.map(report => report.id))
+        }
+    }, (reports))
 
     // useEffect(() => {
     //     if (reports.length === 0 && !reportsLoading && !userLoading && !tasksLoading) {
@@ -43,7 +49,7 @@ const Page = () => {
                 </div>
             </div>
             <div className="w-1/3">
-                <TaskList tasks={tasks} onViewAll={() => router.push("/tasks")} isLoading={isLoading} />
+                <TaskList allReportIds={allReportIds} tasks={tasks} onViewAll={() => router.push("/tasks")} isLoading={isLoading} />
             </div>
             {/* <FirstReportModal
                 visible={isModalVisible}
