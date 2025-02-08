@@ -2,7 +2,7 @@ import React, { useState, useCallback } from "react";
 import { Upload, Button, List, message } from "antd";
 import { DeleteOutlined, InboxOutlined, FilePdfOutlined, FolderAddOutlined } from "@ant-design/icons";
 import { useUploadManager } from "@/components/upload-files/upload-manager";
-import { File as WasmFile, FileExtension } from "@wasm";
+import { FileExtension } from "@wasm";
 import { UploadFile } from "antd/es/upload/interface";
 import { formatFileSize } from "@/utils/helpers";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
@@ -14,47 +14,13 @@ const { Dragger } = Upload;
 
 interface FileUploadContentProps {
     onClose: () => void;
-    afterUpload: () => void;
 }
 
-const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose, afterUpload }) => {
+const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
     const [selectedFiles, setSelectedFiles] = useState<UploadFile[]>([]);
     const uploadManager = useUploadManager();
-    // const [api, contextHolder] = notification.useNotification();
     const addStaleFileId = useCacheInvalidationStore((state) => state.addStaleFileId);
     const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate);
-
-    // useEffect(() => {
-    //     if (!uploadManager.isUploading && (uploadManager.uploadedFiles > 0 || uploadManager.failedFiles.length || uploadManager.filesAlreadyExisted)) {
-
-    //         if (uploadManager.failedFiles.length > 0) {
-    //             api.error({
-    //                 message: "Error",
-    //                 description: `Failed to upload ${uploadManager.failedFiles.length} files`
-    //             });
-    //         }
-
-    //         if (uploadManager.uploadedFiles > 0 || uploadManager.filesAlreadyExisted) {
-    //             const lines = [];
-
-    //             if (uploadManager.uploadedFiles > 0) {
-    //                 lines.push(`Successfully uploaded ${uploadManager.uploadedFiles} files.`);
-    //             }
-
-    //             if (uploadManager.filesAlreadyExisted > 0) {
-    //                 lines.push(`${uploadManager.filesAlreadyExisted} files already existed.`);
-    //             }
-
-    //             api.success({
-    //                 message: "Success",
-    //                 description: lines.join("\n"),
-    //             });
-
-    //             setSelectedFiles([]);
-    //             onClose();
-    //         }
-    //     }
-    // }, [uploadManager, api, onClose]);
 
     const shouldIgnoreFile = (file: UploadFile): boolean => {
         const webkitPath = file.originFileObj?.webkitRelativePath || "";
@@ -80,8 +46,8 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose, afterUpl
         ]);
     }, []);
 
-    const handleFileChange = useCallback(({ fileList }: any) => {
-        const files = fileList.map((item: any) => ({
+    const handleFileChange = useCallback(({ fileList }: { fileList: UploadFile[] }) => {
+        const files = fileList.map((item: UploadFile) => ({
             ...item,
             originFileObj: item.originFileObj || item,
         }));
@@ -95,13 +61,12 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose, afterUpl
         }
 
         try {
-            const nativeFiles = selectedFiles.map((file) => file.originFileObj as File);
+            const nativeFiles = selectedFiles.map((file) => new File([file.originFileObj as Blob], file.name, { type: file.type }));
             uploadManager.uploadFiles(nativeFiles);
             addStaleFileId("all");
             triggerUpdate("files");
             setSelectedFiles([]);
             onClose()
-            // afterUpload()
         } catch (error) {
             console.error("Upload error:", error);
             message.error(error instanceof Error ? error.message : "Failed to upload files");
@@ -162,15 +127,6 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose, afterUpl
                     {uploadManager.isUploading ? "Uploading..." : `Upload (${selectedFiles.length})`}
                 </Button>
             </div>
-
-            {/* {uploadManager.isUploading && (
-                <div style={{ marginTop: 16 }}>
-                    <Progress percent={Math.round(uploadManager.progress * 100)} status={uploadManager.failedFiles.length ? "exception" : "active"} />
-                    <p style={{ marginTop: 8, textAlign: "center" }}>
-                        {uploadManager.uploadedFiles}/{uploadManager.totalFiles} files uploaded
-                    </p>
-                </div>
-            )} */}
         </>
     );
 };

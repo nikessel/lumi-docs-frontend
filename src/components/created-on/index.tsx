@@ -1,7 +1,6 @@
 import React from 'react';
 import { Tag, Tooltip } from 'antd';
 import { Report } from '@wasm';
-import Typography from "@/components/typography";
 
 interface ReportCreatedOnProps {
     reports: Report[];

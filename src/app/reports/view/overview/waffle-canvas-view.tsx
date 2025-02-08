@@ -2,21 +2,19 @@
 
 import React from 'react';
 import { ResponsiveWaffleCanvas } from '@nivo/waffle';
-import { Report } from '@wasm';
 import { generateWaffleDataFromReports } from '@/utils/advanced-charts-utils';
 import { getComplianceColorCode } from '@/utils/formating';
-import { useSelectedFilteredReportsContext } from '@/contexts/reports-context/selected-filtered-reports';
-
+import { useReportsContext } from '@/contexts/reports-context';
 
 const calculateTotalNodes = (waffleData: Array<{ id: string; value: number }>): number => {
     return waffleData.reduce((sum, datum) => sum + datum.value, 0);
 };
 
 const WaffleChart: React.FC = () => {
-    const { reports, loading, error } = useSelectedFilteredReportsContext();
+    const { filteredSelectedReports } = useReportsContext();
 
     // Generate data using the utility function
-    const waffleData = generateWaffleDataFromReports(reports);
+    const waffleData = generateWaffleDataFromReports(filteredSelectedReports);
 
     // Map data with colors based on the midpoint of the compliance interval
     const coloredWaffleData = waffleData.map((datum) => {

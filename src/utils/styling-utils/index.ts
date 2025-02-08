@@ -3,15 +3,12 @@ import type { ReportStatus } from "@wasm";
 
 export function genColor(text: string) {
     if (!text || typeof text !== "string") {
-        // Return default colors for invalid or missing input
         return { color: "#91bba8", backgroundColor: "#e9f1ed" };
     }
 
-    // Split text into words and pick the first letter from the second word (if available) or first word
     const splitString = text.split(" ");
     const initial = splitString[1]?.[0]?.toUpperCase() || splitString[0]?.[0]?.toUpperCase();
 
-    // Return color scheme based on the initial
     switch (initial) {
         case "A": return { color: "#470054", backgroundColor: "#ece5ed" };
         case "B": return { color: "#91bba8", backgroundColor: "#e9f1ed" };

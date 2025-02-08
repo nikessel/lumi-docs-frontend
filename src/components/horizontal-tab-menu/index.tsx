@@ -3,8 +3,7 @@ import Link from 'next/link';
 import { Divider, Modal } from 'antd';
 import { QuestionCircleOutlined } from '@ant-design/icons';
 import { usePathname } from 'next/navigation';
-import { createUrlWithParams, isActiveLink } from '@/utils/url-utils';
-
+import { isActiveLink } from '@/utils/url-utils';
 
 type MenuItem = {
     label: string;

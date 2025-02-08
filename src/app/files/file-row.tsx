@@ -1,6 +1,7 @@
 import React from 'react';
+import { File } from "@wasm";
 
-const FileRow: React.FC<{ file: any; isSelected: boolean; onClick: () => void }> = ({
+const FileRow: React.FC<{ file: File; isSelected: boolean; onClick: () => void }> = ({
     file,
     isSelected,
     onClick,

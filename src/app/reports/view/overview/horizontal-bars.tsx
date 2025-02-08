@@ -1,11 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Report } from '@wasm';
-import { getComplianceColorCode } from '@/utils/formating';
 import { Progress, Tooltip, Modal, Button } from 'antd';
-import { useSelectedFilteredReportsContext } from '@/contexts/reports-context/selected-filtered-reports';
-import { useFilteredReportSections } from '@/hooks/section-hooks';
+import { useReportsContext } from '@/contexts/reports-context';
+import { useSectionsContext } from '@/contexts/sections-context';
 
 type DisplayDataItem = {
     label: string;
@@ -14,25 +12,35 @@ type DisplayDataItem = {
 };
 
 const ComplianceBarChart: React.FC = () => {
-    const { reports, loading, error } = useSelectedFilteredReportsContext();
+    const { filteredSelectedReports, loading } = useReportsContext();
 
-    const { sections, loading: sectionsLoading } = useFilteredReportSections(reports);
+    const { filteredSelectedReportsSections, loading: sectionsLoading } = useSectionsContext();
+
     const [hoveredSection, setHoveredSection] = useState<{ sectionId: string; reportId: string } | null>(null);
     const [sortedDisplay, setSortedDisplay] = useState<DisplayDataItem[]>([]);
     const [selectedSection, setSelectedSection] = useState<DisplayDataItem | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    const [queuedSection, setQueuedSection] = useState<DisplayDataItem | null>(null);
+
     useEffect(() => {
-        if (!sections || sectionsLoading) return;
+        if (queuedSection) {
+            setSelectedSection(queuedSection);
+            setIsModalOpen(true);
+            setQueuedSection(null);
+        }
+    }, [queuedSection]);
+
+    useEffect(() => {
+        if (!filteredSelectedReportsSections || sectionsLoading) return;
 
         const displayData: DisplayDataItem[] = [];
 
-        // Extract and collect sections from reports
-        reports.forEach((report) => {
+        filteredSelectedReports.forEach((report) => {
             if (report.section_assessments) {
                 Array.from(report.section_assessments).forEach(([sectionId, section]) => {
                     displayData.push({
-                        label: sections.find((s) => s.id === sectionId)?.name || '',
+                        label: filteredSelectedReportsSections.find((s) => s.id === sectionId)?.name || '',
                         rating: section.compliance_rating,
                         id: { reportId: report.id, sectionId: sectionId },
                     });
@@ -40,7 +48,6 @@ const ComplianceBarChart: React.FC = () => {
             }
         });
 
-        // Sort sections by compliance rating (ascending order)
         setSortedDisplay(
             displayData.sort((a, b) => {
                 if (a.rating === undefined) return 1; // Move undefined to the bottom
@@ -49,11 +56,10 @@ const ComplianceBarChart: React.FC = () => {
             })
         );
 
-    }, [reports, sections, sectionsLoading]);
+    }, [filteredSelectedReports, filteredSelectedReportsSections, sectionsLoading]);
 
     const handleColumnClick = (section: DisplayDataItem) => {
-        setSelectedSection(section);
-        setIsModalOpen(true);
+        setQueuedSection(section);
     };
 
     const handleModalClose = () => {
@@ -67,7 +73,7 @@ const ComplianceBarChart: React.FC = () => {
 
     return (
         <div className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-            {sortedDisplay.map((section, index) => (
+            {sortedDisplay.map((section) => (
                 <div
                     key={`${section.id.reportId}-${section.id.sectionId}`}
                     onMouseEnter={() => setHoveredSection(section.id)}
@@ -95,7 +101,6 @@ const ComplianceBarChart: React.FC = () => {
                 </div>
             ))}
 
-            {/* Modal for section actions */}
             <Modal
                 title="Section Actions"
                 visible={isModalOpen}
@@ -114,7 +119,7 @@ const ComplianceBarChart: React.FC = () => {
                 ]}
             >
                 <p className="mt-4">
-                    <strong>{selectedSection?.label}</strong> ({reports.find((report) => report.id === selectedSection?.id.reportId)?.title})
+                    <strong>{selectedSection?.label}</strong> ({filteredSelectedReports.find((report) => report.id === selectedSection?.id.reportId)?.title})
                 </p>
                 <div className="my-4">
                     Compliance Rating

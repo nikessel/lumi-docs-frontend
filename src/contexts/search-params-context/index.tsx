@@ -2,10 +2,8 @@ import React from "react"
 import { useRouter, useSearchParams } from "next/navigation";
 import { createContext, useContext, useMemo, useCallback } from "react";
 
-// Define strict types for allowed search params
 type SearchParamKeys = "selectedReports" | "selectedTaskDocuments" | "searchQuery" | "compliance";
 
-// Define the type structure of search params
 interface SearchParamsState {
     selectedReports: string[];
     selectedTaskDocuments: string[];
@@ -13,7 +11,6 @@ interface SearchParamsState {
     compliance: [number, number] | null;
 }
 
-// Define the interface for context functions
 interface SearchParamsContextType extends SearchParamsState {
     // updateSearchParam: <T extends SearchParamKeys>(key: T, value: string | string[] | null) => void;
     toggleSelectedReport: (reportId: string) => void;

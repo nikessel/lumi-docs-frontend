@@ -4,18 +4,17 @@ import Stripe from "stripe";
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 
 export async function POST(req: Request) {
-    console.log("STRIPEPOST!!!!!")
     try {
         if (!stripe) throw new Error("Stripe is not configured");
 
-        const { quantity } = await req.json(); // Extract quantity from the request body
+        const { quantity } = await req.json();
 
         const session = await stripe.checkout.sessions.create({
             ui_mode: "embedded",
             line_items: [
                 {
-                    price: "price_1QkjTCKts1QMyI6uN3FQtHwl", // Replace with your Price ID  
-                    quantity, // Use the quantity passed from the frontend
+                    price: "price_1QkjTCKts1QMyI6uN3FQtHwl",
+                    quantity,
                 },
             ],
             mode: "payment",
@@ -25,12 +24,24 @@ export async function POST(req: Request) {
         });
 
         return NextResponse.json({ clientSecret: session.client_secret });
-    } catch (err: any) {
+    } catch (err: unknown) {
+        let errorMessage = "An unknown error occurred";
+        let statusCode = 500;
+
+        if (err instanceof Error) {
+            errorMessage = err.message;
+        }
+
+        if (typeof err === "object" && err !== null && "statusCode" in err) {
+            statusCode = (err as { statusCode: number }).statusCode;
+        }
+
         return NextResponse.json(
-            { error: err.message },
-            { status: err.statusCode || 500 }
+            { error: errorMessage },
+            { status: statusCode }
         );
     }
+
 }
 
 export async function GET(req: Request) {
@@ -56,10 +67,22 @@ export async function GET(req: Request) {
             line_items: session.line_items?.data, // Purchased items
             customer_email: session.customer_details?.email, // Customer's email
         });
-    } catch (error: any) {
+    } catch (error: unknown) {
+        let errorMessage = "An unknown error occurred";
+        let statusCode = 500;
+
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        }
+
+        if (typeof error === "object" && error !== null && "statusCode" in error) {
+            statusCode = (error as { statusCode: number }).statusCode;
+        }
+
         return NextResponse.json(
-            { error: error.message },
-            { status: error.statusCode || 500 }
+            { error: errorMessage },
+            { status: statusCode }
         );
     }
+
 }

@@ -21,6 +21,7 @@ const SelectDocuments: React.FC<SelectDocumentsProps> = ({ documents }) => {
     const [allDocumentsSelected, setAllDocumentsSelected] = useState(
         selectedDocumentNumbers.length === documents.length
     );
+    
     const [showDocuments, setShowDocuments] = useState(false);
 
     const handleAllDocumentsToggle = (checked: boolean) => {

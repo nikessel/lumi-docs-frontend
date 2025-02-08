@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { SavedView } from "@wasm";
 
 interface SavedViewRenderProps {
-    view?: SavedView; // Made optional for loading state
+    view?: SavedView;
     isLoading: boolean;
     isEmpty?: boolean;
 }
@@ -25,8 +25,6 @@ const SavedViewRender: React.FC<SavedViewRenderProps> = ({ view, isLoading, isEm
                         <Skeleton title={false} paragraph={{ rows: 1, width: 150 }} active />
                     </div>
                 </div>
-
-                {/* Loading Button */}
                 <Skeleton.Button active size="small" />
             </div>
         );
@@ -42,10 +40,6 @@ const SavedViewRender: React.FC<SavedViewRenderProps> = ({ view, isLoading, isEm
             </div>
         );
     }
-
-
-
-
 
     return (
         <div className="flex items-center justify-between p-2 bg-gray-50 rounded-lg shadow-sm">

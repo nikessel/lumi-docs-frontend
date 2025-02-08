@@ -1,18 +1,13 @@
-import React, { useState, useEffect } from "react";
-import { Slider, Drawer, Button, Radio, Switch, Badge, Divider } from "antd";
+import React, { useState, useEffect, useCallback } from "react";
+import { Drawer, Button, Divider } from "antd";
 import { SlidersOutlined } from "@ant-design/icons";
-import Typography from "@/components/typography";
-import { useRouter, useSearchParams } from "next/navigation";
-import type { Report } from "@wasm";
+import { useSearchParams } from "next/navigation";
 import SelectTaskDocuments from "./update-selected-task-documents";
 import ComplianceFilter from "./compliance-filter";
 import SearchRequirements from "./search-query";
 
-interface FilterBarProps {
-    reports?: Report[];
-}
 
-const FilterBar: React.FC<FilterBarProps> = ({ reports }) => {
+const FilterBar: React.FC = () => {
     const [complianceRating, setComplianceRating] = useState<[number, number]>([0, 75]);
     const [acceptanceLevel, setAcceptanceLevel] = useState<number>(20);
     const [aggregation, setAggregation] = useState<string>("Show actual ratings");
@@ -22,7 +17,6 @@ const FilterBar: React.FC<FilterBarProps> = ({ reports }) => {
     const [isDrawerVisible, setIsDrawerVisible] = useState(false);
 
     const searchParams = useSearchParams();
-    const router = useRouter();
 
     // Update filters from URL on load
     useEffect(() => {
@@ -42,7 +36,7 @@ const FilterBar: React.FC<FilterBarProps> = ({ reports }) => {
     }, [searchParams]);
 
     // Update the URL with filters
-    const updateUrlWithFilters = () => {
+    const updateUrlWithFilters = useCallback(() => {
         const updatedSearchParams = new URLSearchParams(window.location.search);
         updatedSearchParams.set("complianceRating", complianceRating.join(","));
         updatedSearchParams.set("acceptanceLevel", String(acceptanceLevel));
@@ -56,12 +50,12 @@ const FilterBar: React.FC<FilterBarProps> = ({ reports }) => {
             "",
             `${window.location.pathname}?${updatedSearchParams.toString()}`
         );
-    };
+    }, [complianceRating, acceptanceLevel, aggregation, ignored, taskCreated, none]);
 
     // Update the URL whenever a filter changes
     useEffect(() => {
         updateUrlWithFilters();
-    }, [complianceRating, acceptanceLevel, aggregation, ignored, taskCreated, none]);
+    }, [complianceRating, acceptanceLevel, aggregation, ignored, taskCreated, none, updateUrlWithFilters]);
 
     const showDrawer = () => {
         setIsDrawerVisible(true);

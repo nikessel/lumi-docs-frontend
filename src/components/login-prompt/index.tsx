@@ -3,7 +3,7 @@
 import React from "react";
 import { Button } from "antd";
 import Image from "next/image";
-import { useAuth } from "@/components/Auth0"; // Ensure this points to your authentication hook
+import { useAuth } from "@/components/Auth0";
 import Typography from "../typography";
 
 const LoginPrompt: React.FC = () => {

@@ -2,19 +2,19 @@
 
 import React from 'react';
 import TaskList from '@/components/tasks-list/task-list';
-import { useSelectedFilteredReportsTasksContext } from '@/contexts/tasks-context/selected-filtered-report-tasks';
 import TaskCommentList from '@/components/latest-comments/task-comment-list';
+import { useTasksContext } from '@/contexts/tasks-context';
 
 const Page: React.FC = () => {
-    const { tasks, loading, error } = useSelectedFilteredReportsTasksContext()
+    const { selectedFilteredReportsTasks } = useTasksContext()
 
     return (
         <div className="flex gap-x-12" style={{ height: "70vh" }}>
             <div style={{ width: "30%" }}>
-                <TaskList tasks={tasks} onViewAll={() => { }} isLoading={loading} />
+                <TaskList tasks={selectedFilteredReportsTasks} />
             </div>
             <div style={{ width: "70%" }}>
-                <TaskCommentList tasks={tasks} />
+                <TaskCommentList tasks={selectedFilteredReportsTasks} />
             </div>
         </div>
     );

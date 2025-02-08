@@ -9,7 +9,6 @@ interface TaskStatusTagProps {
 const TaskStatusTag: React.FC<TaskStatusTagProps> = ({ status }) => {
     if (!status) return null
 
-    // Define the styles and colors for each status
     const statusColors: Record<TaskStatus, string> = {
         completed: "green",
         open: "blue",

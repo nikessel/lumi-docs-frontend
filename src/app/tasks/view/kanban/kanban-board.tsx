@@ -1,18 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button, Modal, Input, Select, message } from 'antd';
+import { message } from 'antd';
 import CustomCard from "./custom-card";
 import ColumnHeader from './column-header';
 import { useUserContext } from "@/contexts/user-context";
-import { ControlledBoard, moveCard, KanbanBoard as KanbanBoardType, Card, OnDragEndNotification } from '@caldwell619/react-kanban';
+import { ControlledBoard, moveCard } from '@caldwell619/react-kanban';
 import { removeKanbanColumn, addKanbanColumn } from '@/utils/kanban-utils';
 import { useWasm } from '@/components/WasmProvider';
-import { KanbanConfig, TaskStatus } from '@wasm';
-import Typography from '@/components/typography';
-import AddColumnSection from './add-column-component';
+import { TaskStatus } from '@wasm';
 import DefaultSetupComponent from './create-default-setup';
-import { useSelectedFilteredReportsTasksContext } from '@/contexts/tasks-context/selected-filtered-report-tasks';
 import UnassignedTasksIndicator from "./unassigned-tasks-indicator";
 import { moveTasksToColumns } from "@/utils/kanban-utils";
+import { useTasksContext } from '@/contexts/tasks-context';
 
 export interface KanbanBoardState {
     columns: Array<{
@@ -27,14 +25,11 @@ export interface KanbanBoardState {
 }
 
 const KanbanBoard: React.FC = () => {
-    const { user, loading: userLoading, error } = useUserContext();
-    const { tasks, loading: tasksLoading, error: tasksError } = useSelectedFilteredReportsTasksContext();
+    const { user, loading: userLoading } = useUserContext();
+    const { selectedFilteredReportsTasks, loading: tasksLoading } = useTasksContext();
 
     const [board, setBoard] = useState<KanbanBoardState | null>(null);
     const { wasmModule } = useWasm();
-
-    const [newColumnName, setNewColumnName] = useState("");
-    const [selectedStatus, setSelectedStatus] = useState<TaskStatus | null>(null);
 
     const [messageApi, contextHolder] = message.useMessage(); // Initialize message API
     const [showDefaultSetup, setShowDefaultSetup] = useState(false);
@@ -47,17 +42,15 @@ const KanbanBoard: React.FC = () => {
 
     useEffect(() => {
         if (user?.task_management?.kanban?.columns && user.task_management.kanban.columns.length > 0 && !tasksLoading && !initialBoardCreated.current) {
-            console.log("TETETEETTET", initialBoardCreated.current)
-            // Map user kanban columns to board state
             initialBoardCreated.current = true
-            const existingTaskIds = new Set(tasks.map(task => task.id));
+            const existingTaskIds = new Set(selectedFilteredReportsTasks.map(task => task.id));
             const mappedColumns = user.task_management.kanban.columns.map((column) => ({
                 id: column.column_name,
                 title: column.column_name,
                 cards: column.tasks
                     .filter(taskId => existingTaskIds.has(taskId)) // Only keep existing tasks
                     .map(taskId => {
-                        const task = tasks.find(t => t.id === taskId);
+                        const task = selectedFilteredReportsTasks.find(t => t.id === taskId);
                         return {
                             id: taskId,
                             title: task?.title || `Task ${taskId}`,
@@ -65,7 +58,6 @@ const KanbanBoard: React.FC = () => {
                         };
                     }),
             }));
-            console.log("SETINGUPBOARD", mappedColumns)
 
             setBoard({ columns: mappedColumns });
             setShowDefaultSetup(false)
@@ -74,7 +66,7 @@ const KanbanBoard: React.FC = () => {
             setSettingUpBoard(false)
             setShowDefaultSetup(true)
         }
-    }, [user, tasks]);
+    }, [user, selectedFilteredReportsTasks, board?.columns?.length, tasksLoading]);
 
     useEffect(() => {
         if (!userLoading && !tasksLoading && !settingUpBoard) {
@@ -102,43 +94,14 @@ const KanbanBoard: React.FC = () => {
                 );
             }
             messageApi.success('Default setup created successfully');
-            setShowDefaultSetup(false); // Hide the default setup component
-        } catch (err) {
+            setShowDefaultSetup(false);
+        } catch (err: unknown) {
             messageApi.error('Failed to create default setup');
-        }
-    };
-
-    const handleCustomSetup = () => {
-        setShowDefaultSetup(false); // Hide the default setup component and show an empty board
-    };
-
-    const handleAddColumn = async () => {
-        if (!newColumnName.trim() || !selectedStatus) {
-            messageApi.warning("Please provide a column name and select a task status.");
-            return;
-        }
-
-        // Check for uniqueness of the column name
-        const existingColumnNames = user?.task_management?.kanban?.columns.map((col) => col.column_name) || [];
-        if (existingColumnNames.includes(newColumnName.trim())) {
-            messageApi.error(`Column name "${newColumnName}" already exists. Please choose a different name.`);
-            return;
-        }
-
-        try {
-            const updatedUser = await addKanbanColumn(wasmModule, newColumnName.trim(), selectedStatus);
-            if (updatedUser) {
-                messageApi.success(`Column "${newColumnName}" added successfully`);
-                setNewColumnName("");
-                setSelectedStatus(null);
-            }
-        } catch (err) {
-            messageApi.error("Failed to add column");
+            console.error(err)
         }
     };
 
     if (isLoading) return <p>Loading Kanban board...</p>;
-    // if (error) return <p>Error loading Kanban board: {error}</p>;
     if (settingUpBoard) return <p>Setting up Kanban board...</p>;
 
     return (
@@ -149,24 +112,19 @@ const KanbanBoard: React.FC = () => {
 
                 {showDefaultSetup ?
                     <DefaultSetupComponent
-                        onCustomSetup={handleCustomSetup}
                         onDefaultSetup={handleDefaultSetup}
                     />
                     :
                     board ? <div>
                         <UnassignedTasksIndicator
-                            tasks={tasks}
+                            tasks={selectedFilteredReportsTasks}
                             kanbanColumns={user?.task_management?.kanban?.columns || []}
                         />
                         <ControlledBoard
-                            // onCardDragEnd={(card, source, destination) => {
-                            //     setBoard((prevBoard) => (prevBoard ? moveCard(prevBoard, source, destination) : null));
-                            // }}
-
                             onCardDragEnd={async (card, source, destination) => {
                                 if (!destination || !source) {
                                     console.warn("Invalid source or destination. Dragging operation cancelled.");
-                                    return; // Do nothing if source or destination is undefined
+                                    return;
                                 }
 
                                 setBoard((prevBoard) => (prevBoard ? moveCard(prevBoard, source, destination) : null));
@@ -176,7 +134,7 @@ const KanbanBoard: React.FC = () => {
                                     return;
                                 }
 
-                                const taskToUpdate = tasks.find((task) => task.id === card.id);
+                                const taskToUpdate = selectedFilteredReportsTasks.find((task) => task.id === card.id);
 
                                 if (!taskToUpdate) {
                                     console.error(`Task with ID "${card.id}" not found.`);
@@ -196,12 +154,10 @@ const KanbanBoard: React.FC = () => {
                                         return;
                                     }
 
-                                    // Calculate the new order for the destination column
                                     const newOrder = [...destinationColumn.tasks];
                                     const destinationIndex = destination.toPosition ?? newOrder.length; // Use `toPosition` or append to the end if undefined
                                     newOrder.splice(destinationIndex, 0, card.id); // Insert the task at the new position
 
-                                    // Call moveTasksToColumns with the new order
                                     const success = await moveTasksToColumns(wasmModule, [
                                         {
                                             task: taskToUpdate,
@@ -222,7 +178,7 @@ const KanbanBoard: React.FC = () => {
                             }}
 
                             renderCard={(card) => (
-                                <CustomCard task={tasks.find((task) => task.id === card.id)} /> // Pass the entire task object to the card
+                                <CustomCard task={selectedFilteredReportsTasks.find((task) => task.id === card.id)} /> // Pass the entire task object to the card
                             )}
                             renderColumnHeader={(column) => (
                                 <ColumnHeader
@@ -232,13 +188,6 @@ const KanbanBoard: React.FC = () => {
                                 />
                             )}
                             allowAddCard={false}
-                        // renderColumnAdder={() => <AddColumnSection
-                        //     newColumnName={newColumnName}
-                        //     setNewColumnName={setNewColumnName}
-                        //     selectedStatus={selectedStatus}
-                        //     setSelectedStatus={setSelectedStatus}
-                        //     handleAddColumn={handleAddColumn}
-                        // />}
                         >
                             {board}
                         </ControlledBoard></div> : ""}

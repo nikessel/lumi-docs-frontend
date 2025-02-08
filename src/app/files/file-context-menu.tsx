@@ -27,15 +27,9 @@ const FileContextMenu: React.FC<{
             <Menu.Item key="create-folder" icon={<FolderAddOutlined />} onClick={onCreateFolder}>
                 Create Folder
             </Menu.Item>
-            {/* <Menu.Item key="rename" icon={<EditOutlined />} onClick={onRename}>
-                Rename
-            </Menu.Item> */}
             <Menu.Item key="move" icon={<FolderOpenOutlined />} onClick={onMove}>
                 Move
             </Menu.Item>
-            {/* <Menu.Item key="delete" icon={<DeleteOutlined />} onClick={onDelete} danger>
-                Delete
-            </Menu.Item> */}
         </Menu>
     );
 };

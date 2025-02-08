@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { Progress } from "antd";
 import Typography from "@/components/typography";
-import { getComplianceColorCode } from "@/utils/formating";
 import RegulatoryFrameworkTag from "@/components/regulatory-framework-tag";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import type { Report } from "@wasm";
 import { Skeleton } from "antd";
 import { TaskWithReportId } from "@/hooks/tasks-hooks";
-import { useSearchParamsState } from "@/contexts/search-params-context";
-import { createUrlWithParams } from "@/utils/url-utils";
 import { LinkOutlined } from "@ant-design/icons";
 
 interface ReportCardProps {
@@ -26,7 +23,6 @@ const ReportCard: React.FC<ReportCardProps> = ({
 }) => {
     const router = useRouter()
     const [unresolvedTasks, setUnresolvedTasks] = useState<TaskWithReportId[] | null>(null)
-    const { toggleSelectedReport } = useSearchParamsState()
 
     useEffect(() => {
         const unresolvedTasks = tasks?.filter((task) => task.status === "open")
@@ -35,18 +31,10 @@ const ReportCard: React.FC<ReportCardProps> = ({
 
     const handleClickReportTitle = async () => {
         router.push(`/reports/view/overview?selectedReports=${report?.id}`)
-        // report?.id && await toggleSelectedReport(report?.id)
-        // const updatedSearchParams = new URLSearchParams(window.location.search);
-        // const newUrl = createUrlWithParams("/reports/view/overview", updatedSearchParams);
-        // router.push(newUrl);
     }
 
     const handleClickUnresolvedTasks = async () => {
         router.push(`/tasks/view/overview?selectedReports=${report?.id}`)
-        // report?.id && await toggleSelectedReport(report?.id)
-        // const updatedSearchParams = new URLSearchParams(window.location.search);
-        // const newUrl = createUrlWithParams("/tasks/view/overview", updatedSearchParams);
-        // router.push(newUrl);
     }
 
     if (isLoading) {

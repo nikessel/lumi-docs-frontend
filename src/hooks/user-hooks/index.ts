@@ -10,6 +10,12 @@ interface UseUserReturn {
     error: string | null;
 }
 
+interface UseUserReturn {
+    user: User | null;
+    loading: boolean;
+    error: string | null;
+}
+
 export const useUser = (): UseUserReturn => {
     const { wasmModule } = useWasm();
     const [user, setUser] = useState<User | null>(null);
@@ -17,52 +23,72 @@ export const useUser = (): UseUserReturn => {
     const [error, setError] = useState<string | null>(null);
 
     const lastUpdated = useCacheInvalidationStore((state) => state.lastUpdated["user"]);
+    const beingRefetched = useCacheInvalidationStore((state) => state.beingRefetched["user"]);
+
     const setBeingRefetched = useCacheInvalidationStore((state) => state.setBeingRefetched);
+    const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate);
 
     useEffect(() => {
         const fetchUserData = async (isInitialLoad = false) => {
+            console.log(`📌 Fetching user data... (Initial Load: ${isInitialLoad})`);
+
             if (!wasmModule) {
+                console.error("❌ WASM module not provided");
                 setError("WASM module not provided");
                 setLoading(false);
                 return;
             }
 
-            try {
-                if (isInitialLoad) {
-                    setLoading(true); // Set loading for the initial fetch
-                } else {
-                    setBeingRefetched("user", true); // Set refetching state
-                }
-                const fetchedUser = await fetchUser(wasmModule);
-
-                if (fetchedUser) {
-                    // Parse preferences if they exist and are a string
-                    if (typeof fetchedUser.preferences === "string") {
-                        try {
-                            fetchedUser.preferences = JSON.parse(fetchedUser.preferences);
-                        } catch (parseError) {
-                            console.warn("Failed to parse user preferences, using raw value:", fetchedUser.preferences);
-                        }
+            if (!user || lastUpdated) {
+                try {
+                    if (isInitialLoad) {
+                        console.log("🔄 Initial user fetch started...");
+                        setLoading(true);
+                    } else {
+                        console.log("🔄 Refetching user data...");
+                        setBeingRefetched("user", true);
                     }
-                    setUser(fetchedUser);
-                } else {
-                    setError("User data not found");
+
+                    const fetchedUser = await fetchUser(wasmModule);
+
+                    if (fetchedUser) {
+                        console.log(`✅ User fetched successfully (ID: ${fetchedUser.id})`);
+
+                        // Parse preferences if needed
+                        if (typeof fetchedUser.preferences === "string") {
+                            try {
+                                fetchedUser.preferences = JSON.parse(fetchedUser.preferences);
+                            } catch {
+                                console.warn("⚠️ Failed to parse user preferences, using raw value:", fetchedUser.preferences);
+                            }
+                        }
+                        triggerUpdate("user", true)
+                        setUser(fetchedUser);
+                    } else {
+                        console.warn("⚠️ User data not found");
+                        setError("User data not found");
+                    }
+                } catch (err: unknown) {
+                    console.error("❌ Error fetching user:", err);
+                    setError(err instanceof Error ? err.message : "Error fetching user");
+                } finally {
+                    if (isInitialLoad) {
+                        console.log("✅ Initial user fetch completed");
+                        setLoading(false);
+                    } else if (beingRefetched) {
+                        console.log("✅ User refetch completed");
+                        setBeingRefetched("user", false);
+                    }
                 }
-            } catch (err: any) {
-                console.error("Failed to fetch user:", err.message);
-                setError(err.message || "Error fetching user");
-            } finally {
-                if (isInitialLoad) {
-                    setLoading(false); // Clear loading state for the initial fetch
-                } else {
-                    setBeingRefetched("user", false); // Clear refetching state
-                }
+            } else {
+                console.log("🟢 User data is already fetched and up to date");
             }
         };
 
-        fetchUserData(loading); // Initial fetch
-    }, [wasmModule, lastUpdated]);
+        fetchUserData(loading);
+    }, [wasmModule, lastUpdated, loading, setBeingRefetched, triggerUpdate, user, beingRefetched]);
 
     return { user, loading, error };
 };
+
 

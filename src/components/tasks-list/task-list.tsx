@@ -1,19 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Button, Input, Card } from "antd";
+import { Input } from "antd";
 import DocumentTaskCard from "./task-card";
 import Typography from "@/components/typography";
 import { Task } from "@wasm";
 import { getDocumentIconLetters } from "@/utils/files-utils";
 import { useFilesContext } from "@/contexts/files-context";
+import { useReportsContext } from "@/contexts/reports-context";
 
 interface TaskListProps {
     tasks: Task[];
-    isLoading: boolean;
-    onViewAll: () => void;
-    allReportIds: string[]
 }
 
-const TaskList: React.FC<TaskListProps> = ({ tasks, isLoading, onViewAll, allReportIds }) => {
+const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
     const [searchTerm, setSearchTerm] = useState("");
     const { files, isLoading: filesLoading } = useFilesContext()
     const [sortedDocuments, setSortedDocuments] = useState<{
@@ -23,8 +21,18 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, isLoading, onViewAll, allRep
         document_id: string | null;
     }[]>([]);
 
+    const { reports } = useReportsContext()
+
+    const [allReportIds, setAllReportIds] = useState<string[]>([]);
+
     useEffect(() => {
-        if (filesLoading) return; // Wait until files are loaded
+        const reportIds = reports.map(report => report.id);
+        setAllReportIds(reportIds);
+    }, [reports]);
+
+
+    useEffect(() => {
+        if (filesLoading) return;
 
         const groupedTasks = tasks.reduce((acc, task) => {
             const doc = task.associated_document || "Unassigned";
@@ -75,7 +83,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks, isLoading, onViewAll, allRep
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
             <div className="flex-1 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-                {sortedDocuments.map(({ document, tasks, document_id, taskCount }) => (
+                {sortedDocuments.map(({ document, document_id, taskCount }) => (
                     <DocumentTaskCard
                         key={document}
                         document_title={document}

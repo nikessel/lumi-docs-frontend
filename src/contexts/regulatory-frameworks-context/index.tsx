@@ -1,5 +1,5 @@
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useRegulatoryFrameworks } from '@/hooks/regulatory-frameworks-hooks'; // Assuming the hook is defined here
+import { useRegulatoryFrameworks } from '@/hooks/regulatory-frameworks-hooks';
 import { RegulatoryFramework } from '@wasm';
 
 interface FrameworkInfo {

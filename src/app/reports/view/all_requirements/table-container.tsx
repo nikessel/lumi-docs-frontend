@@ -94,7 +94,6 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
             }
         }
         else {
-            const { id, ...assessment } = record;
             setOpenModal(true)
             setSelectedRequirement({ requirement: requirements.find((req) => req.id === record.id), requirementAssessment: allAssessmentsSorted.find((ass) => ass.id === record.id) })
         }

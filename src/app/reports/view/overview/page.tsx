@@ -1,32 +1,24 @@
 'use client';
-import Tree from "./tree-view";
 import { Card, Statistic, Skeleton } from 'antd';
 import { getComplianceColorCode } from "@/utils/formating";
-import { useSelectedFilteredReports } from "@/hooks/report-hooks";
-import TreeView from "./tree-view-new";
 import WaffleChart from "./waffle-canvas-view";
-import Typography from "@/components/typography";
-import NetworkChart from "./network-chart";
 import ComplianceBarChart from "./horizontal-bars";
-import { useSelectedFilteredReportsContext } from "@/contexts/reports-context/selected-filtered-reports";
-import { useSelectedFilteredReportsTasksContext } from "@/contexts/tasks-context/selected-filtered-report-tasks";
 import { analyzeReports } from "@/utils/advanced-charts-utils";
 import { analyzeTasks } from "@/utils/tasks-utils";
-import { DotChartOutlined } from '@ant-design/icons';
+import { useReportsContext } from "@/contexts/reports-context";
+import { useTasksContext } from '@/contexts/tasks-context';
 
 const Page = () => {
-    const { reports, loading: reportsLoading } = useSelectedFilteredReportsContext();
-    const { tasks, loading: tasksLoading } = useSelectedFilteredReportsTasksContext();
+    const { filteredSelectedReports, loading: reportsLoading } = useReportsContext();
+    const { selectedFilteredReportsTasks, loading: tasksLoading } = useTasksContext();
 
-    console.log("reports", reports)
+    const analyzedReports = analyzeReports(filteredSelectedReports);
 
-    const analyzedReports = analyzeReports(reports);
-
-    const averageCompliance = reports.length
-        ? reports.reduce((sum, report) => sum + (report.compliance_rating || 0), 0) / reports.length
+    const averageCompliance = filteredSelectedReports.length
+        ? filteredSelectedReports.reduce((sum, report) => sum + (report.compliance_rating || 0), 0) / filteredSelectedReports.length
         : 0;
 
-    const analyzedTasks = analyzeTasks(tasks);
+    const analyzedTasks = analyzeTasks(selectedFilteredReportsTasks);
 
     const isLoading = reportsLoading || tasksLoading;
 
@@ -67,7 +59,7 @@ const Page = () => {
                     <Card bordered={false} className="h-full">
                         <Statistic
                             title="Reports (requirements)"
-                            value={reports.length}
+                            value={filteredSelectedReports.length}
                             precision={0}
                             formatter={(value) => `${value} (${analyzedReports.numberOfRequirementAssessments})`}
                         />

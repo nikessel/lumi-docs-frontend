@@ -5,6 +5,7 @@ interface CacheInvalidationState {
     staleIds: string[];
     staleReportIds: string[];
     staleFileIds: string[];
+    staleTaskIds: string[];
 
     addStaleId: (id: string) => void;
     removeStaleIds: (ids: string[]) => void;
@@ -16,75 +17,84 @@ interface CacheInvalidationState {
     removeStaleFileIds: (ids: string[]) => void;
     clearStaleFileIds: () => void;
 
-    lastUpdated: Record<string, number>;
-    triggerUpdate: (storeName: string) => void;
+    addStaleTaskId: (id: string) => void;
+    removeStaleTaskIds: (ids: string[]) => void;
+    clearStaleTaskIds: () => void;
+
+    lastUpdated: Record<string, number | null>;
+    triggerUpdate: (storeName: string, updateComplete?: boolean) => void;
+
     beingRefetched: Record<string, boolean>;
     setBeingRefetched: (storeName: string, status: boolean) => void;
-    resetState: () => void
+    resetState: () => void;
 }
 
 const useCacheInvalidationStore = create<CacheInvalidationState>()(
     persist(
         (set) => ({
-            // Stale ID management
             staleIds: [],
             staleReportIds: [],
             staleFileIds: [],
+            staleTaskIds: [],
 
+            // ✅ Add Stale IDs
             addStaleId: (id: string) =>
                 set((state) => ({
-                    staleIds: state.staleIds.includes(id)
-                        ? state.staleIds // Avoid duplicates
-                        : [...state.staleIds, id],
+                    staleIds: state.staleIds.includes(id) ? state.staleIds : [...state.staleIds, id],
+                })),
+
+            addStaleTaskId: (id: string) =>
+                set((state) => ({
+                    staleTaskIds: state.staleTaskIds.includes(id) ? state.staleTaskIds : [...state.staleTaskIds, id],
                 })),
 
             addStaleReportId: (id: string) =>
                 set((state) => ({
-                    staleReportIds: state.staleReportIds.includes(id)
-                        ? state.staleReportIds
-                        : [...state.staleReportIds, id],
+                    staleReportIds: state.staleReportIds.includes(id) ? state.staleReportIds : [...state.staleReportIds, id],
                 })),
 
             addStaleFileId: (id: string) =>
                 set((state) => ({
-                    staleFileIds: state.staleFileIds.includes(id)
-                        ? state.staleFileIds
-                        : [...state.staleFileIds, id],
+                    staleFileIds: state.staleFileIds.includes(id) ? state.staleFileIds : [...state.staleFileIds, id],
                 })),
 
+            // ✅ Remove Stale IDs
             removeStaleIds: (ids: string[]) =>
                 set((state) => ({
-                    staleIds: state.staleIds.filter((staleId) => !ids.includes(staleId)), // Remove matching IDs
+                    staleIds: state.staleIds.filter((staleId) => !ids.includes(staleId)),
+                })),
+
+            removeStaleTaskIds: (ids: string[]) =>
+                set((state) => ({
+                    staleTaskIds: state.staleTaskIds.filter((staleId) => !ids.includes(staleId)),
                 })),
 
             removeStaleReportIds: (ids: string[]) =>
                 set((state) => ({
-                    staleReportIds: state.staleReportIds.filter((staleId) => !ids.includes(staleId)), // Remove matching IDs
+                    staleReportIds: state.staleReportIds.filter((staleId) => !ids.includes(staleId)),
                 })),
 
             removeStaleFileIds: (ids: string[]) =>
                 set((state) => ({
-                    staleFileIds: state.staleFileIds.filter((staleId) => !ids.includes(staleId)), // Remove matching IDs
+                    staleFileIds: state.staleFileIds.filter((staleId) => !ids.includes(staleId)),
                 })),
 
-            clearStaleFileIds: () =>
-                set((state) => ({
-                    staleFileIds: [], // Remove matching IDs
-                })),
+            // ✅ Clear Stale IDs
+            clearStaleFileIds: () => set(() => ({ staleFileIds: [] })),
+            clearStaleTaskIds: () => set(() => ({ staleTaskIds: [] })),
 
-            // Cache update triggers
+            // ✅ Cache update triggers
             lastUpdated: {}, // Tracks the last update timestamp for each store
 
-
-            triggerUpdate: (storeName: string) =>
+            triggerUpdate: (storeName, setToNull) =>
                 set((state) => ({
                     lastUpdated: {
                         ...state.lastUpdated,
-                        [storeName]: Date.now(), // Update the timestamp for the store
+                        [storeName]: setToNull ? null : Date.now(),
                     },
                 })),
 
-            // Refetch status tracking
+            // ✅ Refetch status tracking
             beingRefetched: {}, // Tracks if a specific store is being refetched
 
             setBeingRefetched: (storeName: string, status: boolean) =>
@@ -95,11 +105,20 @@ const useCacheInvalidationStore = create<CacheInvalidationState>()(
                     },
                 })),
 
-            resetState: () => set(() => ({ staleIds: [], staleReportIds: [], lastUpdated: {}, beingRefetched: {}, })),
+            // ✅ Reset state
+            resetState: () =>
+                set(() => ({
+                    staleIds: [],
+                    staleReportIds: [],
+                    staleFileIds: [],
+                    staleTaskIds: [],
+                    lastUpdated: {},
+                    beingRefetched: {},
+                })),
         }),
         {
-            name: 'cache-invalidation-store', // Key for storage
-            storage: createJSONStorage(() => localStorage), // Use localStorage
+            name: 'cache-invalidation-store',
+            storage: createJSONStorage(() => localStorage),
         }
     )
 );

@@ -1,132 +1,182 @@
 import { useState, useEffect } from "react";
 import { useWasm } from "@/components/WasmProvider";
-import { fetchTasksByReport } from "@/utils/tasks-utils"
-import { Report, Task } from "@wasm";
-import { getSelectedFilteredReports } from "@/utils/report-utils";
+import { fetchTasksByReport, fetchTaskById } from "@/utils/tasks-utils";
+import { Task } from "@wasm";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
 import { useSearchParamsState } from "@/contexts/search-params-context";
-import { filter } from "jszip";
 import { useFilesContext } from "@/contexts/files-context";
-import { useFilteredRequirementsContext } from '@/contexts/requirement-context/filtered-report-requirement-context';
-import { useSelectedFilteredReports } from "../report-hooks";
+import { useReportsContext } from "@/contexts/reports-context";
+import { filterReports } from "@/utils/report-utils";
+import { useRequirementsContext } from "@/contexts/requirements-context";
 
 export interface TaskWithReportId extends Task {
     reportId: string;
 }
 
-interface UseAllReportsTasks {
+interface UseTasks {
     tasks: TaskWithReportId[];
+    selectedFilteredReportsTasks: Task[];
     loading: boolean;
     error: string | null;
 }
 
-export const useAllReportsTasks = (reports: Report[]): UseAllReportsTasks => {
+export const useTasks = (): UseTasks => {
     const { wasmModule } = useWasm();
     const [tasks, setTasks] = useState<TaskWithReportId[]>([]);
+    const [tasksByReportId, setTasksByReportId] = useState<Record<string, TaskWithReportId[]>>({});
+    const [selectedFilteredReportsTasks, setSelectedFilteredReportsTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
     const lastUpdated = useCacheInvalidationStore((state) => state.lastUpdated["tasks"]);
     const setBeingRefetched = useCacheInvalidationStore((state) => state.setBeingRefetched);
+    const isBeingRefetched = useCacheInvalidationStore((state) => state.beingRefetched["tasks"]);
+    const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate);
+    const staleTaskIds = useCacheInvalidationStore((state) => state.staleTaskIds);
+    const removeStaleTaskIds = useCacheInvalidationStore((state) => state.removeStaleTaskIds)
+
+    const { reports } = useReportsContext();
+    const { selectedReports, selectedTaskDocuments, searchQuery, compliance } = useSearchParamsState();
+    const { requirements } = useRequirementsContext();
+    const { files } = useFilesContext();
 
     useEffect(() => {
         const fetchAllTasks = async (isInitialLoad = false) => {
-            if (!wasmModule) return;
+            if (!wasmModule) {
+                console.warn("❌ WASM module not loaded");
+                setError("WASM module not loaded");
+                return;
+            }
+
+            if (!reports.length) {
+                console.warn("⚠️ No reports available, skipping task fetch");
+                return;
+            }
+
+            if (!isInitialLoad && !lastUpdated) {
+                console.log("🟢 Tasks are already up to date, skipping re-fetch");
+                return;
+            }
 
             try {
+                triggerUpdate("tasks", true);
                 if (isInitialLoad) {
-                    setLoading(true); // Set loading for the initial fetch
+                    console.log("🔄 Initial task fetch started...");
+                    setLoading(true);
                 } else {
-                    setBeingRefetched("tasks", true); // Set refetching for subsequent fetches
+                    console.log("🔄 Refetching tasks...");
+                    setBeingRefetched("tasks", true);
                 }
 
-                const allTasks = await Promise.all(
-                    reports.map(report =>
-                        fetchTasksByReport(wasmModule, report.id).then(tasks =>
-                            tasks.map(task => ({ ...task, reportId: report.id }))
+                let updatedTasksByReport: Record<string, TaskWithReportId[]> = { ...tasksByReportId };
+
+                if (staleTaskIds.length > 0) {
+                    console.log(`🔄 Fetching only stale tasks: ${staleTaskIds.join(", ")}`);
+
+                    // Fetch only the stale tasks by their ID
+                    const updatedTasks = await Promise.all(
+                        staleTaskIds.map(async taskId => {
+                            try {
+                                const updatedTask = await fetchTaskById(wasmModule, taskId);
+                                if (!updatedTask) {
+                                    console.warn(`⚠️ No task found for ID: ${taskId}`);
+                                    return null;
+                                }
+                                return updatedTask as TaskWithReportId;
+                            } catch (error) {
+                                console.error(`❌ Error fetching task ID: ${taskId}`, error);
+                                return null;
+                            }
+                        })
+                    );
+
+                    // Filter out null values
+                    const validUpdatedTasks = updatedTasks.filter((task): task is TaskWithReportId => task !== null);
+
+                    // Replace old tasks with updated ones in both tasks and tasksByReportId
+                    validUpdatedTasks.forEach(updatedTask => {
+                        // Find the report ID from the existing state
+                        const reportId = Object.keys(tasksByReportId).find(reportId =>
+                            tasksByReportId[reportId].some(task => task.id === updatedTask.id)
+                        );
+
+                        if (reportId) {
+                            // Replace the task in `tasksByReportId`
+                            updatedTasksByReport[reportId] = updatedTasksByReport[reportId].map(task =>
+                                task.id === updatedTask.id ? updatedTask : task
+                            );
+
+                            // Replace the task in `tasks`
+                            setTasks(prevTasks =>
+                                prevTasks.map(task => (task.id === updatedTask.id ? updatedTask : task))
+                            );
+                        }
+                    });
+
+                    console.log(`✅ Successfully updated ${validUpdatedTasks.length} stale tasks`);
+                    removeStaleTaskIds(staleTaskIds); // Remove fetched stale task IDs from cache
+                } else {
+                    triggerUpdate("tasks", true);
+                    console.log("🔄 Fetching all tasks for all reports...");
+
+                    const allTasksByReport = await Promise.all(
+                        reports.map(report =>
+                            fetchTasksByReport(wasmModule, report.id).then(tasks =>
+                                tasks.map(task => ({ ...task, reportId: report.id }))
+                            )
                         )
-                    )
-                );
+                    );
 
-                setTasks(allTasks.flat());
+                    allTasksByReport.forEach((tasks, index) => {
+                        updatedTasksByReport[reports[index].id] = tasks;
+                    });
 
-            } catch (err: any) {
-                setError(err.message || "Failed to fetch tasks");
+                    console.log(`✅ Fetched ${Object.values(updatedTasksByReport).flat().length} tasks`);
+                }
+
+                setTasks(Object.values(updatedTasksByReport).flat());
+                setTasksByReportId(updatedTasksByReport);
+                triggerUpdate("tasks", true);
+            } catch (err: unknown) {
+                console.error("❌ Error fetching tasks:", err);
+                setError(err instanceof Error ? err.message : "Failed to fetch tasks");
             } finally {
                 if (isInitialLoad) {
+                    console.log("✅ Initial task fetch completed");
                     setLoading(false);
-                } else {
+                } else if (isBeingRefetched) {
+                    console.log("✅ Task refetch completed");
                     setBeingRefetched("tasks", false);
                 }
             }
         };
 
         fetchAllTasks(loading);
-    }, [wasmModule, reports, lastUpdated]);
+    }, [wasmModule, reports, lastUpdated, staleTaskIds, loading, setBeingRefetched, triggerUpdate, isBeingRefetched, removeStaleTaskIds, tasksByReportId]);
 
-    return { tasks, loading, error };
-};
 
-interface UseSelectedFilteredReportsTasks {
-    tasks: Task[];
-    loading: boolean;
-    error: string | null;
-}
 
-export const useSelectedFilteredReportsTasks = (): UseSelectedFilteredReportsTasks => {
-    const { wasmModule } = useWasm();
-    const [tasks, setTasks] = useState<Task[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
-
-    const lastUpdated = useCacheInvalidationStore((state) => state.lastUpdated["tasks"]);
-    const setBeingRefetched = useCacheInvalidationStore((state) => state.setBeingRefetched);
-    const { selectedReports, selectedTaskDocuments, searchQuery, compliance } = useSearchParamsState()
-    const { files, isLoading: filesLoading } = useFilesContext()
-    const { requirements, loading: requirementsLoading } = useFilteredRequirementsContext()
-
+    /**
+     * 🎯 **Filter Selected Tasks Using Stored `tasksByReportId`**
+     */
     useEffect(() => {
-        const fetchFilteredTasks = async (isInitialLoad = false) => {
-            if (!wasmModule || filesLoading || requirementsLoading) return;
+        console.log("🔄 Filtering tasks based on selected reports and filters...");
 
-            try {
-                if (isInitialLoad) {
-                    setLoading(true); // Set loading for the initial fetch
-                } else {
-                    setBeingRefetched("filteredTasks", true); // Set refetching for subsequent fetches
-                }
+        const filteredReports = filterReports(reports, selectedReports, searchQuery, compliance, requirements);
+        const reportIds = filteredReports.map(report => report.id);
 
-                const reports = await getSelectedFilteredReports(wasmModule, selectedReports, searchQuery, compliance, requirements);
+        let filteredTasks = reportIds.flatMap(reportId => tasksByReportId[reportId] || []);
 
-                let allTasks = await Promise.all(
-                    reports.map(report => fetchTasksByReport(wasmModule, report.id))
+        if (selectedTaskDocuments.length > 0) {
+            filteredTasks = filteredTasks.filter(task => {
+                const associatedDocId = files?.find(file => file.title === task.associated_document)?.id;
+                return associatedDocId && selectedTaskDocuments.includes(associatedDocId);
+            });
+        }
 
-                );
+        console.log(`✅ Filtered tasks updated: ${filteredTasks.length} tasks`);
+        setSelectedFilteredReportsTasks(filteredTasks);
+    }, [tasksByReportId, reports, selectedReports, searchQuery, compliance, requirements, selectedTaskDocuments, files]);
 
-                let flattenedTasks = allTasks.flat();
-
-                if (selectedTaskDocuments.length > 0) {
-                    flattenedTasks = flattenedTasks.filter(task => {
-                        const AscDocId = files?.find((file) => file.title === task.associated_document)?.id
-                        return AscDocId && selectedTaskDocuments.includes(AscDocId)
-                    });
-
-                }
-
-                setTasks(flattenedTasks);
-            } catch (err: any) {
-                setError(err.message || "Failed to fetch filtered tasks");
-            } finally {
-                if (isInitialLoad) {
-                    setLoading(false);
-                } else {
-                    setBeingRefetched("filteredTasks", false);
-                }
-            }
-        };
-
-        fetchFilteredTasks(loading);
-    }, [wasmModule, lastUpdated, selectedReports, selectedTaskDocuments, files, requirements]);
-
-    return { tasks, loading, error };
+    return { tasks, selectedFilteredReportsTasks, loading, error };
 };

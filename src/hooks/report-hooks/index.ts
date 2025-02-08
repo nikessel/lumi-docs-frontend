@@ -1,144 +1,143 @@
 import { useEffect, useState } from 'react';
 import { useWasm } from '@/components/WasmProvider';
-import { getSelectedFilteredReports } from '@/utils/report-utils'; // Adjust the path if necessary
 import { Report } from '@wasm';
-import { fetchReports } from '@/utils/report-utils';
+import { fetchReports, fetchReportsByIds, filterReports } from '@/utils/report-utils';
 import useCacheInvalidationStore from '@/stores/cache-validation-store';
 import { useCreateReportStore } from '@/stores/create-report-store';
 import { useSearchParamsState } from '@/contexts/search-params-context';
-import { useAllRequirements } from '../requirement-hooks';
+import { useAllRequirementsContext } from '@/contexts/requirements-context/all-requirements-context';
 
-interface UseSelectedFilteredReports {
+interface UseReports {
     reports: Report[];
+    filteredSelectedReports: Report[];
     loading: boolean;
     error: string | null;
 }
 
-export const useSelectedFilteredReports = (): UseSelectedFilteredReports => {
+export const useReports = (): UseReports => {
     const { wasmModule } = useWasm();
     const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const { selectedReports, searchQuery, compliance } = useSearchParamsState()
-    const { requirements, loading: requirementsLoading } = useAllRequirements()
 
-    useEffect(() => {
-        const fetchReports = async () => {
-            if (!wasmModule || requirementsLoading) return
-
-            try {
-                setLoading(true);
-                const fetchedReports = await getSelectedFilteredReports(wasmModule, selectedReports, searchQuery, compliance, requirements);
-                console.log("fetchedReports", fetchedReports)
-                setReports(fetchedReports);
-            } catch (err: any) {
-                console.error(err);
-                setError(err?.message || "Failed to fetch reports.");
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchReports();
-    }, [wasmModule, selectedReports, requirements]);
-
-    return { reports, loading, error };
-};
-
-interface UseAllReports {
-    reports: Report[];
-    loading: boolean;
-    error: string | null;
-    forceUpdate: () => Promise<string>
-}
-
-export const useAllReports = (): UseAllReports => {
-    const { wasmModule } = useWasm();
-    const [reports, setReports] = useState<Report[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const lastUpdated = useCacheInvalidationStore((state) => state.lastUpdated["reports"]);
+    const cacheStore = useCacheInvalidationStore.getState();
+    const lastUpdated = cacheStore.lastUpdated["reports"];
+    const staleReportIds = useCacheInvalidationStore((state) => state.staleReportIds);
     const addStaleReportId = useCacheInvalidationStore((state) => state.addStaleReportId);
+    const removeStaleReportIds = useCacheInvalidationStore((state) => state.removeStaleReportIds);
     const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate);
     const setBeingRefetched = useCacheInvalidationStore((state) => state.setBeingRefetched);
-    const newReportCreated = useCreateReportStore((state) => state.newReportCreated)
-    const setNewReportCreated = useCreateReportStore((state) => state.setNewReportCreated)
+
+    const newReportCreated = useCreateReportStore((state) => state.newReportCreated);
+    const setNewReportCreated = useCreateReportStore((state) => state.setNewReportCreated);
 
     const [resolveRefreshPromise, setResolveRefreshPromise] = useState<(() => void) | null>(null);
-    const [refreshKey, setRefreshKey] = useState(0); // Key to trigger useEffect
 
-    const forceUpdate = (): Promise<string> => {
-        console.log("FORCING RERUN");
-        return new Promise<string>((resolve) => {
-            setResolveRefreshPromise(() => () => resolve("OK")); // Save the resolve function with "OK"
-            setRefreshKey((prev) => prev + 1); // Update refresh key to trigger useEffect
-        });
-    };
+    const { selectedReports, searchQuery, compliance } = useSearchParamsState();
+    const { requirements } = useAllRequirementsContext();
+    const [filteredSelectedReports, setFilteredSelectedReports] = useState<Report[]>([]);
 
     useEffect(() => {
-        // Check if any report has a status of "processing"
+        const filteredReports = filterReports(reports, selectedReports, searchQuery, compliance, requirements);
+        setFilteredSelectedReports(filteredReports);
+    }, [reports, selectedReports, searchQuery, compliance, requirements]);
+
+    useEffect(() => {
         const processingReports = reports.filter((report) => report.status === "processing");
 
         if (processingReports.length > 0) {
-            // Add these reports to the stale list
-            processingReports.forEach((report) => {
-                addStaleReportId(report.id);
-            });
+            console.log(`⏳ Detected ${processingReports.length} reports in processing state. Adding to stale list.`);
+            processingReports.forEach((report) => addStaleReportId(report.id));
 
-            // Trigger update after 3 seconds
             const timeout = setTimeout(() => {
+                console.log("🔄 Triggering report update after 5 minutes due to processing state.");
                 triggerUpdate("reports");
             }, 5 * 60 * 1000);
 
-            // Cleanup timeout on unmount or when reports change
             return () => clearTimeout(timeout);
         }
     }, [reports, addStaleReportId, triggerUpdate]);
 
     useEffect(() => {
-        const fetchAllReports = async (isInitialLoad = false) => {
+        const fetchReportsData = async (isInitialLoad = false) => {
             if (!wasmModule) {
-                return
+                console.warn("⚠️ WASM module not loaded. Skipping fetch.");
+                return;
+            }
+
+            if (!lastUpdated && !isInitialLoad) {
+                console.log("🟢 Reports are up to date. No need to fetch.");
+                return;
             }
 
             try {
                 if (isInitialLoad) {
-                    setLoading(true); // Set loading for the initial fetch
+                    console.log("🔄 Initial fetch: Fetching all reports...");
+                    setLoading(true);
                 } else {
-                    setBeingRefetched("reports", true); // Set refetching for subsequent fetches
+                    console.log("🔄 Refreshing reports...");
+                    setBeingRefetched("reports", true);
                 }
 
-                const { reports: fetchedReports, error } = await fetchReports(wasmModule);
+                let fetchedReports: Report[] = [];
 
-                const rep = fetchedReports.find((report) => report.id === newReportCreated.id)
+                if (staleReportIds.length > 0 && reports.length > 0) {
+                    triggerUpdate("reports", true);
+                    console.log(`📌 Fetching only stale reports: ${staleReportIds.join(", ")}`);
+                    const { reports: updatedReports, errors } = await fetchReportsByIds(wasmModule, staleReportIds);
 
-                if (rep) {
-                    setNewReportCreated({ id: rep.id, status: "processing" })
-                }
-                if (error) {
-                    setError(error);
+                    if (Object.keys(errors).length > 0) {
+                        console.error("❌ Errors fetching some stale reports:", errors);
+                    }
+
+                    fetchedReports = reports.map((existingReport) =>
+                        updatedReports[existingReport.id] || existingReport
+                    );
+
+                    removeStaleReportIds(staleReportIds);
                 } else {
-                    setReports(fetchedReports);
+                    triggerUpdate("reports", true);
+                    console.log("📌 Fetching all reports as no stale reports exist.");
+                    const { reports: allReports, error } = await fetchReports(wasmModule);
+
+                    if (error) {
+                        throw new Error(error);
+                    }
+
+                    fetchedReports = allReports;
                 }
-            } catch (err: any) {
-                setError(err?.message || "Failed to fetch reports.");
+
+                setReports(fetchedReports);
+
+                const newReport = fetchedReports.find((report) => report.id === newReportCreated.id);
+                if (newReport) {
+                    console.log(`🔔 Detected new report with ID ${newReport.id}. Marking as processing.`);
+                    setNewReportCreated({ id: newReport.id, status: "processing" });
+                }
+            } catch (err) {
+                console.error("❌ Error fetching reports:", err);
+                setError((err as Error)?.message || "Failed to fetch reports.");
             } finally {
                 if (isInitialLoad) {
+                    console.log("✅ Initial report fetch completed.");
                     setLoading(false);
                 } else {
+                    console.log("✅ Report refresh completed.");
                     setBeingRefetched("reports", false);
                 }
+
                 if (resolveRefreshPromise) {
-                    console.log("RESOLVING PROMISE")
+                    console.log("✅ Resolving refresh promise...");
                     resolveRefreshPromise();
                     setResolveRefreshPromise(null);
                 }
+
+                triggerUpdate("reports", true);
             }
         };
 
-        fetchAllReports(loading);
-    }, [wasmModule, lastUpdated, refreshKey]);
+        fetchReportsData(loading);
+    }, [wasmModule, lastUpdated, loading, newReportCreated.id, removeStaleReportIds, reports, resolveRefreshPromise, setBeingRefetched, setNewReportCreated, staleReportIds, triggerUpdate]);
 
-
-    return { reports, loading, error, forceUpdate };
+    return { reports, filteredSelectedReports, loading, error };
 };

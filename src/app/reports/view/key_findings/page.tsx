@@ -2,21 +2,20 @@
 
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Progress, Skeleton } from 'antd';
-import ReportStateHandler from '@/components/report-state-handler';
 import { extractAllRequirementAssessments } from '@/utils/report-utils';
 import DetailedAssessmentModal from '@/components/detailed-assessment-modal';
 import type { RequirementAssessment, Requirement } from "@wasm";
 import { getComplianceColorCode } from '@/utils/formating';
-import { useSelectedFilteredReportsContext } from '@/contexts/reports-context/selected-filtered-reports';
-import { useFilteredRequirementsContext } from '@/contexts/requirement-context/filtered-report-requirement-context';
 import { RegulatoryFramework } from '@wasm';
 import NATag from '@/components/non-applicable-tag';
+import { useReportsContext } from '@/contexts/reports-context';
+import { useRequirementsContext } from '@/contexts/requirements-context';
 
 type RequirementAssessmentWithId = RequirementAssessment & { id: string, reportId: string, regulatoryFramework: RegulatoryFramework };
 
 const Page = () => {
-    const { reports, loading: reportsLoading, error: reportsError } = useSelectedFilteredReportsContext();
-    const { requirements, loading: requirementsLoading, error: requirementsError } = useFilteredRequirementsContext();
+    const { filteredSelectedReports, loading: reportsLoading } = useReportsContext();
+    const { filteredSelectedRequirements, loading: requirementsLoading } = useRequirementsContext();
 
     const [allAssessmentsSorted, setAllAssessmentsSorted] = useState<RequirementAssessmentWithId[]>([]);
 
@@ -30,23 +29,9 @@ const Page = () => {
 
     const [openModal, setOpenModal] = useState<boolean>(false);
 
-    const [loading, setLoading] = useState(true)
-
-    const error = reportsError || requirementsError;
-
     useEffect(() => {
-        const timer = setTimeout(() => {
-            if (!reportsLoading && !requirementsLoading) {
-                setLoading(false);
-            }
-        }, 200);
-
-        return () => clearTimeout(timer);
-    }, [reportsLoading, requirementsLoading]);
-
-    useEffect(() => {
-        if (reports) {
-            const assessments = extractAllRequirementAssessments(reports);
+        if (filteredSelectedReports) {
+            const assessments = extractAllRequirementAssessments(filteredSelectedReports);
             const sortedAssessments = assessments.sort((a, b) => {
                 if (a.compliance_rating === undefined) return 1; // Push 'undefined' to the bottom
                 if (b.compliance_rating === undefined) return -1; // Push 'undefined' to the bottom
@@ -54,16 +39,14 @@ const Page = () => {
             });
             setAllAssessmentsSorted(sortedAssessments);
         }
-    }, [reports]);
+    }, [filteredSelectedReports]);
 
     // Handle View Details click
     const handleViewDetails = (record: RequirementAssessmentWithId) => {
-        const requirement = requirements.find((req) => req.id === record.id);
+        const requirement = filteredSelectedRequirements.find((req) => req.id === record.id);
         setSelectedRequirement({ requirement, requirementAssessment: record });
         setOpenModal(true);
     };
-
-    console.log("selectedRequirement", selectedRequirement)
 
     // Columns for the table
     const columns = [
@@ -71,20 +54,8 @@ const Page = () => {
             title: 'Requirement Name',
             dataIndex: 'id',
             key: 'name',
-            render: (id: string) => requirements.find((req) => req.id === id)?.name || 'Unknown Requirement',
+            render: (id: string) => filteredSelectedRequirements.find((req) => req.id === id)?.name || 'Unknown Requirement',
         },
-        // {
-        //     title: 'Description',
-        //     dataIndex: 'description',
-        //     key: 'description',
-        //     render: () => '[Insert description]',
-        // },
-        // {
-        //     title: 'Details',
-        //     dataIndex: 'details',
-        //     key: 'details',
-        //     render: () => '[Insert details]',
-        // },
         {
             title: 'Compliance Rating',
             dataIndex: 'compliance_rating',
@@ -111,7 +82,7 @@ const Page = () => {
         },
     ];
 
-    if (loading) {
+    if (reportsLoading || requirementsLoading) {
         return (
             <div className="">
                 <div className="w-100">

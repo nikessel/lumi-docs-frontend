@@ -1,11 +1,9 @@
 'use client';
 import React from "react";
-import { Layout, Anchor, Table, Alert, Affix } from "antd";
+import { Anchor, Alert, Affix } from "antd";
 import Typography from "@/components/typography";
 import Image from "next/image";
 import { useAuth } from "@/components/Auth0";
-
-const { Content, Sider } = Layout;
 
 const generateAnchorItems = () => {
     return [

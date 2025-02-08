@@ -25,7 +25,6 @@ const LoadingLogoScreen: React.FC<LoadingLogoScreenProps> = ({ children }) => {
                 </div>
             </div>
 
-            {/* Render children below the loading screen */}
             {children && <div className="mt-8">{children}</div>}
         </div>
     );

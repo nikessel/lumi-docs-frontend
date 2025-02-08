@@ -1,14 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Card, Button } from "antd";
 import { QuestionCircleOutlined } from "@ant-design/icons";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
 import docBackground from "@/assets/doc_background.svg";
 
 const HelpCard: React.FC<{ collapsed: boolean }> = ({ collapsed }) => {
-    const router = useRouter();
 
     return (
         <Card

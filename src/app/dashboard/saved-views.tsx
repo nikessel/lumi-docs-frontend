@@ -1,5 +1,4 @@
 import React from "react";
-import { Button } from "antd";
 import Typography from "@/components/typography";
 import { useUserContext } from "@/contexts/user-context";
 import SavedViewRender from "./saved-view-card";
@@ -9,7 +8,7 @@ interface SavedViewsProps {
 }
 
 const SavedViews: React.FC<SavedViewsProps> = ({ isLoading }) => {
-    const { user, loading: userLoading, error } = useUserContext();
+    const { user } = useUserContext();
     const allSavedViews = user?.task_management?.saved_views || [];
 
     // Ensure at least 4 placeholders if there are fewer saved views

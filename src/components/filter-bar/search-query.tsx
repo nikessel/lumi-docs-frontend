@@ -11,7 +11,7 @@ const SearchRequirements: React.FC = () => {
             if (inputValue !== searchQuery) {
                 updateSearchQuery(inputValue);
             }
-        }, 1000); // 1 second debounce
+        }, 1000);
 
         return () => clearTimeout(handler);
     }, [inputValue, searchQuery, updateSearchQuery]);

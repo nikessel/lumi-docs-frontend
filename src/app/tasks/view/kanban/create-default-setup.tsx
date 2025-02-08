@@ -1,17 +1,12 @@
 import React from 'react';
 import { Button } from 'antd';
-import { addKanbanColumn } from '@/utils/kanban-utils';
-import { useWasm } from '@/components/WasmProvider';
-import { TaskStatus } from '@wasm';
 import Typography from '@/components/typography';
 
 interface DefaultSetupComponentProps {
-    onCustomSetup: () => void;
     onDefaultSetup: () => void;
 }
 
 const DefaultSetupComponent: React.FC<DefaultSetupComponentProps> = ({
-    onCustomSetup,
     onDefaultSetup,
 }) => {
     return (
@@ -35,7 +30,6 @@ const DefaultSetupComponent: React.FC<DefaultSetupComponentProps> = ({
                 <Button type="primary" onClick={onDefaultSetup}>
                     Create Default Setup
                 </Button>
-                {/* <Button onClick={onCustomSetup}>Create Custom Setup</Button> */}
             </div>
         </div>
     );

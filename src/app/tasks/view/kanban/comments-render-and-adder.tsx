@@ -1,22 +1,21 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Button, Input, message } from "antd";
-import { Task } from "@wasm";
-import { useSelectedFilteredReportsTasksContext } from "@/contexts/tasks-context/selected-filtered-report-tasks";
 import { useWasm } from "@/components/WasmProvider";
 import { updateTask } from "@/utils/tasks-utils";
 import { DeleteOutlined } from "@ant-design/icons";
+import { useTasksContext } from "@/contexts/tasks-context";
 
 interface CommentRenderAndAdderProps {
     task_id: string;
 }
 
 const CommentRenderAndAdder: React.FC<CommentRenderAndAdderProps> = ({ task_id }) => {
-    const { tasks } = useSelectedFilteredReportsTasksContext();
+    const { selectedFilteredReportsTasks } = useTasksContext();
     const { wasmModule } = useWasm();
 
     const max_default_chars = 50; // Maximum number of characters to display by default
 
-    const task = useMemo(() => tasks.find((t) => t.id === task_id), [tasks, task_id]);
+    const task = useMemo(() => selectedFilteredReportsTasks.find((t) => t.id === task_id), [selectedFilteredReportsTasks, task_id]);
     const [commentsToShow, setCommentsToShow] = useState<number>(5);
     const [newComment, setNewComment] = useState<string>("");
     const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set());
@@ -25,14 +24,13 @@ const CommentRenderAndAdder: React.FC<CommentRenderAndAdderProps> = ({ task_id }
     const [prevCommentsLength, setPrevCommentsLength] = useState<number | null>(null);
     const [addingComment, setAddingComment] = useState<boolean>(false);
 
-
     // Sort comments by most recent
     const sortedComments = useMemo(() => {
         if (!task?.comments) return [];
         return [...task.comments].sort(
             (a, b) => new Date(b.created_date).getTime() - new Date(a.created_date).getTime()
         );
-    }, [task?.comments?.length]);
+    }, [task?.comments]);
 
     useEffect(() => {
         if ((task?.comments?.length || task?.comments?.length === 0) && (prevCommentsLength || prevCommentsLength === 0)) {
@@ -42,7 +40,7 @@ const CommentRenderAndAdder: React.FC<CommentRenderAndAdderProps> = ({ task_id }
             setNewComment("");
         }
         (task?.comments?.length || task?.comments?.length === 0) && setPrevCommentsLength(task?.comments?.length)
-    }, [task?.comments?.length])
+    }, [task?.comments, messageApi, prevCommentsLength])
 
     const visibleComments = useMemo(() => sortedComments.slice(0, commentsToShow), [sortedComments, commentsToShow]);
 
@@ -81,6 +79,7 @@ const CommentRenderAndAdder: React.FC<CommentRenderAndAdderProps> = ({ task_id }
         try {
             const updatedComments = sortedComments.filter((_, i) => i !== index);
             await updateTask(wasmModule, task, { comments: updatedComments });
+
         } catch (error) {
             console.error("Failed to delete comment:", error);
             messageApi.error("Failed to delete comment.");

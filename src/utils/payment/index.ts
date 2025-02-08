@@ -1,35 +1,39 @@
-import { RequirementWithGroupId } from "@/hooks/requirement-hooks";
-import { RequirementGroupWithSectionId } from "@/hooks/requirement-group-hooks";
-import { RegulatoryFramework, Section } from "@wasm";
+import { Section, RequirementGroup, Requirement } from "@wasm";
 
 export const PRICE_PER_REQUIREMENT_IN_EURO = 5;
 
-export const getPriceForSection = (sectionId: string, allGroups: RequirementGroupWithSectionId[], allRequirements: RequirementWithGroupId[]): number => {
-    const relatedGroups = allGroups.filter((group) => group.section_id === sectionId);
-    const relatedRequirements = allRequirements.filter((requirement) =>
-        relatedGroups.some((group) => group.id === requirement.group_id)
-    );
+export const getPriceForSection = (
+    sectionId: string,
+    requirementGroupsBySectionId: Record<string, RequirementGroup[]>,
+    requirementsByGroupId: Record<string, Requirement[]>
+): number => {
+    const groupsForSection = requirementGroupsBySectionId[sectionId] || [];
+    const relatedRequirements = groupsForSection.flatMap(group => requirementsByGroupId[group.id] || []);
     return PRICE_PER_REQUIREMENT_IN_EURO * relatedRequirements.length;
 };
 
-export const getPriceForGroup = (groupId: string, allRequirements: RequirementWithGroupId[]): number => {
-    const relatedRequirements = allRequirements.filter(
-        (requirement) => requirement.group_id === groupId
-    );
-
-    return PRICE_PER_REQUIREMENT_IN_EURO * relatedRequirements.length;
+export const getPriceForGroup = (
+    groupId: string,
+    requirementsByGroupId: Record<string, Requirement[]>
+): number => {
+    const requirementsForGroup = requirementsByGroupId[groupId] || [];
+    return PRICE_PER_REQUIREMENT_IN_EURO * requirementsForGroup.length;
 };
 
-export const getPriceForFramework = (framework: RegulatoryFramework, allSections: Section[], allGroups: RequirementGroupWithSectionId[], allRequirements: RequirementWithGroupId[]) => {
-    let price = 0
-    const relatedSections = allSections.filter((section) => section.regulatory_framework === framework)
-    relatedSections.forEach((section) => {
-        price = price + getPriceForSection(section.id, allGroups, allRequirements)
-    })
-    return price
-}
+export const getPriceForFramework = (
+    frameworkId: string,
+    sectionsByRegulatoryFramework: Record<string, Section[]>,
+    requirementGroupsBySectionId: Record<string, RequirementGroup[]>,
+    requirementsByGroupId: Record<string, Requirement[]>
+): number => {
+    const sectionsForFramework = sectionsByRegulatoryFramework[frameworkId] || [];
+    return sectionsForFramework.reduce((totalPrice, section) => {
+        return totalPrice + getPriceForSection(section.id, requirementGroupsBySectionId, requirementsByGroupId);
+    }, 0);
+};
 
-// Format the price for EU locale
+
+// ✅ Format the price for EU locale
 export const formatPrice = (value: number) =>
     new Intl.NumberFormat("de-DE", {
         style: "currency",

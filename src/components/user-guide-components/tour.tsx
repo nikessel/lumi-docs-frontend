@@ -1,43 +1,35 @@
 "use client";
 
-import React, { useState, useEffect, MutableRefObject } from "react";
+import React, { useState, useEffect, MutableRefObject, useCallback } from "react";
 import { Tour, Modal, Button } from "antd";
 import type { TourProps } from "antd";
-import Image from "next/image";
 import FileUploadContent from "../upload-files/file-upload";
-import { useRouter } from "next/navigation"
-import { useUploadManager } from "../upload-files/upload-manager";
 import { useWasm } from "../WasmProvider";
 import { useUserContext } from "@/contexts/user-context";
 import { updateUserTourPreference } from "@/utils/user-utils";
+import Image from "next/image";
 
 interface TourComponentProps {
     startTour: boolean,
     reportsRef: MutableRefObject<null>;
     regulatoryFrameworksRef: MutableRefObject<null>;
     filesRef: MutableRefObject<null>;
-    tasksRef: MutableRefObject<null>,
     newReportButtonRef: MutableRefObject<null>,
 }
 
-const TourComponent: React.FC<TourComponentProps> = ({ startTour, reportsRef, regulatoryFrameworksRef, filesRef, tasksRef, newReportButtonRef }) => {
+const TourComponent: React.FC<TourComponentProps> = ({ startTour, reportsRef, regulatoryFrameworksRef, filesRef }) => {
     const [open, setOpen] = useState(startTour);
-
     const [currentStep, setCurrentStep] = useState(0)
-    const uploadManager = useUploadManager()
-    const router = useRouter();
-
     const [showTourEndModal, setShowTourEndModal] = useState(false);
     const { user } = useUserContext()
     const { wasmModule } = useWasm()
 
-    const handleDoNotShowAgain = async () => {
-        console.log("DONTSHOWASGIN", user, wasmModule)
+    const handleDoNotShowAgain = useCallback(async () => {
         if (user && wasmModule) {
             await updateUserTourPreference(wasmModule, user.id, false);
         }
         setShowTourEndModal(false);
-    };
+    }, [user, wasmModule]);
 
     const handleContinueLater = () => {
         setShowTourEndModal(false);
@@ -49,25 +41,16 @@ const TourComponent: React.FC<TourComponentProps> = ({ startTour, reportsRef, re
         }
     }, [startTour]);
 
-    // useEffect(() => {
-    //     if (!uploadManager.isUploading && (uploadManager.uploadedFiles > 0 || uploadManager.failedFiles.length || uploadManager.filesAlreadyExisted)) {
-    //         if (uploadManager.uploadedFiles > 0 || uploadManager.filesAlreadyExisted) {
-    //             setTimeout(() => {
-    //                 setCurrentStep(currentStep + 1)
-    //                 router.push("/reports?uploadSuccess=true");
-    //             }, 100);
-    //         }
-    //     }
-    // }, [uploadManager, router]);
-
     const steps: TourProps["steps"] = [
         {
             title: "Reports",
             description: <div>A report is a <strong>gap analysis</strong> of up to thousands of documents against a selected regulatory framework</div>,
             cover: (
-                <img
+                <Image
                     alt="tour.png"
                     src="https://user-images.githubusercontent.com/5378891/197385811-55df8480-7ff4-44bd-9d43-a7dade598d70.png"
+                    width={500}
+                    height={300}
                 />
             ),
             placement: "right",
@@ -78,31 +61,23 @@ const TourComponent: React.FC<TourComponentProps> = ({ startTour, reportsRef, re
             description: "Regulatory frameworks are structured into Sections, Groups, and Requirements, providing a systematic approach to managing compliance in well-defined, manageable segments.",
             placement: "right",
             cover: (
-                <img
+                <Image
                     alt="tour.png"
                     src="https://user-images.githubusercontent.com/5378891/197385811-55df8480-7ff4-44bd-9d43-a7dade598d70.png"
+                    width={500}
+                    height={300}
                 />
             ),
             target: () => regulatoryFrameworksRef.current,
         },
-        // {
-        //     title: "Tasks",
-        //     description: "Tasks are automatically generated based on report findings, enabling you to track implementation progress using a structured Kanban board.",
-        //     cover: (
-        //         <img
-        //             alt="tour.png"
-        //             src="https://user-images.githubusercontent.com/5378891/197385811-55df8480-7ff4-44bd-9d43-a7dade598d70.png"
-        //         />
-        //     ),
-        //     placement: "right",
-        //     target: () => tasksRef.current,
-        // },
         {
             title: "Files",
             cover: (
-                <img
+                <Image
                     alt="tour.png"
                     src="https://user-images.githubusercontent.com/5378891/197385811-55df8480-7ff4-44bd-9d43-a7dade598d70.png"
+                    width={500}
+                    height={300}
                 />
             ),
             description: "Files are exported from your QMS or Technical File and uploaded for automated compliance assessment, helping to identify areas for improvement.",
@@ -111,15 +86,17 @@ const TourComponent: React.FC<TourComponentProps> = ({ startTour, reportsRef, re
         },
         {
             title: "Get started - upload your first documents",
-            description: <div className="pb-4"><FileUploadContent afterUpload={() => console.log("afterupload")} onClose={() => console.log("close")} /></div>,
+            description: <div className="pb-4"><FileUploadContent onClose={() => console.log("close")} /></div>,
             target: null,
         },
         {
             title: "You're ready. ",
             cover: (
-                <img
+                <Image
                     alt="tour.png"
                     src="https://user-images.githubusercontent.com/5378891/197385811-55df8480-7ff4-44bd-9d43-a7dade598d70.png"
+                    width={500}
+                    height={300}
                 />
             ),
             description: "Crete your first report by clicking the button and following the instructions",
@@ -150,13 +127,11 @@ const TourComponent: React.FC<TourComponentProps> = ({ startTour, reportsRef, re
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
-    }, [open, currentStep]);
+    }, [open, currentStep, handleDoNotShowAgain, steps.length]);
 
     const handleStepChange = (newStep: number) => {
         setCurrentStep(newStep);
     };
-
-
 
     const handleCloseTour = () => {
         if (currentStep === steps.length - 1) {

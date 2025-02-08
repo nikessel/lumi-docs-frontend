@@ -1,107 +1,117 @@
-import { useEffect, useState } from 'react';
-import { useWasm } from '@/components/WasmProvider';
-import { fetchSectionsByIds } from '@/utils/sections-utils';
-import { Section, Report, RegulatoryFramework } from '@wasm';
+import { useEffect, useState } from "react";
+import { useWasm } from "@/components/WasmProvider";
+import { fetchSectionsByRegulatoryFramework } from "@/utils/sections-utils";
+import { Section } from "@wasm";
+import useCacheInvalidationStore from "@/stores/cache-validation-store";
+import { useRegulatoryFrameworksContext } from "@/contexts/regulatory-frameworks-context";
+import { useReportsContext } from "@/contexts/reports-context";
 
-interface UseFilteredReportSections {
+interface UseSections {
     sections: Section[];
+    filteredSelectedReportsSections: Section[];
+    sectionsForRegulatoryFramework: Record<string, Section[]>;
     loading: boolean;
     error: string | null;
 }
 
-export const useFilteredReportSections = (reports: Report[]): UseFilteredReportSections => {
+export const useSections = (): UseSections => {
     const { wasmModule } = useWasm();
+    const { filteredSelectedReports } = useReportsContext();
+    const { frameworks } = useRegulatoryFrameworksContext();
+
     const [sections, setSections] = useState<Section[]>([]);
+    const [sectionsForRegulatoryFramework, setSectionsForRegulatoryFramework] = useState<Record<string, Section[]>>({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const lastUpdated = useCacheInvalidationStore((state) => state.lastUpdated["sections"]);
+    const setBeingRefetched = useCacheInvalidationStore((state) => state.setBeingRefetched);
+    const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate);
+
     useEffect(() => {
-        const fetchSections = async () => {
-            if (!wasmModule || reports.length === 0) {
-                setLoading(false);
+        const fetchAllSections = async (isInitialLoad = false) => {
+            console.log(`🔄 Fetching all sections for all frameworks... (Initial Load: ${isInitialLoad})`);
+
+            if (!wasmModule) {
+                console.error("❌ WASM module not loaded");
+                setError("WASM module not loaded");
+                return;
+            }
+
+            if (!frameworks.length) {
+                console.warn("⚠️ No regulatory frameworks available, skipping section fetch");
+                return;
+            }
+
+            if (!isInitialLoad && !lastUpdated) {
+                console.log("🟢 Sections are already up to date, skipping re-fetch");
                 return;
             }
 
             try {
-                setLoading(true);
-
-                // Extract all section IDs from the reports
-                const allSectionIds = reports.flatMap((report) =>
-                    Array.from(report.section_assessments.keys())
-                );
-
-                const { sections, errors } = await fetchSectionsByIds(wasmModule, allSectionIds);
-
-                if (Object.keys(errors).length > 0) {
-                    console.error("Errors fetching sections:", errors);
-                    setError("Some sections could not be fetched.");
+                if (isInitialLoad) {
+                    console.log("🔄 Initial section fetch started...");
+                    setLoading(true);
+                } else {
+                    console.log("🔄 Refetching sections...");
+                    setBeingRefetched("sections", true);
                 }
 
-                setSections(sections);
-            } catch (err: any) {
-                console.error(err);
-                setError(err?.message || "Failed to fetch sections.");
-            } finally {
-                setLoading(false);
-            }
-        };
+                const sectionsMap: Record<string, Section[]> = {};
+                let allFetchedSections: Section[] = [];
 
-        fetchSections();
-    }, [wasmModule, reports]);
+                const fetchPromises = frameworks.map(async (framework) => {
+                    const { sections, error } = await fetchSectionsByRegulatoryFramework(wasmModule, framework.id);
 
-    return { sections, loading, error };
-};
-
-// Hook: Use Sections for Regulatory Frameworks
-interface UseSectionsForFrameworks {
-    sections: Section[];
-    loading: boolean;
-    error: string | null;
-}
-
-export const useSectionsForRegulatoryFrameworks = (
-    frameworks: RegulatoryFramework[]
-): UseSectionsForFrameworks => {
-    const { wasmModule } = useWasm();
-    const [sections, setSections] = useState<Section[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        console.log("TESTasdasd RESPONSE useffect")
-
-        const fetchSections = async () => {
-            if (!wasmModule || frameworks.length === 0) {
-                setLoading(false);
-                return;
-            }
-
-            try {
-                setLoading(true);
-
-                const allSections: Section[] = [];
-                for (const framework of frameworks) {
-                    const response = await wasmModule.get_sections_by_regulatory_framework({ input: framework });
-                    console.log("TESTasdasd RESPONSE", response)
-
-                    if (response.error) {
-                        throw new Error(response.error.message);
+                    if (error) {
+                        console.warn(`⚠️ Failed to fetch sections for framework ${framework.id}:`, error);
+                        setError(`Failed to fetch sections for some frameworks.`);
+                    } else {
+                        sectionsMap[framework.id] = sections;
+                        allFetchedSections = [...allFetchedSections, ...sections];
                     }
-                    allSections.push(...(response.output?.output || []));
-                }
+                });
 
-                setSections(allSections);
-            } catch (err: any) {
-                console.error(err);
-                setError(err?.message || 'Failed to fetch sections.');
+                await Promise.all(fetchPromises);
+
+                console.log(`✅ Successfully fetched ${allFetchedSections.length} sections.`);
+
+                setSections(allFetchedSections);
+                setSectionsForRegulatoryFramework(sectionsMap);
+                triggerUpdate("sections", true);
+
+            } catch (err: unknown) {
+                console.error("❌ Error fetching sections:", err);
+                setError((err as Error)?.message || "Failed to fetch sections.");
             } finally {
-                setLoading(false);
+                if (isInitialLoad) {
+                    console.log("✅ Initial section fetch completed");
+                    setLoading(false);
+                } else {
+                    console.log("✅ Section refetch completed");
+                    setBeingRefetched("sections", false);
+                }
             }
         };
 
-        fetchSections();
-    }, [wasmModule, frameworks]);
+        fetchAllSections(loading);
+    }, [wasmModule, frameworks, lastUpdated, loading, setBeingRefetched, triggerUpdate]);
 
-    return { sections, loading, error };
+    const filteredSelectedReportsSections = (() => {
+        if (!filteredSelectedReports.length) return sections;
+
+        const selectedSectionIds = filteredSelectedReports.flatMap(report =>
+            Array.from(report.section_assessments.keys())
+        );
+
+        return sections.filter(section => selectedSectionIds.includes(section.id));
+    })();
+
+    return {
+        sections,
+        filteredSelectedReportsSections,
+        sectionsForRegulatoryFramework,
+        loading,
+        error,
+    };
 };
-

@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from "react";
-import { Button, Progress, Tooltip, Dropdown, Menu, Skeleton, Tag } from "antd";
+import { Button, Progress, Tooltip, Dropdown, Menu, Skeleton } from "antd";
 import { MoreOutlined, FolderOutlined, ReloadOutlined } from "@ant-design/icons";
 import Typography from "../typography";
 import "@/styles/globals.css";
@@ -19,7 +19,7 @@ import { useSearchParamsState } from "@/contexts/search-params-context";
 
 const extractProgress = (title: string): number => {
     const match = title.match(/(\d+)\/(\d+)/);
-    if (!match) return 0; // Default to 0% if no match is found
+    if (!match) return 0;
 
     const completed = parseInt(match[1], 10);
     const total = parseInt(match[2], 10);
@@ -31,7 +31,6 @@ interface ReportMetaViewProps {
     openRedirectPath: string,
     report: Report | null,
     wasmModule: typeof WasmModule | null;
-    forceUpdate: () => Promise<string>,
     setActionLoading: (input: boolean) => void;
     actionLoading: boolean;
     loading?: boolean
@@ -42,16 +41,17 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
     openRedirectPath,
     loading,
     wasmModule,
-    forceUpdate,
     setActionLoading,
     actionLoading
 }) => {
     const router = useRouter();
     const { selectedReports, toggleSelectedReport } = useSearchParamsState();
-    const [isSelected, setIsSelected] = useState(selectedReports.includes(report?.id || ""));
+    const [isSelected, setIsSelected] = useState(false);
     const [messageApi, contextHolder] = antdMessage.useMessage();
     const addStaleReportId = useCacheInvalidationStore((state) => state.addStaleReportId)
     const [assessmentProgres, setAssessmentProgress] = useState(0)
+    const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate)
+
 
     useEffect(() => {
         if (report?.status === "processing") {
@@ -61,8 +61,11 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
     }, [report])
 
     useEffect(() => {
-        setIsSelected(selectedReports.includes(report?.id || ""));
+        if (report?.id) {
+            setIsSelected(selectedReports.includes(report.id));
+        }
     }, [selectedReports, report?.id]);
+
 
 
     const toggleSelection = () => {
@@ -84,18 +87,18 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
                 key: messageKey,
                 type: 'loading',
                 content: 'Archiving report...',
-                duration: 0, // Keeps the message visible until updated
+                duration: 0,
             });
             await archiveReport(wasmModule, id);
             addStaleReportId(id)
-            await forceUpdate()
+            triggerUpdate("reports")
 
         } catch (error) {
             messageApi.open({
                 key: messageKey,
                 type: 'error',
                 content: 'Could not archive report',
-                duration: 0, // Keeps the message visible until updated
+                duration: 0,
             });
             console.error("Error archiving report:", error);
         }
@@ -116,23 +119,23 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
                 key: messageKey,
                 type: 'loading',
                 content: 'Restoring report...',
-                duration: 0, // Keeps the message visible until updated
+                duration: 0,
             });
             await restoreReport(wasmModule, id);
             addStaleReportId(id)
-            await forceUpdate()
+            triggerUpdate("reports")
+
         } catch (error) {
             messageApi.open({
                 key: messageKey,
                 type: 'error',
                 content: 'Could not restore report',
-                duration: 2, // Message disappears after 2 seconds
+                duration: 2,
             });
             console.error("Error archiving report:", error);
         }
         setActionLoading(false)
     };
-
 
     const menu = (
         <Menu>

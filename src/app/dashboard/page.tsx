@@ -1,44 +1,20 @@
 'use client';
-import React, { useEffect, useState } from "react";
-import Typography from "@/components/typography";
-import { Button, Divider } from "antd";
-import { PlusOutlined } from "@ant-design/icons";
+import React from "react";
 import "@/styles/globals.css";
 import { useUserContext } from "@/contexts/user-context";
-import { useAllReports } from "@/hooks/report-hooks";
-import { useAllReportsTasks } from "@/hooks/tasks-hooks";
 import ReportList from "./report-list";
 import TaskList from "@/components/tasks-list/task-list";
 import SavedViews from "./saved-views";
 import { useRouter } from "next/navigation";
-import { useAllReportsContext } from "@/contexts/reports-context/all-reports-context";
-import { useAllReportsTasksContext } from '@/contexts/tasks-context/all-report-tasks';
-import FirstReportModal from "@/components/user-guide-components/first-report-modal";
+import { useReportsContext } from "@/contexts/reports-context";
+import { useTasksContext } from "@/contexts/tasks-context";
 
 const Page = () => {
     const router = useRouter();
-
-    const { user, loading: userLoading, error: userError } = useUserContext()
-    const { reports, loading: reportsLoading, error: reportsError } = useAllReportsContext()
-    const { tasks, loading: tasksLoading, error: tasksError } = useAllReportsTasksContext()
-
+    const { loading: userLoading } = useUserContext()
+    const { reports, loading: reportsLoading } = useReportsContext()
+    const { tasks, loading: tasksLoading } = useTasksContext()
     const isLoading = tasksLoading || reportsLoading || userLoading
-    const [isModalVisible, setIsModalVisible] = useState(true);
-    const [allReportIds, setAllReportIds] = useState<string[]>([])
-
-    useEffect(() => {
-        if (reports?.length > 0) {
-            setAllReportIds(reports.map(report => report.id))
-        }
-    }, (reports))
-
-    // useEffect(() => {
-    //     if (reports.length === 0 && !reportsLoading && !userLoading && !tasksLoading) {
-    //         setIsModalVisible(true)
-    //     }
-
-    // }, [reports, reportsLoading, userLoading, tasksLoading])
-
 
     return (
         <div className="flex" style={{ height: "75vh" }}>
@@ -49,12 +25,8 @@ const Page = () => {
                 </div>
             </div>
             <div className="w-1/3">
-                <TaskList allReportIds={allReportIds} tasks={tasks} onViewAll={() => router.push("/tasks")} isLoading={isLoading} />
+                <TaskList tasks={tasks} />
             </div>
-            {/* <FirstReportModal
-                visible={isModalVisible}
-                onClose={() => setIsModalVisible(false)}
-            /> */}
         </div>
     );
 };

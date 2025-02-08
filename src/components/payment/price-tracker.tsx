@@ -10,16 +10,14 @@ const PriceTracker: React.FC = () => {
 
     let totalPrice = calculateReportPrice();
 
-    // If no sections or groups are selected, the price is 0
     if (selectedSections.length === 0 || selectedRequirementGroups.length === 0) {
         totalPrice = 0;
     }
 
-    // Spring animation for the price
     const { animatedPrice } = useSpring({
         from: { animatedPrice: 0 },
         to: { animatedPrice: totalPrice },
-        config: { tension: 60, friction: 10, clamp: true }, // Controls the smoothness of the animation
+        config: { tension: 60, friction: 10, clamp: true },
     });
 
     const tooltipContent = `

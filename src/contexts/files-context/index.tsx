@@ -1,5 +1,5 @@
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useFiles } from '@/hooks/files-hooks'; // Assuming the hook is defined here
+import { useFiles } from '@/hooks/files-hooks';
 import { File } from '@wasm';
 
 interface FilesContextType {

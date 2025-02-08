@@ -1,21 +1,17 @@
 import React, { useState } from "react";
 import { Button, Modal, Input, message } from "antd";
 import { SaveOutlined } from "@ant-design/icons";
-import { useRouter } from "next/navigation";
 import { saveViewToUser } from "@/utils/user-utils";
-import type * as WasmModule from "@wasm";
 import { useWasm } from "../WasmProvider";
 import Typography from "../typography";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
 import { useUserContext } from "@/contexts/user-context";
-import { useUser } from "@/hooks/user-hooks";
 
 const SaveViewButton: React.FC = () => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [isSaving, setIsSaving] = useState(false);
-    const router = useRouter();
     const [messageApi, contextHolder] = message.useMessage();
     const { wasmModule, isLoading } = useWasm()
     const { user } = useUserContext()

@@ -1,19 +1,18 @@
 import React, { useEffect, useMemo } from "react";
 import { DatePicker, message } from "antd";
 import dayjs from "dayjs"; // Ensure dayjs is installed
-import { Task } from "@wasm";
 import { useWasm } from "@/components/WasmProvider";
 import { updateTask } from "@/utils/tasks-utils";
-import { useSelectedFilteredReportsTasksContext } from "@/contexts/tasks-context/selected-filtered-report-tasks";
 import { Dayjs } from "dayjs";
+import { useTasksContext } from "@/contexts/tasks-context";
 
 interface DueDateTagProps {
     task_id: string;
 }
 
 const DueDateTag: React.FC<DueDateTagProps> = ({ task_id }) => {
-    const { tasks } = useSelectedFilteredReportsTasksContext();
-    const task = useMemo(() => tasks.find((t) => t.id === task_id), [tasks, task_id]);
+    const { selectedFilteredReportsTasks } = useTasksContext();
+    const task = useMemo(() => selectedFilteredReportsTasks.find((t) => t.id === task_id), [selectedFilteredReportsTasks, task_id]);
     const [localStateDueDate, setLocalStateDueDate] = React.useState<Dayjs | null>(null);
     const { wasmModule } = useWasm();
 

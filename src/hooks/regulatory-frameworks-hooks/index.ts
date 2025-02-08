@@ -19,16 +19,31 @@ export const useRegulatoryFrameworks = (): UseRegulatoryFrameworks => {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        try {
-            setLoading(true);
-            const frameworks = getSupportedFrameworks();
-            setFrameworks(frameworks);
-        } catch (err: any) {
-            console.error(err);
-            setError("Failed to fetch regulatory frameworks.");
-        } finally {
-            setLoading(false);
-        }
+        const fetchFrameworks = async () => {
+            console.log("📌 Fetching regulatory frameworks...");
+
+            try {
+                setLoading(true);
+                const frameworksData = getSupportedFrameworks();
+
+                if (!frameworksData || frameworksData.length === 0) {
+                    console.warn("⚠️ No regulatory frameworks found.");
+                    setError("No regulatory frameworks available.");
+                    return;
+                }
+
+                console.log(`✅ Successfully fetched ${frameworksData.length} regulatory frameworks.`);
+                setFrameworks(frameworksData);
+            } catch (err: unknown) {
+                console.error("❌ Error fetching regulatory frameworks:", err);
+                setError("Failed to fetch regulatory frameworks.");
+            } finally {
+                console.log("✅ Fetching frameworks process completed.");
+                setLoading(false);
+            }
+        };
+
+        fetchFrameworks();
     }, []);
 
     return { frameworks, loading, error };

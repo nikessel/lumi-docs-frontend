@@ -1,29 +1,25 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Table, Breadcrumb, Skeleton, Button } from 'antd';
-import { useRegulatoryFrameworks } from '@/hooks/regulatory-frameworks-hooks';
-import { useSectionsForRegulatoryFrameworks } from '@/hooks/section-hooks';
-import { useRequirementGroupsForSectionIds } from '@/hooks/requirement-group-hooks';
-import { useRequirementsForGroupIds } from '@/hooks/requirement-hooks';
-import { Section, RequirementGroup, Requirement } from '@wasm';
+import { Table, Breadcrumb, Skeleton } from 'antd';
 import RegulatoryFrameworkTag from '@/components/regulatory-framework-tag';
 import { useRegulatoryFrameworksContext } from '@/contexts/regulatory-frameworks-context';
-import ReportStateHandler from '@/components/report-state-handler';
 import { getPriceForGroup, getPriceForSection, getPriceForFramework, PRICE_PER_REQUIREMENT_IN_EURO } from '@/utils/payment';
 import { formatPrice } from '@/utils/payment';
+import { useSectionsContext } from '@/contexts/sections-context';
+import { useRequirementGroupsContext } from '@/contexts/requirement-group-context';
+import { useRequirementsContext } from '@/contexts/requirements-context';
 
 const RegulatoryFrameworksTable: React.FC = () => {
     const { frameworks, loading: frameworksLoading } = useRegulatoryFrameworksContext();
-    const frameworkIds = useMemo(() => frameworks.map(f => f.id), [frameworks]);
 
-    const { sections, loading: sectionsLoading, error } = useSectionsForRegulatoryFrameworks(frameworkIds);
-    const sectionIds = useMemo(() => sections.map(section => section.id), [sections]);
+    const { sectionsForRegulatoryFramework, loading: sectionsLoading } = useSectionsContext();
 
-    const { requirementGroups, loading: groupsLoading } = useRequirementGroupsForSectionIds(sectionIds);
-    const groupIds = useMemo(() => requirementGroups.map(group => group.id), [requirementGroups]);
+    const { requirementGroupsBySectionId, loading: groupsLoading } = useRequirementGroupsContext();
 
-    const { requirements, loading: requirementsLoading } = useRequirementsForGroupIds(groupIds);
+    const { requirementsByGroupId, loading: requirementsLoading } = useRequirementsContext();
+
+    console.log("ALKJSBDLKJASBDLIAJSBDLKJANSD", sectionsForRegulatoryFramework)
 
     const [isLoading, setIsLoading] = useState(true);
     const [breadcrumb, setBreadcrumb] = useState<{ name: string; id: string | null }[]>([{ name: 'Frameworks', id: null }]);
@@ -176,74 +172,66 @@ const RegulatoryFrameworksTable: React.FC = () => {
                 key: f.id,
                 name: f.id,
                 description: f.description || 'No description available',
-                sectionCount: sections.filter(section => section.regulatory_framework === f.id).length,
-                price: formatPrice(getPriceForFramework(f.id, sections, requirementGroups, requirements)),
+                sectionCount: sectionsForRegulatoryFramework[f.id]?.length || 0,
+                price: formatPrice(getPriceForFramework(f.id, sectionsForRegulatoryFramework, requirementGroupsBySectionId, requirementsByGroupId)),
                 documents: 1000,
             }));
         } else if (view === 'sections') {
-            return sections
-                .filter(section => section.regulatory_framework === selectedId)
-                .map(section => ({
-                    key: section.id,
-                    name: section.name,
-                    description: section.description || 'No description available',
-                    groupCount: requirementGroups.filter(group => group.section_id === section.id).length,
-                    price: formatPrice(getPriceForSection(section.id, requirementGroups, requirements))
-                }));
+            return sectionsForRegulatoryFramework[selectedId || ""]?.map(section => ({
+                key: section.id,
+                name: section.name,
+                description: section.description || 'No description available',
+                groupCount: requirementGroupsBySectionId[section.id]?.length || 0,
+                price: formatPrice(getPriceForSection(section.id, requirementGroupsBySectionId, requirementsByGroupId))
+            })) || [];
         } else if (view === 'groups') {
-            return requirementGroups
-                .filter(group => group.section_id === selectedId)
-                .map(group => ({
-                    key: group.id,
-                    name: group.name,
-                    description: group.description || 'No description available',
-                    requirementCount: requirements.filter(req => req.group_id === group.id).length,
-                    price: formatPrice(getPriceForGroup(group.id, requirements))
-
-                }));
+            return requirementGroupsBySectionId[selectedId || ""]?.map(group => ({
+                key: group.id,
+                name: group.name,
+                description: group.description || 'No description available',
+                requirementCount: requirementsByGroupId[group.id]?.length || 0,
+                price: formatPrice(getPriceForGroup(group.id, requirementsByGroupId))
+            })) || [];
         } else {
-            return requirements
-                .filter(req => req.group_id === selectedId)
-                .map(req => ({
-                    key: req.id,
-                    name: req.name,
-                    description: req.description || 'No description available',
-                    price: formatPrice(PRICE_PER_REQUIREMENT_IN_EURO)
-                }));
+            return requirementsByGroupId[selectedId || ""]?.map(req => ({
+                key: req.id,
+                name: req.name,
+                description: req.description || 'No description available',
+                price: formatPrice(PRICE_PER_REQUIREMENT_IN_EURO)
+            })) || [];
         }
-    }, [isLoading, view, frameworks, sections, requirementGroups, requirements, selectedId]);
+    }, [isLoading, view, frameworks, sectionsForRegulatoryFramework, requirementGroupsBySectionId, requirementsByGroupId, selectedId]);
+
 
     return (
-        <ReportStateHandler expectReports={false} loading={false} reports={[]} error={error}>
 
-            <div>
-                <Breadcrumb className="mb-2">
-                    {breadcrumb.map((crumb, index) => (
-                        <Breadcrumb.Item key={index} onClick={() => handleBreadcrumbClick(index)}>
-                            {crumb.name}
-                        </Breadcrumb.Item>
-                    ))}
-                </Breadcrumb>
-                <Table
-                    columns={columns}
-                    dataSource={dataSource}
-                    pagination={{ pageSize: 10 }}
-                    rowKey="key"
-                    onRow={(record) => ({
-                        onClick: () => {
-                            if (view !== 'requirements') {
-                                handleRowClick(
-                                    record.key,
-                                    record.name,
-                                    view === 'frameworks' ? 'sections' : view === 'sections' ? 'groups' : 'requirements'
-                                );
-                            }
-                        },
-                        style: { cursor: view === 'requirements' ? 'default' : 'pointer' },
-                    })}
-                />
-            </div>
-        </ReportStateHandler>
+        <div>
+            <Breadcrumb className="mb-2">
+                {breadcrumb.map((crumb, index) => (
+                    <Breadcrumb.Item key={index} onClick={() => handleBreadcrumbClick(index)}>
+                        {crumb.name}
+                    </Breadcrumb.Item>
+                ))}
+            </Breadcrumb>
+            <Table
+                columns={columns}
+                dataSource={dataSource}
+                pagination={{ pageSize: 10 }}
+                rowKey="key"
+                onRow={(record) => ({
+                    onClick: () => {
+                        if (view !== 'requirements') {
+                            handleRowClick(
+                                record.key,
+                                record.name,
+                                view === 'frameworks' ? 'sections' : view === 'sections' ? 'groups' : 'requirements'
+                            );
+                        }
+                    },
+                    style: { cursor: view === 'requirements' ? 'default' : 'pointer' },
+                })}
+            />
+        </div>
     );
 };
 

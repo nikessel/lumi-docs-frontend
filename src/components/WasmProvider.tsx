@@ -2,7 +2,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import type * as WasmModule from "@wasm";
 import { handleEvent } from "@/components/WebsocketEventHandler";
-import useLoadingStore from "@/stores/global-loading-unification";
 
 interface WasmContextType {
   wasmModule: typeof WasmModule | null;
@@ -62,17 +61,6 @@ export default function WasmProviderComponent({
   const [wasmModule, setWasmModule] = useState<typeof WasmModule | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>();
-
-  const addLoadingComponent = useLoadingStore((state) => state.addLoadingComponent)
-  const removeLoadingComponent = useLoadingStore((state) => state.removeLoadingComponent)
-
-  useEffect(() => {
-    if (isLoading) {
-      addLoadingComponent("wasmprovider")
-    } else {
-      removeLoadingComponent("wasmprovider")
-    }
-  }, [isLoading])
 
   useEffect(() => {
     let mounted = true;

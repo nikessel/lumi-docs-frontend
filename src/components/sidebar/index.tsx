@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, MutableRefObject } from "react";
 import { Layout, Menu, Divider, message } from "antd";
-import { FilePdfOutlined, FileDoneOutlined, ProjectOutlined, BarChartOutlined, FileSearchOutlined, SettingOutlined, CreditCardOutlined, LogoutOutlined } from "@ant-design/icons";
+import { FilePdfOutlined, FileDoneOutlined, ProjectOutlined, BarChartOutlined, FileSearchOutlined, LogoutOutlined } from "@ant-design/icons";
 import SidebarToggleButton from "./sider-toggle-button";
 import SiderLogo from "./sider-logo";
 import Link from 'next/link';
@@ -19,14 +19,20 @@ const AppSiderComponent: React.FC<{ reportsRef: MutableRefObject<null>; regulato
     const { logout } = useAuth()
     const [messageApi, contextHolder] = message.useMessage()
 
-    const checkWindowWidth = () => {
-        if (window.innerWidth <= 1200) {
-            setCollapsed(true);
-            setShowToggleButton(false);
-        } else {
-            setShowToggleButton(true);
-        }
-    };
+    useEffect(() => {
+        const checkWindowWidth = () => {
+            const shouldCollapse = window.innerWidth <= 1200;
+            setCollapsed(prev => (prev !== shouldCollapse ? shouldCollapse : prev));
+            setShowToggleButton(prev => (prev !== !shouldCollapse ? !shouldCollapse : prev));
+        };
+
+        setTimeout(checkWindowWidth, 0); // Delaying execution after the initial render
+        window.addEventListener("resize", checkWindowWidth);
+
+        return () => {
+            window.removeEventListener("resize", checkWindowWidth);
+        };
+    }, []);
 
     const handleSignOut = async () => {
         messageApi.loading("Signing out")
@@ -34,14 +40,14 @@ const AppSiderComponent: React.FC<{ reportsRef: MutableRefObject<null>; regulato
         logout()
     }
 
-    useEffect(() => {
-        checkWindowWidth();
-        window.addEventListener("resize", checkWindowWidth);
+    // useEffect(() => {
+    //     checkWindowWidth();
+    //     window.addEventListener("resize", checkWindowWidth);
 
-        return () => {
-            window.removeEventListener("resize", checkWindowWidth);
-        };
-    }, []);
+    //     return () => {
+    //         window.removeEventListener("resize", checkWindowWidth);
+    //     };
+    // }, []);
 
     const toggleCollapse = () => {
         setCollapsed(!collapsed);
@@ -92,24 +98,6 @@ const AppSiderComponent: React.FC<{ reportsRef: MutableRefObject<null>; regulato
         },
     ];
 
-    const accountMenuItems = [
-        {
-            key: "/settings",
-            icon: <SettingOutlined />,
-            label: <Link href="/settings">Settings</Link>,
-        },
-        {
-            key: "/billing",
-            icon: <CreditCardOutlined />,
-            label: <Link href="/billing">Billing</Link>,
-        },
-        {
-            key: "/",
-            icon: <LogoutOutlined />,
-            label: <Link href="/">Sign out</Link>,
-        },
-    ];
-
     return (
         <Sider collapsible collapsed={collapsed} className="h-screen" trigger={null}>
             <div className="h-full flex flex-col">
@@ -121,15 +109,13 @@ const AppSiderComponent: React.FC<{ reportsRef: MutableRefObject<null>; regulato
                     <Divider />
                     <Menu
                         mode="inline"
-                        selectedKeys={[activeKey]} // Highlight the menu item for the base path
+                        selectedKeys={[activeKey]}
                         items={menuItems}
                     />
                 </div>
 
-                {/* Add spacing above HelpCard */}
                 <div className="flex-grow" />
 
-                {/* Move HelpCard slightly above the bottom */}
                 <div className="w-full flex justify-center mb-12">
                     <HelpCard collapsed={collapsed} />
                 </div>

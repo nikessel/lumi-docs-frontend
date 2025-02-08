@@ -35,8 +35,6 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
     const [blobUrls, setBlobUrls] = React.useState<{ [id: string]: string }>({});
     const [viewLoading, setViewLoading] = React.useState<{ [id: string]: boolean }>({});
 
-    console.log("DETAILED", requirement, requirementAssessment)
-
     return (
         <Modal
             open={open}

@@ -5,6 +5,15 @@ import { Task } from "@wasm";
 import { KanbanColumn } from "@wasm";
 import { moveTasksToColumns } from "@/utils/kanban-utils";
 import { useWasm } from "@/components/WasmProvider";
+import type { ColumnsType } from "antd/es/table";
+
+interface AutoAssignableTask {
+    task: Task;
+    matchingColumns: KanbanColumn[];
+    isAutoAssignable: boolean;
+    defaultColumn: string;
+}
+
 
 interface UnassignedTasksIndicatorProps {
     tasks: Task[];
@@ -56,7 +65,7 @@ const UnassignedTasksIndicator: React.FC<UnassignedTasksIndicatorProps> = ({ tas
         };
 
         countAssignableTasks();
-    }, [taskColumnMapping, tasks, kanbanColumns]);
+    }, [taskColumnMapping, tasks, kanbanColumns, unassignedTasks]);
 
     const handleOpenModal = () => setIsModalVisible(true);
     const handleCloseModal = () => setIsModalVisible(false);
@@ -82,7 +91,7 @@ const UnassignedTasksIndicator: React.FC<UnassignedTasksIndicatorProps> = ({ tas
 
             if (success) {
                 messageApi.success("All tasks successfully assigned.");
-                setTaskColumnMapping((prev) => ({}));
+                setTaskColumnMapping({});
             } else {
                 messageApi.error("Some tasks failed to assign. Please try again.");
             }
@@ -95,18 +104,18 @@ const UnassignedTasksIndicator: React.FC<UnassignedTasksIndicatorProps> = ({ tas
         }
     };
 
-    const columns = [
+    const columns: ColumnsType<AutoAssignableTask> = [
         {
             title: "Task Title",
-            dataIndex: "title",
-            key: "title",
-            render: (_: any, { task }: any) => <Typography.Text>{task.title}</Typography.Text>,
+            dataIndex: "task",
+            key: "task",
+            render: (task: Task) => <Typography.Text>{task.title}</Typography.Text>,
         },
         {
             title: "Auto-Assigned",
             dataIndex: "isAutoAssignable",
             key: "isAutoAssignable",
-            render: (_: any, { isAutoAssignable }: any) =>
+            render: (isAutoAssignable: boolean) =>
                 isAutoAssignable ? (
                     <CheckCircleOutlined style={{ color: "green" }} />
                 ) : (
@@ -115,11 +124,11 @@ const UnassignedTasksIndicator: React.FC<UnassignedTasksIndicatorProps> = ({ tas
         },
         {
             title: "Select Column",
-            dataIndex: "matchingColumns",
-            key: "matchingColumns",
-            render: (_: any, { task, defaultColumn }: any) => (
+            dataIndex: "task",
+            key: "selectColumn",
+            render: (task: Task, record: AutoAssignableTask) => (
                 <Select
-                    value={taskColumnMapping[task.id!] || defaultColumn}
+                    value={taskColumnMapping[task.id!] || record.defaultColumn}
                     onChange={(value) => handleColumnChange(task.id!, value)}
                     style={{ width: "200px" }}
                 >
@@ -141,6 +150,7 @@ const UnassignedTasksIndicator: React.FC<UnassignedTasksIndicatorProps> = ({ tas
             ),
         },
     ];
+
 
     return (
         <div style={{ margin: "16px" }}>

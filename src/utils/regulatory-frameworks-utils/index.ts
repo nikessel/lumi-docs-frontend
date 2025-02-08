@@ -1,8 +1,8 @@
 import { RegulatoryFramework } from "@wasm";
 
 interface PricingInfo {
-    price: string; // Example: €1,500
-    documents_included: number; // Example: 1000
+    price: string;
+    documents_included: number;
 }
 
 interface FrameworkInfo {

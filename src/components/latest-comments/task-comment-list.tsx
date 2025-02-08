@@ -1,7 +1,6 @@
 import React from 'react';
 import TaskCommentCard from './task-comment-card';
 import { Task } from '@wasm';
-import { Button } from 'antd';
 import Typography from '../typography';
 
 interface TaskCommentListProps {

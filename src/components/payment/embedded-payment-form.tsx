@@ -7,8 +7,6 @@ import {
     EmbeddedCheckout,
 } from "@stripe/react-stripe-js";
 
-console.log("process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
-
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
     ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
     : null;

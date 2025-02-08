@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Table, Input, Button, Modal, Breadcrumb, message, Tag } from 'antd';
-import { SearchOutlined, FolderAddOutlined, DeleteOutlined, LoadingOutlined, ExportOutlined, DownloadOutlined, FolderOpenOutlined } from '@ant-design/icons';
+import { SearchOutlined, FolderAddOutlined, LoadingOutlined, ExportOutlined, DownloadOutlined, FolderOpenOutlined } from '@ant-design/icons';
 import pdfIcon from '@/assets/pdf-icon.svg';
 import folderIcon from '@/assets/folder-icon.svg';
 import dayjs from 'dayjs';
@@ -10,9 +10,9 @@ import Image from 'next/image';
 import FileContextMenu from './file-context-menu';
 import { Select } from 'antd';
 import { File } from "@wasm";
-import { moveFile, createDirectory } from '@/utils/files-utils';
+import { createDirectory } from '@/utils/files-utils';
 import { useWasm } from '@/components/WasmProvider';
-import useCacheInvalidationStore from '@/stores/cache-validation-store';
+import type { ColumnType } from 'antd/es/table';
 
 
 const FileManager: React.FC<{
@@ -32,13 +32,11 @@ const FileManager: React.FC<{
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const [currentPath, setCurrentPath] = useState<string>('');
     const [breadcrumb, setBreadcrumb] = useState<string[]>(['./']);
-    const [isLoading, setIsLoading] = useState(false);
-    const [contextMenu, setContextMenu] = useState<{ x: number; y: number; record: any } | null>(null);
+    const [contextMenu, setContextMenu] = useState<{ x: number; y: number; record: File } | null>(null);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [modalAction, setModalAction] = useState<'create' | 'rename' | 'move'>('create');
     const [newFolderName, setNewFolderName] = useState('');
-    const [foldersForMove, setFoldersForMove] = useState<any[]>([]);
-    const [fileToRename, setFileToRename] = useState<any | null>(null);
+    const [foldersForMove, setFoldersForMove] = useState<File[]>([]);
     const [currentPage, setCurrentPage] = useState(1);
 
     useEffect(() => {
@@ -80,15 +78,15 @@ const FileManager: React.FC<{
         return extension === 'pdf' ? pdfIcon : folderIcon;
     };
 
-    const columns = [
+    const columns: ColumnType<File>[] = [
         {
             title: 'Name',
             dataIndex: 'title',
             key: 'title',
-            sorter: (a: any, b: any) => a.title.localeCompare(b.title),
-            render: (text: string, record: any) => (
+            sorter: (a, b) => a.title.localeCompare(b.title),
+            render: (text: string, record) => (
                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <Image src={getFileIcon(record.extension)} alt="icon" width={16} height={16} style={{ marginRight: 8 }} />
+                    {record.extension ? <Image src={getFileIcon(record.extension)} alt="icon" width={16} height={16} style={{ marginRight: 8 }} /> : ""}
                     <span>{`${record.title}${record.extension ? `.${record.extension}` : ''}`}</span>
                 </div>
             ),
@@ -97,7 +95,7 @@ const FileManager: React.FC<{
             title: 'Size',
             dataIndex: 'size',
             key: 'size',
-            sorter: (a: any, b: any) => a.size - b.size,
+            sorter: (a, b) => a.size - b.size,
             render: (size: number) => {
                 const mb = size / (1024 * 1024);
                 return mb < 1024 ? `${mb.toFixed(2)} MB` : `${(mb / 1024).toFixed(2)} GB`;
@@ -107,12 +105,12 @@ const FileManager: React.FC<{
             title: 'Created On',
             dataIndex: 'created_date',
             key: 'created_date',
-            sorter: (a: any, b: any) =>
+            sorter: (a, b) =>
                 dayjs(a.created_date).unix() - dayjs(b.created_date).unix(),
             render: (date: string) => dayjs(date).format('DD/MM/YYYY HH:mm'),
         },
         {
-            render: (record: any) => (
+            render: (record) => (
                 <div className="flex gap-x-2 justify-end">
                     {record.status === "uploading" ? <Tag color="geekblue">Uploading <LoadingOutlined style={{ marginLeft: 5 }} /></Tag> : record.status === "processing" ? <Tag color="geekblue">Processing <LoadingOutlined style={{ marginLeft: 5 }} /></Tag> : record.status === "ready" ? "" : <Tag color="red">Failed</Tag>}
                     <Button loading={viewLoading[record.id]} disabled={viewLoading[record.id]} icon={<ExportOutlined />} type="default" size="small" onClick={() => viewFile(record.id)}></Button>
@@ -139,7 +137,7 @@ const FileManager: React.FC<{
         );
         setModalAction('move');
         setIsModalVisible(true);
-        setContextMenu(null); // Close context menu
+        setContextMenu(null);
     };
 
     const confirmModalAction = async () => {
@@ -158,8 +156,7 @@ const FileManager: React.FC<{
                 message.error('Please select a destination folder.');
             }
         } else if (modalAction === 'create') {
-            const res = await createDirectory(wasmModule, newFolderName, currentPath)
-            console.log("ressssss")
+            await createDirectory(wasmModule, newFolderName)
         }
         setIsModalVisible(false);
         setNewFolderName('');
@@ -205,9 +202,9 @@ const FileManager: React.FC<{
                     </Button>
                 </div>
             </div>
-            <Table
+            <Table<File>
                 columns={columns}
-                dataSource={isLoading ? [] : filteredFiles}
+                dataSource={filteredFiles}
                 rowKey="id"
                 pagination={{
                     current: currentPage,
@@ -281,8 +278,7 @@ const FileManager: React.FC<{
 
                 })}
                 rowClassName="file-row" // Apply the class here
-
-                loading={isLoading}
+                loading={false}
             />
             {contextMenu && (
                 <FileContextMenu

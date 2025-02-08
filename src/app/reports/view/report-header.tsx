@@ -1,6 +1,5 @@
 import React from "react";
 import { Tag, Tooltip } from "antd";
-import Typography from "@/components/typography";
 import { Report } from "@wasm"
 
 interface ReportsHeaderProps {

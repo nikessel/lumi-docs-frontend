@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from "react";
-import { Input, Button, Divider, Switch, Tooltip, message, List, Modal } from "antd";
+import { Input, Button, Divider, Switch, message, List, Modal } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import "@/styles/globals.css";
 import Typography from "@/components/typography";

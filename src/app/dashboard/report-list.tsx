@@ -2,7 +2,7 @@ import React from "react";
 import { Button } from "antd";
 import ReportCard from "./report-card";
 import Typography from "@/components/typography";
-import type { Report, Task } from "@wasm";
+import type { Report } from "@wasm";
 import { TaskWithReportId } from "@/hooks/tasks-hooks";
 
 interface ReportListProps {

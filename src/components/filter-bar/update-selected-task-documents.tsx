@@ -12,7 +12,6 @@ const SelectTaskDocuments: React.FC = () => {
     const { files, isLoading } = useFiles(); // Fetch available files
     const { selectedTaskDocuments, toggleSelectedTaskDocuments } = useSearchParamsState(); // Get state management functions
 
-    // Memoize options for performance optimization
     const fileOptions = useMemo(() => {
         return files.map((file) => ({
             label: file.title || file.path || file.id,
@@ -20,9 +19,7 @@ const SelectTaskDocuments: React.FC = () => {
         }));
     }, [files]);
 
-    // Handle file selection changes
     const handleChange = (selectedIds: string[]) => {
-        // Determine which files are newly selected or deselected
         selectedIds.forEach((fileId) => {
             if (!selectedTaskDocuments.includes(fileId)) {
                 toggleSelectedTaskDocuments(fileId); // Add selected document

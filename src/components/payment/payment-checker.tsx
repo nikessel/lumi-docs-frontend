@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
-import { message } from "antd"; // Import Ant Design notification
-import { ConfigProvider } from "antd"; // Context holder for Ant Design
+import { message } from "antd";
+import { ConfigProvider } from "antd";
 import { createReport, validateReportInput } from "@/utils/report-utils/create-report-utils";
 import { useWasm } from "../WasmProvider";
 import { useCreateReportStore } from "@/stores/create-report-store";
@@ -12,8 +12,7 @@ export default function PaymentChecker() {
     const searchParams = useSearchParams();
     const sessionId = searchParams.get("session_id");
     const { wasmModule } = useWasm()
-    const [api, contextHolder] = message.useMessage(); // Ant Design notification context
-    // const [creatingReport, setCreatingReport] = useState(false)
+    const [api, contextHolder] = message.useMessage();
     const newReportCreated = useCreateReportStore((state) => state.newReportCreated)
     const setNewReportCreated = useCreateReportStore((state) => state.setNewReportCreated)
 
@@ -46,53 +45,17 @@ export default function PaymentChecker() {
             });
             setNewReportCreated({ id: "", status: undefined })
         }
-    }, [newReportCreated])
-
-    // useEffect(() => {
-    //     if (successfulResponseRecieved && reportsBeingRefetched) {
-    //         api.open({
-    //             key,
-    //             type: "loading",
-    //             content: "Creating report ...",
-    //             duration: 0,
-    //         });
-    //     }
-
-    //     if (!reportsBeingRefetched && successfulResponseRecieved) {
-    //         //change to success message
-    //         api.open({
-    //             key,
-    //             type: "success",
-    //             content: "Report is being generated.",
-    //             duration: 3,
-    //         });
-    //         setSuccessfulResponseRecieved(false)
-    //     }
-    // }, [reportsBeingRefetched, successfulResponseRecieved])
-
+    }, [newReportCreated, api, setNewReportCreated])
 
     useEffect(() => {
 
         if (!sessionId || !wasmModule || creatingReportRef.current) return;
-        // Show "Checking payment..." loading notification
         creatingReportRef.current = true;
 
-        const key = "payment-check";
-
-        // api.open({
-        //     key,
-        //     message: "Checking payment...",
-        //     description: "We are verifying your payment. Please wait.",
-        //     duration: 0,
-        //     type: "info",
-        // });
-
-        // Fetch payment details
         fetch(`/api/checkout_sessions?session_id=${sessionId}`)
             .then((res) => res.json())
             .then((data) => {
                 if (data.error) {
-                    // Close loading notification and show an error notification
                     api.error("Payment Check Failed");
                     return;
                 }
@@ -109,23 +72,16 @@ export default function PaymentChecker() {
 
                     const createReportInput = !valRep.error ? valRep.input : undefined
 
-                    const { resetState, selectedSections } = useCreateReportStore.getState();
+                    const { resetState } = useCreateReportStore.getState();
 
                     resetState()
 
                     if (createReportInput) {
                         createReport(wasmModule, createReportInput)
 
-                        // setSuccessfulResponseRecieved(true)
                     } else {
                         api.error("An input error ocurred when creating the report")
                     }
-
-                    // api.success({
-                    //     key,
-                    //     message: "Payment Successful",
-                    //     description: "Your payment was successful! We are preparing your report.",
-                    // });
 
                 } else {
                     api.error("Payment Failed");
@@ -134,11 +90,10 @@ export default function PaymentChecker() {
                 url.searchParams.delete("session_id");
                 window.history.replaceState({}, document.title, url.toString());
             })
-            .catch((err) => {
+            .catch(() => {
                 api.error("An error ocurred");
             });
-    }, [wasmModule]);
+    }, [wasmModule, api, sessionId]);
 
-    // Render nothing, but include context holder for notifications
     return <ConfigProvider>{contextHolder}</ConfigProvider>;
 }

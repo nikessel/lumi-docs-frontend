@@ -13,8 +13,6 @@ import type { StorageKey, Claims } from "@wasm";
 import { useRouter } from "next/navigation";
 import { useWasm } from "@/components/WasmProvider";
 import { storage, useStorage } from "@/storage";
-import useLoadingStore from "@/stores/global-loading-unification";
-import LoadingLogoScreen from "./loading-screen";
 
 const SK = {
   id_token: "id_token" as StorageKey,
@@ -81,8 +79,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const { wasmModule, isLoading: isWasmLoading } = useWasm();
   const [idToken] = useStorage(SK.id_token);
-
-  const router = useRouter();
 
   const signup = useCallback(async () => {
     if (!wasmModule) {

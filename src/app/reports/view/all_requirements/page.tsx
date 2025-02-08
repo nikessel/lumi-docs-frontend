@@ -1,36 +1,21 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import ReportStateHandler from '@/components/report-state-handler';
+import React from 'react';
 import TableContainer from './table-container';
-import { useSelectedFilteredReportsContext } from '@/contexts/reports-context/selected-filtered-reports';
-import { useFilteredSectionsContext } from '@/contexts/sections/filtered-report-sections';
-import { useFilteredRequirementsContext } from '@/contexts/requirement-context/filtered-report-requirement-context';
-import { useFilteredRequirementGroupsContext } from '@/contexts/requirement-group-context/filtered-report-requirement-group';
 import { Table, Skeleton } from 'antd';
+import { useReportsContext } from '@/contexts/reports-context';
+import { useSectionsContext } from '@/contexts/sections-context';
+import { useRequirementsContext } from '@/contexts/requirements-context';
+import { useRequirementGroupsContext } from '@/contexts/requirement-group-context';
 
 const Page = () => {
-    const { reports, loading: reportsLoading, error: reportsError } = useSelectedFilteredReportsContext();
+    const { filteredSelectedReports, loading: reportsLoading } = useReportsContext();
 
-    const { sections, loading: sectionsLoading, error: sectionsError } = useFilteredSectionsContext();
-    const { requirements, loading: requirementsLoading, error: requirementsError } = useFilteredRequirementsContext();
-    const { requirementGroups, loading: groupsLoading, error: groupsError } = useFilteredRequirementGroupsContext();
+    const { filteredSelectedReportsSections, loading: sectionsLoading } = useSectionsContext();
+    const { filteredSelectedRequirements, loading: requirementsLoading } = useRequirementsContext();
+    const { filteredSelectedRequirementGroups, loading: groupsLoading } = useRequirementGroupsContext();
 
-    const error = reportsError || sectionsError || requirementsError || groupsError;
-
-    const [loading, setLoading] = useState(true)
-
-    useEffect(() => {
-        const timeout = setTimeout(() => {
-            if (!reportsLoading && !sectionsLoading && !requirementsLoading && !groupsLoading) {
-                setLoading(false);
-            }
-        }, 200);
-
-        return () => clearTimeout(timeout);
-    }, [reportsLoading, sectionsLoading, requirementsLoading, groupsLoading]);
-
-    if (loading) {
+    if (reportsLoading || sectionsLoading || requirementsLoading || groupsLoading) {
         return (
             <div>
                 <div className="my-4">
@@ -66,10 +51,10 @@ const Page = () => {
     return (
         <div>
             <TableContainer
-                reports={reports}
-                sections={sections}
-                requirements={requirements}
-                requirement_groups={requirementGroups}
+                reports={filteredSelectedReports}
+                sections={filteredSelectedReportsSections}
+                requirements={filteredSelectedRequirements}
+                requirement_groups={filteredSelectedRequirementGroups}
             />
         </div>
     );

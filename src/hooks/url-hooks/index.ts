@@ -16,7 +16,7 @@ export const useUrlSelectedReports = (): UseUrlSelectedReports => {
             const decodedReports = urlSelectedReports
                 .split(',')
                 .map(report => decodeURIComponent(report))
-                .filter(Boolean); // Remove empty strings
+                .filter(Boolean);
             setSelectedReports(decodedReports);
         } else {
             setSelectedReports([]);
