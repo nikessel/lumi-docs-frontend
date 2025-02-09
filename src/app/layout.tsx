@@ -37,10 +37,10 @@ import { useRequirementGroupsContext } from "@/contexts/requirement-group-contex
 import { useRequirementsContext } from "@/contexts/requirements-context";
 import { useSectionsContext } from "@/contexts/sections-context";
 import { useTasksContext } from "@/contexts/tasks-context";
-// import { AuthProvider } from "@/hooks/auth-hook/Auth0Provider";
-// import { useAuth as useAuthNew } from "@/hooks/auth-hook";
-import { useAuth } from "@/components/Auth0";
-import { AuthProvider } from "@/components/Auth0";
+import { AuthProvider } from "@/hooks/auth-hook/Auth0Provider";
+import { useAuth } from "@/hooks/auth-hook";
+// import { useAuth } from "@/components/Auth0";
+// import { AuthProvider } from "@/components/Auth0";
 
 const { Content } = Layout;
 
