@@ -5,6 +5,7 @@ import { RequirementGroup } from "@wasm";
 import { useReportsContext } from "@/contexts/reports-context";
 import { useSectionsContext } from "@/contexts/sections-context";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
+// import { useNewAuth } from "../auth-hook";
 
 interface UseRequirementGroups {
     requirementGroups: RequirementGroupWithSectionId[];
@@ -22,6 +23,8 @@ export const useRequirementGroups = (): UseRequirementGroups => {
     const { wasmModule } = useWasm();
     const { reports, filteredSelectedReports } = useReportsContext();
     const { sections, loading: sectionsLoading } = useSectionsContext();
+    // const { isAuthenticated, isLoading: authLoading } = useNewAuth()
+
 
     const [requirementGroups, setRequirementGroups] = useState<RequirementGroupWithSectionId[]>([]);
     const [loading, setLoading] = useState(true);
@@ -36,13 +39,17 @@ export const useRequirementGroups = (): UseRequirementGroups => {
             console.log(`🔄 Fetching requirement groups... (Initial Load: ${isInitialLoad})`);
 
             if (!wasmModule) {
-                console.error("❌ WASM module not provided");
                 setError("WASM module not provided");
                 return;
             }
 
+            // if (!isAuthenticated && !authLoading) {
+            //     setError("User not authenticated");
+            //     setLoading(false)
+            //     return
+            // }
+
             if (sections.length === 0) {
-                console.warn("⚠️ No sections available, skipping fetch");
                 if (!sectionsLoading) {
                     setLoading(false)
                 }
@@ -50,16 +57,13 @@ export const useRequirementGroups = (): UseRequirementGroups => {
             }
 
             if (!isInitialLoad && !lastUpdated) {
-                console.log("🟢 Requirement groups are already up to date, skipping fetch");
                 return;
             }
 
             try {
                 if (isInitialLoad) {
-                    console.log("🔄 Initial fetch for requirement groups started...");
                     setLoading(true);
                 } else {
-                    console.log("🔄 Refetching requirement groups...");
                     setBeingRefetched("requirementGroups", true);
                 }
 
@@ -82,6 +86,7 @@ export const useRequirementGroups = (): UseRequirementGroups => {
                 }
 
                 console.log(`✅ Fetched ${allGroups.length} requirement groups`);
+
                 setRequirementGroups(allGroups);
 
                 // **Important:** Mark fetch as completed
@@ -91,10 +96,8 @@ export const useRequirementGroups = (): UseRequirementGroups => {
                 setError((err as Error)?.message || "Failed to fetch requirement groups.");
             } finally {
                 if (isInitialLoad) {
-                    console.log("✅ Initial requirement groups fetch completed");
                     setLoading(false);
                 } else {
-                    console.log("✅ Requirement groups refetch completed");
                     setBeingRefetched("requirementGroups", false);
                 }
             }

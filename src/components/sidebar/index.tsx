@@ -7,8 +7,10 @@ import SiderLogo from "./sider-logo";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { clearAllData } from "@/utils/sign-out-util";
-import { useAuth } from "../Auth0";
+// import { useAuth } from "../Auth0";
 import HelpCard from "../help-card";
+// import { useAuth } from "@/hooks/auth-hook";¨
+import { useAuth } from "../Auth0";
 
 const { Sider } = Layout;
 

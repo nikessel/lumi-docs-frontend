@@ -5,6 +5,7 @@ import { Requirement } from "@wasm";
 import { useReportsContext } from "@/contexts/reports-context";
 import { useRequirementGroupsContext } from "@/contexts/requirement-group-context";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
+// import { useNewAuth } from "../auth-hook";
 
 interface UseRequirements {
     requirements: RequirementWithGroupId[];
@@ -22,6 +23,8 @@ export const useRequirements = (): UseRequirements => {
     const { wasmModule } = useWasm();
     const { reports, filteredSelectedReports } = useReportsContext();
     const { requirementGroups, loading: groupsLoading } = useRequirementGroupsContext();
+    // const { isAuthenticated, isLoading: authLoading } = useNewAuth()
+
 
     const [requirements, setRequirements] = useState<RequirementWithGroupId[]>([]);
     const [loading, setLoading] = useState(true);
@@ -36,13 +39,17 @@ export const useRequirements = (): UseRequirements => {
             console.log(`🔄 Fetching requirements... (Initial Load: ${isInitialLoad})`);
 
             if (!wasmModule) {
-                console.error("❌ WASM module not loaded");
                 setError("WASM module not loaded");
                 return;
             }
 
+            // if (!isAuthenticated && !authLoading) {
+            //     setError("User not authenticated");
+            //     setLoading(false)
+            //     return
+            // }
+
             if (!requirementGroups.length) {
-                console.log("⚠️ No requirement groups available, skipping requirement fetch");
                 if (!groupsLoading) {
                     setLoading(false)
                 }
@@ -50,16 +57,13 @@ export const useRequirements = (): UseRequirements => {
             }
 
             if (!isInitialLoad && !lastUpdated) {
-                console.log("🟢 Requirements are already up to date, skipping re-fetch");
                 return;
             }
 
             try {
                 if (isInitialLoad) {
-                    console.log("🔄 Initial requirement fetch started...");
                     setLoading(true);
                 } else {
-                    console.log("🔄 Refetching requirements...");
                     setBeingRefetched("requirements", true);
                 }
 
@@ -93,10 +97,8 @@ export const useRequirements = (): UseRequirements => {
                 setError((err as Error)?.message || "Failed to fetch requirements.");
             } finally {
                 if (isInitialLoad) {
-                    console.log("✅ Initial requirement fetch completed");
                     setLoading(false);
                 } else {
-                    console.log("✅ Requirement refetch completed");
                     setBeingRefetched("requirements", false);
                 }
             }
@@ -149,6 +151,8 @@ export const useAllRequirements = (): UseAllRequirements => {
     const [requirements, setRequirements] = useState<Requirement[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    // const { isAuthenticated, isLoading: authLoading } = useNewAuth()
+
 
     const lastUpdated = useCacheInvalidationStore((state) => state.lastUpdated["allRequirements"]);
     const setBeingRefetched = useCacheInvalidationStore((state) => state.setBeingRefetched);
@@ -159,22 +163,24 @@ export const useAllRequirements = (): UseAllRequirements => {
             console.log(`🔄 Fetching all requirements... (Initial Load: ${isInitialLoad})`);
 
             if (!wasmModule) {
-                console.error("❌ WASM module not loaded");
                 setError("WASM module not loaded");
                 return;
             }
 
+            // if (!isAuthenticated && !authLoading) {
+            //     setError("User not authenticated");
+            //     setLoading(false)
+            //     return
+            // }
+
             if (!isInitialLoad && !lastUpdated) {
-                console.log("🟢 All requirements are already up to date, skipping fetch");
                 return;
             }
 
             try {
                 if (isInitialLoad) {
-                    console.log("🔄 Initial all-requirements fetch started...");
                     setLoading(true);
                 } else {
-                    console.log("🔄 Refetching all requirements...");
                     setBeingRefetched("allRequirements", true);
                 }
 
@@ -195,10 +201,8 @@ export const useAllRequirements = (): UseAllRequirements => {
                 setError((err as Error)?.message || "Failed to fetch requirements.");
             } finally {
                 if (isInitialLoad) {
-                    console.log("✅ Initial all-requirements fetch completed");
                     setLoading(false);
                 } else {
-                    console.log("✅ All-requirements refetch completed");
                     setBeingRefetched("allRequirements", false);
                 }
             }

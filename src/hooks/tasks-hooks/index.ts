@@ -8,6 +8,8 @@ import { useFilesContext } from "@/contexts/files-context";
 import { useReportsContext } from "@/contexts/reports-context";
 import { filterReports } from "@/utils/report-utils";
 import { useRequirementsContext } from "@/contexts/requirements-context";
+// import { useNewAuth } from "@/hooks/auth-hook";
+
 
 export interface TaskWithReportId extends Task {
     reportId: string;
@@ -27,6 +29,7 @@ export const useTasks = (): UseTasks => {
     const [selectedFilteredReportsTasks, setSelectedFilteredReportsTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    // const { isAuthenticated, isLoading: authLoading } = useNewAuth()
 
     const lastUpdated = useCacheInvalidationStore((state) => state.lastUpdated["tasks"]);
     const setBeingRefetched = useCacheInvalidationStore((state) => state.setBeingRefetched);
@@ -42,14 +45,19 @@ export const useTasks = (): UseTasks => {
 
     useEffect(() => {
         const fetchAllTasks = async (isInitialLoad = false) => {
+
             if (!wasmModule) {
-                console.warn("❌ WASM module not loaded");
                 setError("WASM module not loaded");
                 return;
             }
 
+            // if (!isAuthenticated && !authLoading) {
+            //     setError("User not authenticated");
+            //     setLoading(false)
+            //     return
+            // }
+
             if (!reports.length) {
-                console.warn("⚠️ No reports available, skipping task fetch");
                 if (!reportsLoading) {
                     setLoading(false)
                 }
@@ -57,7 +65,6 @@ export const useTasks = (): UseTasks => {
             }
 
             if (!isInitialLoad && !lastUpdated) {
-                console.log("🟢 Tasks are already up to date, skipping re-fetch");
                 return;
             }
 
@@ -74,7 +81,7 @@ export const useTasks = (): UseTasks => {
                 let updatedTasksByReport: Record<string, TaskWithReportId[]> = { ...tasksByReportId };
 
                 if (staleTaskIds.length > 0) {
-                    console.log(`🔄 Fetching only stale tasks: ${staleTaskIds.join(", ")}`);
+                    console.log(`🔄 Fethced ${staleTaskIds.length} stale tasks: ${staleTaskIds.join(", ")}`);
 
                     // Fetch only the stale tasks by their ID
                     const updatedTasks = await Promise.all(
@@ -116,12 +123,10 @@ export const useTasks = (): UseTasks => {
                         }
                     });
 
-                    console.log(`✅ Successfully updated ${validUpdatedTasks.length} stale tasks`);
+                    console.log(`✅ Fetched ${validUpdatedTasks.length} stale tasks: ${staleTaskIds.join(", ")}`);
                     removeStaleTaskIds(staleTaskIds); // Remove fetched stale task IDs from cache
                 } else {
                     triggerUpdate("tasks", true);
-                    console.log("🔄 Fetching all tasks for all reports...");
-
                     const allTasksByReport = await Promise.all(
                         reports.map(report =>
                             fetchTasksByReport(wasmModule, report.id).then(tasks =>
@@ -145,11 +150,9 @@ export const useTasks = (): UseTasks => {
                 setError(err instanceof Error ? err.message : "Failed to fetch tasks");
             } finally {
                 if (isInitialLoad) {
-                    console.log("✅ Initial tasks fetch completed.");
                     setLoading(false)
 
                 } else {
-                    console.log("✅ Task refresh completed.");
                     setLoading(false)
                     setBeingRefetched("tasks", false);
                 }

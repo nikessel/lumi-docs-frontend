@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import type { ReactNode } from "react";
-import { AuthProvider } from "@/components/Auth0";
+// import { AuthProvider as OldAuthProvider } from "@/components/Auth0";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { ConfigProvider, Layout } from "antd";
 import { antdconfig } from "@/../antd-config";
@@ -19,7 +19,7 @@ import { FilesProvider } from '@/contexts/files-context';
 import { UserProvider } from "@/contexts/user-context";
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-import { useAuth } from "@/components/Auth0";
+// import { useAuth } from "@/components/Auth0";
 import { useReportsContext } from "@/contexts/reports-context";
 import { SearchParamsProvider } from "@/contexts/search-params-context";
 import TourComponent from "@/components/user-guide-components/tour";
@@ -37,7 +37,10 @@ import { useRequirementGroupsContext } from "@/contexts/requirement-group-contex
 import { useRequirementsContext } from "@/contexts/requirements-context";
 import { useSectionsContext } from "@/contexts/sections-context";
 import { useTasksContext } from "@/contexts/tasks-context";
-
+// import { AuthProvider } from "@/hooks/auth-hook/Auth0Provider";
+// import { useAuth as useAuthNew } from "@/hooks/auth-hook";
+import { useAuth } from "@/components/Auth0";
+import { AuthProvider } from "@/components/Auth0";
 
 const { Content } = Layout;
 
@@ -47,7 +50,7 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
   const [globalLoading, setGlobalLoading] = useState(true)
   const [initialLoadCompleted, setInitialLoadCompleted] = useState(false)
   const { isLoading: wasmLoading } = useWasm();
-  const { isLoading: AuthLoading, isAuthenticated } = useAuth()
+  // const { isLoading: AuthLoading, isAuthenticated } = useAuth()
 
   const { loading: reportsLoading } = useReportsContext()
   const { user, loading: userLoading } = useUserContext()
@@ -55,7 +58,6 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
   const { loading: requirementsLoading } = useRequirementsContext()
   const { loading: sectionsLoading } = useSectionsContext()
   const { loading: tasksLoading } = useTasksContext()
-
 
   const router = useRouter()
   const routesWithoutAuth = useMemo(() => ["/verify-email", "/callback", "/documentation", "/signup", "/logout"], []);
@@ -72,6 +74,8 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
   const tasksRef = useRef(null)
   const newReportButtonRef = useRef(null);
 
+  const { isCheckingSession } = useAuth();
+
   useEffect(() => {
     if (!stripePromise) {
       setShowNoPaymentWarning(true)
@@ -80,16 +84,18 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  console.log("asdasdasdasdasdasd", !wasmLoading, !AuthLoading, !reportsLoading, !userLoading, window.location.pathname !== "/callback", !initialLoadCompleted, !groupsLoading, !requirementsLoading, !sectionsLoading, !tasksLoading)
-
-  // && !reportsLoading && !userLoading && window.location.pathname !== "/callback" && !initialLoadCompleted && !groupsLoading && !requirementsLoading && !sectionsLoading && !tasksLoading
+  useEffect(() => {
+    if (isCheckingSession) {
+      console.log("234234easd242134 Checking session...");
+    }
+  }, [isCheckingSession]);
 
   useEffect(() => {
-    if ((!wasmLoading && !AuthLoading && !reportsLoading && !userLoading && window.location.pathname !== "/callback" && !initialLoadCompleted && !groupsLoading && !requirementsLoading && !sectionsLoading && !tasksLoading) || (routesWithoutAuth.indexOf(window.location.pathname) > -1)) {
+    if ((!wasmLoading && !reportsLoading && !userLoading && window.location.pathname !== "/callback" && !initialLoadCompleted && !groupsLoading && !requirementsLoading && !sectionsLoading && !tasksLoading) || (routesWithoutAuth.indexOf(window.location.pathname) > -1)) {
       setGlobalLoading(false)
       setInitialLoadCompleted(true)
     }
-  }, [wasmLoading, AuthLoading, reportsLoading, initialLoadCompleted, userLoading, groupsLoading, requirementsLoading, sectionsLoading, tasksLoading, routesWithoutAuth])
+  }, [wasmLoading, reportsLoading, initialLoadCompleted, userLoading, groupsLoading, requirementsLoading, sectionsLoading, tasksLoading, routesWithoutAuth])
 
   useEffect(() => {
     if (adminRoutes.indexOf(window.location.pathname) && user && !user.config?.admin) {
@@ -97,13 +103,22 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
     }
   }, [adminRoutes, router, user])
 
-  if (globalLoading || window.location.pathname === "/callback") {
-    return <LoadingLogoScreen>{window.location.pathname === "/callback" ? children : ""}</LoadingLogoScreen>;
+  if (isCheckingSession) {
+    return <div className="w-full h-full bg-red-500"></div>;
   }
 
-  if (!globalLoading && !isAuthenticated && routesWithoutAuth.indexOf(window.location.pathname) < 0) {
-    return <LoginPrompt />
-  }
+  // if (routesWithoutAuth.indexOf(window.location.pathname) > -1) {
+  //   return <div>{children}</div>;
+  // }
+
+  // if (globalLoading || window.location.pathname === "/callback") {
+  //   return <LoadingLogoScreen>{window.location.pathname === "/callback" ? children : ""}</LoadingLogoScreen>;
+  // }
+
+
+  // if (!globalLoading && !isAuthenticated && routesWithoutAuth.indexOf(window.location.pathname) < 0) {
+  //   return <LoginPrompt />
+  // }
 
 
   return (
@@ -140,6 +155,7 @@ export default function RootLayout({
       <body className="h-full">
         <WasmProviderComponent>
           <Suspense fallback={<LoadingLogoScreen />}>
+            {/* <OldAuthProvider> */}
             <AuthProvider>
               <UserProvider>
                 <SearchParamsProvider>
@@ -163,6 +179,7 @@ export default function RootLayout({
                 </SearchParamsProvider>
               </UserProvider>
             </AuthProvider>
+            {/* </OldAuthProvider> */}
           </Suspense>
         </WasmProviderComponent>
       </body>

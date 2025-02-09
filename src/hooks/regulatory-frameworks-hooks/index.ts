@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { getSupportedFrameworks } from "@/utils/regulatory-frameworks-utils";
 import { RegulatoryFramework } from "@wasm";
+// import { useNewAuth } from "../auth-hook";
+
 
 interface FrameworkInfo {
     id: RegulatoryFramework;
@@ -17,10 +19,10 @@ export const useRegulatoryFrameworks = (): UseRegulatoryFrameworks => {
     const [frameworks, setFrameworks] = useState<FrameworkInfo[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    // const { isAuthenticated, isLoading: authLoading } = useNewAuth()
 
     useEffect(() => {
         const fetchFrameworks = async () => {
-            console.log("📌 Fetching regulatory frameworks...");
 
             try {
                 setLoading(true);
