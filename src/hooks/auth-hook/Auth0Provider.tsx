@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             domain={authConfig.domain}
             clientId={authConfig.client_id}
             authorizationParams={{
-                redirect_uri: authConfig.login_redirect_uri,
+                redirect_uri: "http://localhost:3000/",
                 scope: "openid profile email",
             }}
             cacheLocation="localstorage"

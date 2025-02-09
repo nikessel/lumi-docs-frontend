@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useWasm } from "@/components/WasmProvider";
 
 export const useAuth = () => {
-    const { loginWithRedirect, logout, user, isAuthenticated, getAccessTokenSilently } = useAuth0();
+    const { loginWithRedirect, logout, user, isAuthenticated } = useAuth0();
     const router = useRouter();
     const { wasmModule } = useWasm();
     const [isCheckingSession, setIsCheckingSession] = useState(true);
@@ -19,11 +19,10 @@ export const useAuth = () => {
     const logoutUser = useCallback(() => {
         logout({
             logoutParams: {
-                returnTo: "http://localhost:3000/logout", // 👈 Ensure this URL matches your app's logout route
+                returnTo: "http://localhost:3000/logout",
             },
         });
 
-        // Optionally clear tokens from local storage
         localStorage.removeItem("access_token");
         localStorage.removeItem("id_token");
     }, [logout]);

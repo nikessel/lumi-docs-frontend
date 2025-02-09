@@ -22,7 +22,7 @@ export const useAuthConfig = () => {
                 if (res.error || !res.output) {
                     throw new Error(res.error?.message || "Failed to fetch Auth0 config");
                 }
-
+                setError("")
                 setAuthConfig(res.output.output);
             } catch (err) {
                 console.error("Auth0 config error:", err);
