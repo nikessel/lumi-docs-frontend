@@ -1,7 +1,9 @@
-"use client"; // Ensure it runs only on the client side
-import { createContext, useContext, useEffect } from "react";
-import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
+"use client";
 import React from "react"
+import { createContext, useContext } from "react";
+import { Auth0Provider } from "@auth0/auth0-react";
+import { useAuthConfig } from "./auth-config";
+import LoadingLogoScreen from "@/components/loading-screen"; // Create a simple loading screen if necessary
 
 interface AuthProviderProps {
     children: React.ReactNode;
@@ -9,14 +11,23 @@ interface AuthProviderProps {
 
 const AuthContext = createContext({});
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+    const { authConfig, isLoading, error } = useAuthConfig();
+
+    if (isLoading) {
+        return <LoadingLogoScreen>Loading authentication...</LoadingLogoScreen>;
+    }
+
+    if (error || !authConfig) {
+        return <div>Error loading authentication: {error}</div>;
+    }
+
     return (
         <Auth0Provider
-            domain={process.env.NEXT_PUBLIC_AUTH0_DOMAIN!}
-            clientId={process.env.NEXT_PUBLIC_AUTH0_CLIENT_ID!}
+            domain={authConfig.domain}
+            clientId={authConfig.client_id}
             authorizationParams={{
-                redirect_uri: typeof window !== "undefined" ? window.location.origin : undefined,
-                audience: process.env.NEXT_PUBLIC_AUTH0_AUDIENCE,
+                redirect_uri: authConfig.login_redirect_uri,
                 scope: "openid profile email",
             }}
             cacheLocation="localstorage"
