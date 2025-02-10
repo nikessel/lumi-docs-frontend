@@ -10,7 +10,8 @@
     "build:clean": "rm -rf .next/cache && next build",
     "start": "next start",
     "lint": "eslint .",
-    "clean": "rm -rf .next/cache"
+    "clean": "rm -rf .next/cache",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@ant-design/nextjs-registry": "^1.0.2",
