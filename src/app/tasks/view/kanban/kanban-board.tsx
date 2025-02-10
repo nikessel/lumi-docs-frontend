@@ -43,6 +43,7 @@ const KanbanBoard: React.FC = () => {
     useEffect(() => {
         if (user?.task_management?.kanban?.columns && user.task_management.kanban.columns.length > 0 && !tasksLoading && !initialBoardCreated.current) {
             initialBoardCreated.current = true
+
             const existingTaskIds = new Set(selectedFilteredReportsTasks.map(task => task.id));
             const mappedColumns = user.task_management.kanban.columns.map((column) => ({
                 id: column.column_name,
@@ -98,8 +99,11 @@ const KanbanBoard: React.FC = () => {
         } catch (err: unknown) {
             messageApi.error('Failed to create default setup');
             console.error(err)
+        } finally {
+            initialBoardCreated.current = false
         }
     };
+
 
     if (isLoading) return <p>Loading Kanban board...</p>;
     if (settingUpBoard) return <p>Setting up Kanban board...</p>;

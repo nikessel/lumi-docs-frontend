@@ -3,6 +3,7 @@ import { useWasm } from "@/components/WasmProvider";
 import { fetchFiles } from "@/utils/files-utils";
 import type { File } from "@wasm";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
+import { useAuth } from "../auth-hook/Auth0Provider";
 
 interface UseFiles {
     files: File[];
@@ -17,6 +18,8 @@ export const useFiles = (): UseFiles => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [isRefetching, setIsRefetching] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { isAuthenticated, isLoading: authLoading } = useAuth()
+
 
     const addStaleFileId = useCacheInvalidationStore((state) => state.addStaleFileId);
     const removeStaleFileIds = useCacheInvalidationStore((state) => state.removeStaleFileIds);
@@ -46,17 +49,17 @@ export const useFiles = (): UseFiles => {
     useEffect(() => {
         const loadFiles = async () => {
             if (!wasmModule) {
-                console.warn("⚠️ WASM module not available, skipping file fetch.");
                 return;
             }
 
-            // **Prevent unnecessary fetches**
+            if (!isAuthenticated || authLoading) {
+                return
+            }
+
             if (!isInitialLoad && !lastUpdated) {
-                console.log("🟢 Files are up to date, skipping fetch.");
                 return;
             }
 
-            console.log(`📌 Fetching files... (Initial Load: ${isInitialLoad})`);
             try {
                 if (isInitialLoad) {
                     setIsLoading(true);
@@ -75,7 +78,6 @@ export const useFiles = (): UseFiles => {
                     setError(null);
                     setInitialLoad(false);
 
-                    // Remove fetched files from stale list
                     const fetchedFileIds = fetchedFiles.map((file) => file.id);
                     removeStaleFileIds(fetchedFileIds);
                 }
@@ -89,7 +91,7 @@ export const useFiles = (): UseFiles => {
         };
 
         loadFiles();
-    }, [wasmModule, lastUpdated, isInitialLoad, removeStaleFileIds]);
+    }, [wasmModule, lastUpdated, isInitialLoad, removeStaleFileIds, authLoading, isAuthenticated]);
 
     return { files, isLoading, error };
 };

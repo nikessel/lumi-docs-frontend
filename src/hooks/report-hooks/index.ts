@@ -6,6 +6,7 @@ import useCacheInvalidationStore from '@/stores/cache-validation-store';
 import { useCreateReportStore } from '@/stores/create-report-store';
 import { useSearchParamsState } from '@/contexts/search-params-context';
 import { useAllRequirementsContext } from '@/contexts/requirements-context/all-requirements-context';
+import { useAuth } from '../auth-hook/Auth0Provider';
 
 interface UseReports {
     reports: Report[];
@@ -19,6 +20,8 @@ export const useReports = (): UseReports => {
     const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { isAuthenticated, isLoading: authLoading } = useAuth()
+
 
     const cacheStore = useCacheInvalidationStore.getState();
     const lastUpdated = cacheStore.lastUpdated["reports"];
@@ -61,21 +64,21 @@ export const useReports = (): UseReports => {
     useEffect(() => {
         const fetchReportsData = async (isInitialLoad = false) => {
             if (!wasmModule) {
-                console.warn("⚠️ WASM module not loaded. Skipping fetch.");
                 return;
             }
 
+            if (!isAuthenticated || authLoading) {
+                return
+            }
+
             if (!lastUpdated && !isInitialLoad) {
-                console.log("🟢 Reports are up to date. No need to fetch.");
                 return;
             }
 
             try {
                 if (isInitialLoad) {
-                    console.log("🔄 Initial fetch: Fetching all reports...");
                     setLoading(true);
                 } else {
-                    console.log("🔄 Refreshing reports...");
                     setBeingRefetched("reports", true);
                 }
 
@@ -83,11 +86,12 @@ export const useReports = (): UseReports => {
 
                 if (staleReportIds.length > 0 && reports.length > 0) {
                     triggerUpdate("reports", true);
-                    console.log(`📌 Fetching only stale reports: ${staleReportIds.join(", ")}`);
                     const { reports: updatedReports, errors } = await fetchReportsByIds(wasmModule, staleReportIds);
 
                     if (Object.keys(errors).length > 0) {
                         console.error("❌ Errors fetching some stale reports:", errors);
+                    } else {
+                        console.log(`✅ Fetched stale reports: ${staleReportIds.join(", ")}`);
                     }
 
                     fetchedReports = reports.map((existingReport) =>
@@ -97,12 +101,14 @@ export const useReports = (): UseReports => {
                     removeStaleReportIds(staleReportIds);
                 } else {
                     triggerUpdate("reports", true);
-                    console.log("📌 Fetching all reports as no stale reports exist.");
+
                     const { reports: allReports, error } = await fetchReports(wasmModule);
 
                     if (error) {
                         throw new Error(error);
                     }
+
+                    console.log(`✅ Fetched all reports: ${allReports.length}`);
 
                     fetchedReports = allReports;
                 }
@@ -110,22 +116,22 @@ export const useReports = (): UseReports => {
                 setReports(fetchedReports);
 
                 const newReport = fetchedReports.find((report) => report.id === newReportCreated.id);
+
                 if (newReport) {
                     console.log(`🔔 Detected new report with ID ${newReport.id}. Marking as processing.`);
                     setNewReportCreated({ id: newReport.id, status: "processing" });
                 }
+
             } catch (err) {
                 console.error("❌ Error fetching reports:", err);
                 setError((err as Error)?.message || "Failed to fetch reports.");
             } finally {
                 if (isInitialLoad) {
-                    console.log("✅ Initial report fetch completed.");
                     setLoading(false);
                 } else {
-                    console.log("✅ Report refresh completed.");
+                    setLoading(false);
                     setBeingRefetched("reports", false);
                 }
-
                 if (resolveRefreshPromise) {
                     console.log("✅ Resolving refresh promise...");
                     resolveRefreshPromise();
@@ -137,7 +143,7 @@ export const useReports = (): UseReports => {
         };
 
         fetchReportsData(loading);
-    }, [wasmModule, lastUpdated, loading, newReportCreated.id, removeStaleReportIds, reports, resolveRefreshPromise, setBeingRefetched, setNewReportCreated, staleReportIds, triggerUpdate]);
+    }, [wasmModule, lastUpdated, loading, newReportCreated.id, removeStaleReportIds, reports, resolveRefreshPromise, setBeingRefetched, setNewReportCreated, staleReportIds, triggerUpdate, authLoading, isAuthenticated]);
 
     return { reports, filteredSelectedReports, loading, error };
 };

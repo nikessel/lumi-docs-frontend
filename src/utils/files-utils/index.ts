@@ -8,8 +8,6 @@ export async function fetchFiles(
     wasmModule: typeof WasmModule | null
 ): Promise<{ files: File[]; error: string | null }> {
 
-    console.log("📡 Fetching files...");
-
     const result: { files: File[]; error: string | null } = {
         files: [],
         error: null,
@@ -18,8 +16,6 @@ export async function fetchFiles(
     const clearStaleFileIds = useCacheInvalidationStore.getState().clearStaleFileIds;
 
     if (!wasmModule) {
-        result.error = "🚫 WASM module not loaded";
-        console.error("🚫 Error: WASM module is missing.");
         return result;
     }
 
@@ -31,7 +27,6 @@ export async function fetchFiles(
             const filesData = response.output.output;
             result.files = filesData;
             clearStaleFileIds();
-            console.log(`📂 Files fetched successfully: ${filesData.length} files`);
         } else if (response.error) {
             result.error = response.error.message;
             console.error(`⚠️ Fetch failed: ${response.error.message}`);

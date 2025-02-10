@@ -5,6 +5,8 @@ import { Section } from "@wasm";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
 import { useRegulatoryFrameworksContext } from "@/contexts/regulatory-frameworks-context";
 import { useReportsContext } from "@/contexts/reports-context";
+import { useAuth } from "../auth-hook/Auth0Provider";
+
 
 interface UseSections {
     sections: Section[];
@@ -18,6 +20,8 @@ export const useSections = (): UseSections => {
     const { wasmModule } = useWasm();
     const { filteredSelectedReports } = useReportsContext();
     const { frameworks, loading: frameWorksLoading } = useRegulatoryFrameworksContext();
+    const { isAuthenticated, isLoading: authLoading } = useAuth()
+
 
     const [sections, setSections] = useState<Section[]>([]);
     const [sectionsForRegulatoryFramework, setSectionsForRegulatoryFramework] = useState<Record<string, Section[]>>({});
@@ -30,16 +34,15 @@ export const useSections = (): UseSections => {
 
     useEffect(() => {
         const fetchAllSections = async (isInitialLoad = false) => {
-            console.log(`🔄 Fetching all sections for all frameworks... (Initial Load: ${isInitialLoad})`);
-
             if (!wasmModule) {
-                console.error("❌ WASM module not loaded");
-                setError("WASM module not loaded");
                 return;
             }
 
+            if (!isAuthenticated || authLoading) {
+                return
+            }
+
             if (!frameworks.length) {
-                console.warn("⚠️ No regulatory frameworks available, skipping section fetch");
                 if (!frameWorksLoading) {
                     setLoading(false)
                 }
@@ -47,16 +50,13 @@ export const useSections = (): UseSections => {
             }
 
             if (!isInitialLoad && !lastUpdated) {
-                console.log("🟢 Sections are already up to date, skipping re-fetch");
                 return;
             }
 
             try {
                 if (isInitialLoad) {
-                    console.log("🔄 Initial section fetch started...");
                     setLoading(true);
                 } else {
-                    console.log("🔄 Refetching sections...");
                     setBeingRefetched("sections", true);
                 }
 
@@ -88,17 +88,15 @@ export const useSections = (): UseSections => {
                 setError((err as Error)?.message || "Failed to fetch sections.");
             } finally {
                 if (isInitialLoad) {
-                    console.log("✅ Initial section fetch completed");
                     setLoading(false);
                 } else {
-                    console.log("✅ Section refetch completed");
                     setBeingRefetched("sections", false);
                 }
             }
         };
 
         fetchAllSections(loading);
-    }, [wasmModule, frameworks, frameWorksLoading, lastUpdated, loading, setBeingRefetched, triggerUpdate]);
+    }, [wasmModule, frameworks, frameWorksLoading, lastUpdated, loading, setBeingRefetched, triggerUpdate, authLoading, isAuthenticated]);
 
     const filteredSelectedReportsSections = (() => {
         if (!filteredSelectedReports.length) return sections;

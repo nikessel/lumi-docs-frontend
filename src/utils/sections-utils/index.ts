@@ -50,7 +50,6 @@ export async function fetchSectionsByRegulatoryFramework(
     wasmModule: typeof WasmModule | null,
     regulatoryFramework: RegulatoryFramework
 ): Promise<{ sections: Section[]; error?: string }> {
-    console.log(`📌 Fetching sections for framework: ${regulatoryFramework}`);
 
     const result: { sections: Section[]; error?: string } = { sections: [] };
 
@@ -61,7 +60,6 @@ export async function fetchSectionsByRegulatoryFramework(
     }
 
     try {
-        console.log(`🔄 Requesting sections for framework: ${regulatoryFramework}`);
         const response = await wasmModule.get_sections_by_regulatory_framework({ input: regulatoryFramework });
 
         if (response.error) {
@@ -71,7 +69,6 @@ export async function fetchSectionsByRegulatoryFramework(
 
         if (response.output?.output) {
             result.sections = response.output.output;
-            console.log(`✅ Successfully fetched ${result.sections.length} sections for framework: ${regulatoryFramework}`);
         }
     } catch (error) {
         console.error(`❌ Failed to fetch sections for framework ${regulatoryFramework}:`, error);

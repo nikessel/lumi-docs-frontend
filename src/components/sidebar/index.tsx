@@ -7,9 +7,10 @@ import SiderLogo from "./sider-logo";
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { clearAllData } from "@/utils/sign-out-util";
-import { useAuth } from "../Auth0";
+// import { useAuth } from "../Auth0";
 import HelpCard from "../help-card";
-
+// import { useAuth } from "@/hooks/auth-hook";¨
+import { useAuth } from "@/hooks/auth-hook/Auth0Provider";
 const { Sider } = Layout;
 
 const AppSiderComponent: React.FC<{ reportsRef: MutableRefObject<null>; regulatoryFrameworksRef: MutableRefObject<null>; filesRef: MutableRefObject<null>, tasksRef: MutableRefObject<null> }> = ({ reportsRef, regulatoryFrameworksRef, filesRef, tasksRef }) => {

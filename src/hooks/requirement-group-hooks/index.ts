@@ -5,6 +5,8 @@ import { RequirementGroup } from "@wasm";
 import { useReportsContext } from "@/contexts/reports-context";
 import { useSectionsContext } from "@/contexts/sections-context";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
+import { useAuth } from "../auth-hook/Auth0Provider";
+import { fetchGroupsBySectionIds } from "@/utils/requirement-group-utils";
 
 interface UseRequirementGroups {
     requirementGroups: RequirementGroupWithSectionId[];
@@ -22,6 +24,7 @@ export const useRequirementGroups = (): UseRequirementGroups => {
     const { wasmModule } = useWasm();
     const { reports, filteredSelectedReports } = useReportsContext();
     const { sections, loading: sectionsLoading } = useSectionsContext();
+    const { isAuthenticated, isLoading: authLoading } = useAuth()
 
     const [requirementGroups, setRequirementGroups] = useState<RequirementGroupWithSectionId[]>([]);
     const [loading, setLoading] = useState(true);
@@ -36,53 +39,43 @@ export const useRequirementGroups = (): UseRequirementGroups => {
             console.log(`🔄 Fetching requirement groups... (Initial Load: ${isInitialLoad})`);
 
             if (!wasmModule) {
-                console.error("❌ WASM module not provided");
-                setError("WASM module not provided");
+                return;
+            }
+
+            if (!isAuthenticated || authLoading) {
                 return;
             }
 
             if (sections.length === 0) {
-                console.warn("⚠️ No sections available, skipping fetch");
                 if (!sectionsLoading) {
-                    setLoading(false)
+                    setLoading(false);
                 }
                 return;
             }
 
             if (!isInitialLoad && !lastUpdated) {
-                console.log("🟢 Requirement groups are already up to date, skipping fetch");
                 return;
             }
 
             try {
                 if (isInitialLoad) {
-                    console.log("🔄 Initial fetch for requirement groups started...");
                     setLoading(true);
                 } else {
-                    console.log("🔄 Refetching requirement groups...");
                     setBeingRefetched("requirementGroups", true);
                 }
 
-                const allGroups: RequirementGroupWithSectionId[] = [];
+                // Use the new utility function
+                const { requirementGroups: fetchedGroups, errors } = await fetchGroupsBySectionIds(
+                    wasmModule,
+                    sections.map(section => section.id)
+                );
 
-                for (const section of sections) {
-                    const response = await wasmModule.get_requirement_groups_by_section({ input: section.id });
-
-                    if (response.error) {
-                        console.error(`⚠️ Error fetching requirement groups for section ${section.id}:`, response.error.message);
-                        throw new Error(response.error.message);
-                    }
-
-                    const groupsWithSectionId = (response.output?.output || []).map((group: RequirementGroup) => ({
-                        ...group,
-                        section_id: section.id,
-                    }));
-
-                    allGroups.push(...groupsWithSectionId);
+                if (Object.keys(errors).length > 0) {
+                    console.warn("⚠️ Some sections failed to fetch requirement groups:", errors);
                 }
 
-                console.log(`✅ Fetched ${allGroups.length} requirement groups`);
-                setRequirementGroups(allGroups);
+                setRequirementGroups(fetchedGroups);
+                console.log(`✅ Fetched ${fetchedGroups.length} requirement groups`);
 
                 // **Important:** Mark fetch as completed
                 triggerUpdate("requirementGroups", true);
@@ -91,17 +84,16 @@ export const useRequirementGroups = (): UseRequirementGroups => {
                 setError((err as Error)?.message || "Failed to fetch requirement groups.");
             } finally {
                 if (isInitialLoad) {
-                    console.log("✅ Initial requirement groups fetch completed");
                     setLoading(false);
                 } else {
-                    console.log("✅ Requirement groups refetch completed");
                     setBeingRefetched("requirementGroups", false);
                 }
             }
         };
 
         fetchRequirementGroups(loading);
-    }, [wasmModule, sections, sectionsLoading, lastUpdated, loading, setBeingRefetched, triggerUpdate]);
+    }, [wasmModule, sections, sectionsLoading, lastUpdated, loading, setBeingRefetched, triggerUpdate, authLoading, isAuthenticated]);
+
 
     const filteredSelectedRequirementGroups = (() => {
         if (!filteredSelectedReports.length) return requirementGroups;

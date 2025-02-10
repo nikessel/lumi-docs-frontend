@@ -3,6 +3,7 @@ import { fetchUser } from "@/utils/user-utils";
 import type { User } from "@wasm";
 import { useWasm } from '@/components/WasmProvider';
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
+import { useAuth } from "../auth-hook/Auth0Provider";
 
 interface UseUserReturn {
     user: User | null;
@@ -21,6 +22,8 @@ export const useUser = (): UseUserReturn => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    // const { isAuthenticated, isLoading: authLoading } = useNewAuth()
+    const { isAuthenticated, isLoading: authLoading } = useAuth()
 
     const lastUpdated = useCacheInvalidationStore((state) => state.lastUpdated["user"]);
     const beingRefetched = useCacheInvalidationStore((state) => state.beingRefetched["user"]);
@@ -30,31 +33,28 @@ export const useUser = (): UseUserReturn => {
 
     useEffect(() => {
         const fetchUserData = async (isInitialLoad = false) => {
-            console.log(`📌 Fetching user data... (Initial Load: ${isInitialLoad})`);
+            if (!isAuthenticated || authLoading) {
+                return
+            }
 
             if (!wasmModule) {
-                console.error("❌ WASM module not provided");
-                setError("WASM module not provided");
-                setLoading(false);
                 return;
             }
 
             if (isInitialLoad || lastUpdated) {
                 try {
+                    setLoading(true)
                     if (isInitialLoad) {
-                        console.log("🔄 Initial user fetch started...");
                         setLoading(true);
                     } else {
-                        console.log("🔄 Refetching user data...");
                         setBeingRefetched("user", true);
                     }
 
                     const fetchedUser = await fetchUser(wasmModule);
 
                     if (fetchedUser) {
-                        console.log(`✅ User fetched successfully (ID: ${fetchedUser.id})`);
+                        console.log(`✅ fetched user: ${fetchedUser.id}`);
 
-                        // Parse preferences if needed
                         if (typeof fetchedUser.preferences === "string") {
                             try {
                                 fetchedUser.preferences = JSON.parse(fetchedUser.preferences);
@@ -73,20 +73,16 @@ export const useUser = (): UseUserReturn => {
                     setError(err instanceof Error ? err.message : "Error fetching user");
                 } finally {
                     if (isInitialLoad) {
-                        console.log("✅ Initial user fetch completed");
                         setLoading(false);
                     } else if (beingRefetched) {
-                        console.log("✅ User refetch completed");
                         setBeingRefetched("user", false);
                     }
                 }
-            } else {
-                console.log("🟢 User data is already fetched and up to date");
             }
         };
 
         fetchUserData(loading);
-    }, [wasmModule, lastUpdated, loading, setBeingRefetched, triggerUpdate, beingRefetched]);
+    }, [wasmModule, lastUpdated, loading, setBeingRefetched, triggerUpdate, beingRefetched, isAuthenticated, authLoading]);
 
     return { user, loading, error };
 };

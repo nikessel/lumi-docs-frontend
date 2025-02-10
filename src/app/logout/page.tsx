@@ -1,12 +1,13 @@
 'use client'
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/components/Auth0"
+// import { useAuth } from "@/components/Auth0"
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Typography from "@/components/typography";
+import { useAuth } from "@/hooks/auth-hook/Auth0Provider";
 
 export default function LogoutScreen() {
-  const { login } = useAuth();
+  const { loginWithRedirect } = useAuth();
   const router = useRouter();
 
   return (
@@ -23,7 +24,7 @@ export default function LogoutScreen() {
         <div className="flex justify-center mt-8 gap-4">
           <Button
             className="bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={login}
+            onClick={() => loginWithRedirect()}
           >
             Login
           </Button>
