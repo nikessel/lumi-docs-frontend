@@ -12,7 +12,6 @@ interface DocumentTaskCardProps {
     document_icon_letters: string;
     isLoading: boolean;
     allReportIds: string[]
-    isEmpty?: boolean;
 }
 
 const DocumentTaskCard: React.FC<DocumentTaskCardProps> = ({
@@ -21,7 +20,6 @@ const DocumentTaskCard: React.FC<DocumentTaskCardProps> = ({
     document_icon_letters,
     isLoading,
     allReportIds,
-    isEmpty,
     document_id,
 }) => {
     const searchParams = useSearchParams()
@@ -51,42 +49,34 @@ const DocumentTaskCard: React.FC<DocumentTaskCardProps> = ({
         );
     }
 
-    if (isEmpty) {
+    if (document_id) {
         return (
-            <div className="p-4 bg-gray-50 rounded-lg flex items-center justify-center">
-                <Typography textSize="small" color="secondary">
-                    Tasks are automatically generated when you create reports
-                </Typography>
-            </div>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-2" >
+                <div className="flex items-center">
+                    <div
+                        className="flex items-center justify-center w-10 h-10 rounded-full mr-3"
+                        style={{
+                            color: genColor(document_title).color,
+                            backgroundColor: genColor(document_title).backgroundColor,
+                        }}
+                    >
+                        {document_icon_letters}
+                    </div>
+                    <div>
+                        <Typography textSize="h6" className="font-bold">
+                            {document_title}
+                        </Typography>
+                        <Typography textSize="small" color="secondary" className="mt-1">
+                            {number_of_associated_tasks} implementation tasks
+                        </Typography>
+                    </div>
+                </div>
+                <Button type="link" onClick={handleOnClickDocumentCard} className="p-0 text-blue-500">
+                    View
+                </Button>
+            </div >
         );
     }
-
-    return (
-        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-2">
-            <div className="flex items-center">
-                <div
-                    className="flex items-center justify-center w-10 h-10 rounded-full mr-3"
-                    style={{
-                        color: genColor(document_title).color,
-                        backgroundColor: genColor(document_title).backgroundColor,
-                    }}
-                >
-                    {document_icon_letters}
-                </div>
-                <div>
-                    <Typography textSize="h6" className="font-bold">
-                        {document_title}
-                    </Typography>
-                    <Typography textSize="small" color="secondary" className="mt-1">
-                        {number_of_associated_tasks} implementation tasks
-                    </Typography>
-                </div>
-            </div>
-            <Button type="link" onClick={handleOnClickDocumentCard} className="p-0 text-blue-500">
-                View
-            </Button>
-        </div>
-    );
 };
 
 export default DocumentTaskCard;

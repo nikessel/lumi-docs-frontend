@@ -40,7 +40,6 @@ export const useRequirements = (): UseRequirements => {
 
     useEffect(() => {
         const fetchRequirements = async () => {
-            console.log("GROUSP", groupsLoading)
             if (!wasmModule || !isAuthenticated || authLoading) return;
             if (requirementGroups.length === 0 || groupsLoading) return;
             if (!user?.email) return

@@ -77,8 +77,6 @@ const ReportCreator: React.FC<ReportCreatorProps> = () => {
         }
     }, [requirementsByGroupId, requirementsSetForGroups, selectedRequirementGroups, setRequirementsSetForGroups, setSelectedRequirements]);
 
-    console.log("sdasawd23213asdasd", requirementGroupsBySectionId)
-
     useEffect(() => {
         if (files.length > 0) {
             setSelectedDocumentNumbers(files.map(file => file.number));

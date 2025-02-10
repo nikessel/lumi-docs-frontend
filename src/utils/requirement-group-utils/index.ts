@@ -25,7 +25,6 @@ export async function fetchRequirementGroupsByIds(
 
             if (response.output) {
                 const group = response.output.output;
-                console.log(`✅ Successfully fetched requirement group: ${id}`);
                 result.requirementGroups.push(group);
             } else if (response.error) {
                 console.error(`❌ Error fetching requirement group ${id}: ${response.error.message}`);

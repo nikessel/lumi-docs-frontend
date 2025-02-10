@@ -12,13 +12,11 @@ interface ReportCardProps {
     report: Report | undefined
     tasks: TaskWithReportId[] | null,
     isLoading: boolean,
-    isEmpty?: boolean;
 }
 
 const ReportCard: React.FC<ReportCardProps> = ({
     report,
     isLoading,
-    isEmpty,
     tasks
 }) => {
     const router = useRouter()
@@ -47,16 +45,6 @@ const ReportCard: React.FC<ReportCardProps> = ({
                 <div className="mt-4">
                     <Skeleton.Button active size="small" style={{ width: "100%" }} />
                 </div>
-            </div>
-        );
-    }
-
-    if (isEmpty) {
-        return (
-            <div className="p-4 bg-gray-50 rounded-lg flex items-center justify-center" style={{ width: "45%", height: "100px" }}>
-                <Typography textSize="small" color="secondary">
-                    New reports will be shown here
-                </Typography>
             </div>
         );
     }

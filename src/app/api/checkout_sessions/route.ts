@@ -20,7 +20,7 @@ export async function POST(req: Request) {
                 },
             ],
             mode: "payment",
-            return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/reports?session_id={CHECKOUT_SESSION_ID}`,
+            return_url: `${process.env.NEXT_PUBLIC_STRIPE_BASE_URL}/reports?session_id={CHECKOUT_SESSION_ID}`,
             automatic_tax: { enabled: true },
 
         });

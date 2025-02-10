@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from "react";
-import { Button, Progress, Tooltip, Dropdown, Menu, Skeleton } from "antd";
+import { Button, Progress, Tooltip, Dropdown, Menu, Skeleton, Tag, Checkbox } from "antd";
 import { MoreOutlined, FolderOutlined, ReloadOutlined } from "@ant-design/icons";
 import Typography from "../typography";
 import "@/styles/globals.css";
@@ -16,6 +16,7 @@ import type * as WasmModule from "@wasm";
 import ReportStatusTag from "../report-status-tag";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
 import { useSearchParamsState } from "@/contexts/search-params-context";
+import { LoadingOutlined } from "@ant-design/icons";
 
 const extractProgress = (title: string): number => {
     const match = title.match(/(\d+)\/(\d+)/);
@@ -189,15 +190,15 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
                 <Tooltip title="The report progress is updated every 5 minutes">
                     <div
                         style={{ width: "100%" }}
-                        className={`flex items-center gap-3 flex`}
+                        className={`flex items-center flex justify-between`}
                     >
                         <div className="whitespace-nowrap mr-3">{report.title}</div>
-                        <Progress status="active" percent={assessmentProgres} />
+                        <Tag color="geekblue">Processing<LoadingOutlined style={{ marginLeft: 5 }} /></Tag>
                     </div>
                 </Tooltip>
                 :
                 <div className={`flex items-center gap-3`}>
-                    <Image src={isSelected ? Checked : Unchecked} alt="checkbox" width={20} />
+                    <Checkbox checked={isSelected} />
                     <Typography>{report?.title}</Typography>
                 </div>
             }

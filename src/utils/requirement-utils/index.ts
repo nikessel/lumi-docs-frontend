@@ -25,7 +25,6 @@ export async function fetchRequirementsByIds(
 
             if (response.output) {
                 const requirement = response.output.output;
-                console.log(`✅ Successfully fetched requirement: ${id}`);
                 result.requirements.push(requirement);
             } else if (response.error) {
                 console.error(`❌ Error fetching requirement ${id}: ${response.error.message}`);

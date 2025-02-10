@@ -198,11 +198,6 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
 
             const res = await wasmModule.get_user();
 
-            console.log("askjnadkjansdkljnasdkjnasd", res)
-
-
-            console.log("🔍 Fetching user:", res);
-
             if (res?.output?.output && !res.error?.kind) {
                 setIsAuthenticated((prev) => (!prev ? true : prev));
             } else {

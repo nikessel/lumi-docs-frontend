@@ -30,7 +30,6 @@ const SavedViews: React.FC<SavedViewsProps> = ({ isLoading }) => {
                         key={index}
                         view={view || undefined}
                         isLoading={isLoading}
-                        isEmpty={!allSavedViews[index]}
                     />
                 ))}
             </div>

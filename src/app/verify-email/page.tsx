@@ -40,7 +40,7 @@ export default function VerifyEmailPage() {
     }, 2000); // Poll every 5 seconds
 
     return () => clearInterval(interval);
-  }, [email, loginWithRedirect, clearTokens]);
+  }, [email, loginWithRedirect, clearTokens, logout]);
 
   return (
     <div className="flex items-center justify-center py-12 px-4 ">

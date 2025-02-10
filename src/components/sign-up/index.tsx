@@ -62,7 +62,6 @@ const UserSignup: React.FC = () => {
         try {
             const response = await wasmModule.create_user({ input: { ...values, config: {} } });
             console.log("SUBMITTING", response);
-
             if (response.output || response?.error?.kind === "AlreadyExists") {
                 messageApi.success("Profile created successfully!");
                 triggerReAuth()

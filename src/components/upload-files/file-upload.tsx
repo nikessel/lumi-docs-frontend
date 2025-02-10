@@ -47,6 +47,7 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
     }, []);
 
     const handleFileChange = useCallback(({ fileList }: { fileList: UploadFile[] }) => {
+        console.log("sdasdasd", fileList)
         const files = fileList.map((item: UploadFile) => ({
             ...item,
             originFileObj: item.originFileObj || item,
@@ -55,6 +56,8 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
     }, [processFiles]);
 
     const handleUpload = async () => {
+        console.log("sdasdasd", selectedFiles)
+
         if (!selectedFiles.length) {
             message.error("No files selected for upload.");
             return;

@@ -20,7 +20,7 @@ interface UseReports {
 export const useReports = (): UseReports => {
     const { wasmModule } = useWasm();
     const [reports, setReports] = useState<Report[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { isAuthenticated, isLoading: authLoading } = useAuth()
 
@@ -50,28 +50,27 @@ export const useReports = (): UseReports => {
     }, [reports, selectedReports, searchQuery, compliance, requirements]);
 
     useEffect(() => {
-        const processingReports = reports.filter((report) => report.status === "processing");
+        const processingReports = reports.filter(report => report.status === "processing");
 
         if (processingReports.length > 0) {
-            console.log(`⏳ Detected ${processingReports.length} reports in processing state. Adding to stale list.`);
-            processingReports.forEach((report) => addStaleReportId(report.id));
             const timeout = setTimeout(() => {
-                console.log("🔄 Triggering report update after 5 minutes due to processing state.");
+                processingReports.forEach(report => addStaleReportId(report.id));
                 triggerUpdate("reports");
-            }, 5 * 60 * 1000);
+            }, 30000);
+
             return () => clearTimeout(timeout);
         }
     }, [reports, addStaleReportId, triggerUpdate]);
 
     useEffect(() => {
         const fetchReportsData = async () => {
-            console.log("asdasd234234asdas", requirementsLoading)
             if (!wasmModule || !isAuthenticated || authLoading || requirementsLoading) return;
             if (!user?.email) return
+            if (loading) return
 
             try {
                 setLoading(true);
-                let fetchedReports: Report[] = [];
+                let fetchedReports: Report[] = reports;
 
                 if (staleReportIds.length > 0 && reports.length > 0) {
                     // Fetch only stale reports
@@ -81,29 +80,40 @@ export const useReports = (): UseReports => {
                         logLumiDocsContext(`Errors fetching some stale reports: ${errors}`, "error")
                     }
 
+                    if (updatedReports) {
+                        Object.values(updatedReports).forEach((report) => {
+                            if (report) {
+                                const existingIndex = fetchedReports.findIndex((existingReport) => existingReport.id === report.id);
+                                if (existingIndex === -1) {
+                                    fetchedReports.push(report);
+                                } else {
+                                    fetchedReports[existingIndex] = report;
+                                }
+                            }
+                        });
+                    }
+
+
                     fetchedReports = reports.map((existingReport) =>
                         updatedReports[existingReport.id] || existingReport
                     );
 
                     removeStaleReportIds(staleReportIds);
-                    logLumiDocsContext(`Stale reports updated: ${fetchedReports.length}`, "success")
+                    logLumiDocsContext(`Stale reports updated: ${staleReportIds.length}`, "success")
                 } else {
-                    // Fetch all reports
                     const { reports: allReports, error } = await fetchReports(wasmModule);
-
                     if (error) {
                         throw new Error(error);
                     }
-
                     fetchedReports = allReports;
-                    logLumiDocsContext(`All reports updated: ${fetchedReports.length}`, "success")
+                    logLumiDocsContext(`All reports asdasd updated: ${fetchedReports.length}`, "success")
                 }
 
                 setReports(fetchedReports);
-
                 const newReport = fetchedReports.find((report) => report.id === newReportCreated.id);
+
                 if (newReport) {
-                    logLumiDocsContext(`🔔 lumi-docs-context Detected new report with ID ${newReport.id}. Marking as processing.`, "success")
+                    logLumiDocsContext(`🔔 Detected new report with ID ${newReport.id}. Marking as processing.`, "success")
                     setNewReportCreated({ id: newReport.id, status: "processing" });
                 }
 
@@ -111,7 +121,7 @@ export const useReports = (): UseReports => {
                 logLumiDocsContext(`Error fetching reports: ${err}`, "error")
                 setError(err instanceof Error ? err.message : "Failed to fetch reports.");
             } finally {
-                triggerUpdate("reports", true); // Reset lastUpdated to avoid unnecessary refetches
+                triggerUpdate("reports", true);
                 setLoading(false);
                 setHasFetchedOnce(true);
             }

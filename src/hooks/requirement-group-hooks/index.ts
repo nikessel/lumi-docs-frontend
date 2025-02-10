@@ -40,7 +40,6 @@ export const useRequirementGroups = (): UseRequirementGroups => {
 
     useEffect(() => {
         const fetchRequirementGroups = async () => {
-            console.log("sectionbssss", sectionsLoading)
             if (!wasmModule || !isAuthenticated || authLoading) return;
             if (sections.length === 0 || sectionsLoading) return;
             if (!user?.email) return

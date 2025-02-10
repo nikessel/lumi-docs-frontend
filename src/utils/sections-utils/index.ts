@@ -29,7 +29,6 @@ export async function fetchSectionsByIds(
 
             if (response.output) {
                 const section = response.output.output[0];
-                console.log(`✅ Successfully fetched section: ${id}`);
                 result.sections.push(section);
             } else if (response.error) {
                 console.error(`❌ Error fetching section ${id}: ${response.error.message}`);

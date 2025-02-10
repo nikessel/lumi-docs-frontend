@@ -54,22 +54,6 @@ const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
 
     }, [files, filesLoading, tasks]);
 
-    if (tasks.length === 0) {
-        return (
-            <div className="flex flex-col h-full">
-                <div className="flex gap-4 items-center mb-4">
-                    <Typography textSize="h3">Document Tasks</Typography>
-                </div>
-                <div className="p-4 bg-gray-50 rounded-lg flex items-center justify-center h-full">
-                    <Typography textSize="small" color="secondary">
-                        Tasks are automatically generated when you create reports
-                    </Typography>
-                </div>
-
-            </div>
-        );
-    }
-
     return (
         <div className="flex flex-col h-full">
             <div className="flex gap-4 items-center mb-4">

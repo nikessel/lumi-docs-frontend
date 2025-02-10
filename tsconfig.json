@@ -50,7 +50,7 @@
     "eslint.config.mjs" // Add this line
     ,
     "src/utils/report-utils"
-  ],
+, "src/hooks/use-requirement-price"  ],
   "exclude": [
     "node_modules",
     "src/pkg/**/*",

@@ -7,8 +7,6 @@ export async function fetchTasksByReport(
     reportId: string
 ): Promise<Task[]> {
 
-    console.log(`📌 Fetching tasks for report ID: ${reportId}...`);
-
     if (!wasmModule) {
         console.error("❌ WASM module not loaded.");
         throw new Error("WASM module not loaded");
@@ -23,7 +21,6 @@ export async function fetchTasksByReport(
                 reportId,
             }));
 
-            console.log(`✅ Successfully fetched ${tasks.length} tasks for report ID: ${reportId}.`);
             return tasks;
         }
 

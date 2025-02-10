@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Typography from "@/components/typography";
 import { Button, Divider, Input } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
@@ -25,6 +25,7 @@ const Page = () => {
     const archivedReports = reports.filter((report) => isArchived(report.status));
     const archivedCount = archivedReports.length;
     const [actionLoading, setActionLoading] = useState(false)
+    const [initialRenderCompleted, setInitialRenderCompleted] = useState(false)
 
     const filteredReports = reports.filter(
         (report) =>
@@ -41,7 +42,21 @@ const Page = () => {
         return 0;
     });
 
-    if ((loading || isLoading) && reports.length < 1) {
+    useEffect(() => {
+        if (!isLoading && !loading && !initialRenderCompleted) {
+            setInitialRenderCompleted(true)
+        }
+    }, [loading, isLoading, initialRenderCompleted])
+
+    if (!loading && !isLoading && !initialRenderCompleted) {
+        return (
+            <div className="mt-4 bg-gray-50 w-full flex items-center justify-center" style={{ height: "78vh" }}>
+                <Typography color="secondary">Create your first report to simplify your compliance journey</Typography>
+            </div>
+        )
+    }
+
+    if ((loading || isLoading) && !initialRenderCompleted) {
         return (
             <div>
                 <div className="flex justify-between items-center">
@@ -84,7 +99,7 @@ const Page = () => {
             </div>
             <Divider className="border-thin mt-2 mb-2" />
 
-            {reports.length > 0 && (!loading && !isLoading) ? <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center">
                 <Typography color="secondary">
                     Open a single report or check more for merged view
                 </Typography>
@@ -110,11 +125,7 @@ const Page = () => {
                         {selectedCount === 0 ? "Select reports" : selectedCount === 1 ? `Open ${selectedCount} report` : `Open ${selectedCount} reports`}
                     </Button>
                 </div>
-            </div> :
-                <div className="mt-4 bg-gray-50 w-full flex items-center justify-center" style={{ height: "78vh" }}>
-                    <Typography color="secondary">Create your first report to simplify your compliance journey</Typography>
-                </div>
-            }
+            </div>
 
             <div className="flex flex-col mt-4">
                 {sortedReports.filter((report) => !isArchived(report.status)).map((report) => (

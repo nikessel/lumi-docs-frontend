@@ -210,7 +210,10 @@ const FileManager: React.FC<{
                     current: currentPage,
                     pageSize: 100,
                     total: filteredFiles.length,
-                    onChange: (page) => setCurrentPage(page),
+                    onChange: (page) => {
+                        if (page !== currentPage)
+                            setCurrentPage(page)
+                    },
                     showSizeChanger: false,
                 }}
                 onRow={(record, index) => ({

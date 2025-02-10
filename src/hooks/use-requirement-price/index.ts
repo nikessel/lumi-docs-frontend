@@ -34,9 +34,10 @@ export const useRequirementPrice = (): UseRequirementPrice => {
                 setLoading(false);
             }
         };
-
-        fetchPrice();
-    }, []);
+        if (!price) {
+            fetchPrice();
+        }
+    }, [price]);
 
     return { price, loading, error };
 };

@@ -4,12 +4,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Table, Breadcrumb, Skeleton } from 'antd';
 import RegulatoryFrameworkTag from '@/components/regulatory-framework-tag';
 import { useRegulatoryFrameworksContext } from '@/contexts/regulatory-frameworks-context';
-import { getPriceForGroup, getPriceForSection, getPriceForFramework, PRICE_PER_REQUIREMENT_IN_EURO } from '@/utils/payment';
+import { getPriceForGroup, getPriceForSection, getPriceForFramework } from '@/utils/payment';
 import { formatPrice } from '@/utils/payment';
 import { useSectionsContext } from '@/contexts/sections-context';
 import { useRequirementGroupsContext } from '@/contexts/requirement-group-context';
 import { useRequirementsContext } from '@/contexts/requirements-context';
-
+import { useRequirementPrice } from '@/hooks/use-requirement-price';
 const RegulatoryFrameworksTable: React.FC = () => {
     const { frameworks, loading: frameworksLoading } = useRegulatoryFrameworksContext();
 
@@ -19,8 +19,7 @@ const RegulatoryFrameworksTable: React.FC = () => {
 
     const { requirementsByGroupId, loading: requirementsLoading } = useRequirementsContext();
 
-    console.log("ALKJSBDLKJASBDLIAJSBDLKJANSD", sectionsForRegulatoryFramework)
-
+    const { price } = useRequirementPrice()
     const [isLoading, setIsLoading] = useState(true);
     const [breadcrumb, setBreadcrumb] = useState<{ name: string; id: string | null }[]>([{ name: 'Frameworks', id: null }]);
     const [view, setView] = useState<'frameworks' | 'sections' | 'groups' | 'requirements'>('frameworks');
@@ -173,7 +172,7 @@ const RegulatoryFrameworksTable: React.FC = () => {
                 name: f.id,
                 description: f.description || 'No description available',
                 sectionCount: sectionsForRegulatoryFramework[f.id]?.length || 0,
-                price: formatPrice(getPriceForFramework(f.id, sectionsForRegulatoryFramework, requirementGroupsBySectionId, requirementsByGroupId)),
+                price: formatPrice(getPriceForFramework(f.id, sectionsForRegulatoryFramework, requirementGroupsBySectionId, requirementsByGroupId, price ? price : 0)),
                 documents: 1000,
             }));
         } else if (view === 'sections') {
@@ -182,7 +181,7 @@ const RegulatoryFrameworksTable: React.FC = () => {
                 name: section.name,
                 description: section.description || 'No description available',
                 groupCount: requirementGroupsBySectionId[section.id]?.length || 0,
-                price: formatPrice(getPriceForSection(section.id, requirementGroupsBySectionId, requirementsByGroupId))
+                price: formatPrice(getPriceForSection(section.id, requirementGroupsBySectionId, requirementsByGroupId, price ? price : 0))
             })) || [];
         } else if (view === 'groups') {
             return requirementGroupsBySectionId[selectedId || ""]?.map(group => ({
@@ -190,17 +189,17 @@ const RegulatoryFrameworksTable: React.FC = () => {
                 name: group.name,
                 description: group.description || 'No description available',
                 requirementCount: requirementsByGroupId[group.id]?.length || 0,
-                price: formatPrice(getPriceForGroup(group.id, requirementsByGroupId))
+                price: formatPrice(getPriceForGroup(group.id, requirementsByGroupId, price ? price : 0))
             })) || [];
         } else {
             return requirementsByGroupId[selectedId || ""]?.map(req => ({
                 key: req.id,
                 name: req.name,
                 description: req.description || 'No description available',
-                price: formatPrice(PRICE_PER_REQUIREMENT_IN_EURO)
+                price: formatPrice(price ? price : 0)
             })) || [];
         }
-    }, [isLoading, view, frameworks, sectionsForRegulatoryFramework, requirementGroupsBySectionId, requirementsByGroupId, selectedId]);
+    }, [isLoading, view, frameworks, sectionsForRegulatoryFramework, requirementGroupsBySectionId, requirementsByGroupId, selectedId, price]);
 
 
     return (

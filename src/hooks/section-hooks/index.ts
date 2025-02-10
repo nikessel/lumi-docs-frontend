@@ -40,6 +40,7 @@ export const useSections = (): UseSections => {
             if (!wasmModule || !isAuthenticated || authLoading) return;
             if (frameworks.length === 0 || frameWorksLoading) return;
             if (!user?.email) return
+            
             try {
                 setLoading(true);
 

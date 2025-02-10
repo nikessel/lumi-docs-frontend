@@ -67,7 +67,7 @@ export const createReport = async (wasmModule: typeof WasmModule | null, input: 
     const cacheStore = useCacheInvalidationStore.getState();
     const createReportStore = useCreateReportStore.getState()
     newReportId && cacheStore.addStaleReportId(newReportId);
-    cacheStore.triggerUpdate("reports")
+    cacheStore.triggerUpdate("reports");
     newReportId && createReportStore.setNewReportCreated({ id: newReportId, status: "pending" })
 
     if (response.error) {

@@ -49,7 +49,6 @@ export async function fetchReportsByIds(
     wasmModule: typeof WasmModule | null,
     reportIds: string[]
 ): Promise<{ reports: Record<string, Report | null>; errors: Record<string, string> }> {
-    console.log(`📌 Fetching reports for IDs: ${reportIds.join(", ")}...`);
 
     if (!wasmModule) {
         console.error("❌ WASM module not loaded.");
@@ -77,7 +76,6 @@ export async function fetchReportsByIds(
 
                 if (response.output) {
                     results.reports[reportId] = response.output.output;
-                    console.log(`✅ Report fetched successfully for ID: ${reportId}`);
                 } else if (response.error) {
                     results.errors[reportId] = response.error.message;
                     console.error(`❌ Error fetching report ${reportId}: ${response.error.message}`);
@@ -225,7 +223,6 @@ export async function archiveReport(
     wasmModule: typeof WasmModule | null,
     reportId: string
 ): Promise<string> {
-    console.log(`📌 Archiving report for ID: ${reportId}...`);
 
     if (!wasmModule) {
         console.error("❌ WASM module not loaded.");
@@ -234,9 +231,7 @@ export async function archiveReport(
 
     try {
         const response = await wasmModule.archive_report({ input: reportId });
-
         if (response.output) {
-            console.log(`✅ Report with ID ${reportId} archived successfully.`);
             return `Report with ID ${reportId} archived successfully.`;
         } else if (response.error) {
             console.error(`❌ Error archiving report ${reportId}: ${response.error.message}`);
@@ -256,8 +251,6 @@ export async function restoreReport(
     wasmModule: typeof WasmModule | null,
     reportId: string
 ): Promise<string> {
-    console.log(`📌 Restoring report for ID: ${reportId}...`);
-
     if (!wasmModule) {
         console.error("❌ WASM module not loaded.");
         throw new Error("WASM module not loaded");
@@ -267,7 +260,6 @@ export async function restoreReport(
         const response = await wasmModule.restore_report({ input: reportId });
 
         if (response.output) {
-            console.log(`✅ Report with ID ${reportId} restored successfully.`);
             return `Report with ID ${reportId} restored successfully.`;
         } else if (response.error) {
             console.error(`❌ Error restoring report ${reportId}: ${response.error.message}`);

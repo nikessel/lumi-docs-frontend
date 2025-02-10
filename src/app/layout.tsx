@@ -130,7 +130,7 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
             {!noLayout ? <AppSider reportsRef={reportsRef} regulatoryFrameworksRef={regulatoryFrameworksRef} filesRef={filesRef} tasksRef={tasksRef} /> : ""}
             <Layout className="h-full">
               <UploadIndicator />
-              <TourComponent startTour={user?.preferences?.tour_enabled || false} reportsRef={reportsRef} regulatoryFrameworksRef={regulatoryFrameworksRef} filesRef={filesRef} newReportButtonRef={newReportButtonRef} />
+              <TourComponent startTour={false} reportsRef={reportsRef} regulatoryFrameworksRef={regulatoryFrameworksRef} filesRef={filesRef} newReportButtonRef={newReportButtonRef} />
               <Content className="pt-8 pb-8 px-4 sm:px-8 container h-full">
                 <div className="bg-white p-6 rounded shadow-sm h-full overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                   {children}

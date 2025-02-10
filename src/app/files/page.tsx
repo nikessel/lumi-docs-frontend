@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button, Divider, Space, Skeleton } from 'antd';
 import { UploadOutlined } from "@ant-design/icons";
 import Typography from '@/components/typography';
@@ -21,7 +21,14 @@ const Page = () => {
     const [downloadLoading, setDownloadLoading] = useState<{ [id: string]: boolean }>({});
     const [isModalVisible, setIsModalVisible] = useState(false); // State for modal visibility
 
-    if ((isLoading && files.length < 1) || wasmLoading) {
+    const [firstRenderCompleted, setFirstRenderCompleted] = useState(false)
+
+    useEffect(() => {
+        if (!isLoading && wasmLoading && !firstRenderCompleted)
+            setFirstRenderCompleted(true)
+    }, [isLoading, wasmLoading, firstRenderCompleted])
+
+    if (((isLoading && files.length < 1) && firstRenderCompleted) || wasmLoading) {
         return (
             <div className="w-full h-full p-4">
                 <Space direction="vertical" size="large" style={{ width: '100%' }}>

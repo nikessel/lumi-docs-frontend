@@ -26,12 +26,12 @@ const ReportList: React.FC<ReportListProps> = ({ reports, onViewAll, isLoading, 
             </div>
 
             <div className="flex justify-between w-100">
-                <ReportCard key={0} tasks={allTasks.filter((task) => task.reportId === displayedReports[0]?.id)} report={displayedReports[0]} isLoading={isLoading} isEmpty={!reports[0]} />
-                <ReportCard key={1} tasks={allTasks.filter((task) => task.reportId === displayedReports[1]?.id)} report={displayedReports[1]} isLoading={isLoading} isEmpty={!reports[1]} />
+                <ReportCard key={0} tasks={allTasks.filter((task) => task.reportId === displayedReports[0]?.id)} report={displayedReports[0]} isLoading={isLoading} />
+                <ReportCard key={1} tasks={allTasks.filter((task) => task.reportId === displayedReports[1]?.id)} report={displayedReports[1]} isLoading={isLoading} />
             </div>
             <div className="flex justify-between w-100 mt-4">
-                <ReportCard key={2} tasks={allTasks.filter((task) => task.reportId === displayedReports[2]?.id)} report={displayedReports[2]} isLoading={isLoading} isEmpty={!reports[2]} />
-                <ReportCard key={3} tasks={allTasks.filter((task) => task.reportId === displayedReports[3]?.id)} report={displayedReports[3]} isLoading={isLoading} isEmpty={!reports[3]} />
+                <ReportCard key={2} tasks={allTasks.filter((task) => task.reportId === displayedReports[2]?.id)} report={displayedReports[2]} isLoading={isLoading} />
+                <ReportCard key={3} tasks={allTasks.filter((task) => task.reportId === displayedReports[3]?.id)} report={displayedReports[3]} isLoading={isLoading} />
             </div>
         </div>
     );
