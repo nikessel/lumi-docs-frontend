@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { getSupportedFrameworks } from "@/utils/regulatory-frameworks-utils";
 import { RegulatoryFramework } from "@wasm";
+import useCacheInvalidationStore from "@/stores/cache-validation-store";
 import { useAuth } from "../auth-hook/Auth0Provider";
+import { logLumiDocsContext } from "@/utils/logging-utils";
 
 interface FrameworkInfo {
     id: RegulatoryFramework;
@@ -18,38 +20,43 @@ export const useRegulatoryFrameworks = (): UseRegulatoryFrameworks => {
     const [frameworks, setFrameworks] = useState<FrameworkInfo[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const { isAuthenticated, isLoading: authLoading } = useAuth()
+    const { isAuthenticated, isLoading: authLoading } = useAuth();
+
+    const lastUpdated = useCacheInvalidationStore((state) => state.lastUpdated["regulatoryFrameworks"]);
+    const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate);
+
+    const [hasFetchedOnce, setHasFetchedOnce] = useState(false);
 
     useEffect(() => {
         const fetchFrameworks = async () => {
-
-            if (!isAuthenticated || authLoading) {
-                return
-            }
+            if (!isAuthenticated || authLoading) return;
 
             try {
                 setLoading(true);
                 const frameworksData = getSupportedFrameworks();
 
                 if (!frameworksData || frameworksData.length === 0) {
-                    console.warn("⚠️ No regulatory frameworks found.");
+                    logLumiDocsContext("No regulatory frameworks found.", "warning")
                     setError("No regulatory frameworks available.");
                     return;
                 }
 
-                console.log(`✅ Successfully fetched ${frameworksData.length} regulatory frameworks.`);
                 setFrameworks(frameworksData);
+                logLumiDocsContext(`Regulatory frameworks updated: ${frameworksData.length}`, "success")
             } catch (err: unknown) {
-                console.error("❌ Error fetching regulatory frameworks:", err);
+                logLumiDocsContext(`Error fetching regulatory frameworks: ${err}`, "error")
                 setError("Failed to fetch regulatory frameworks.");
             } finally {
-                console.log("✅ Fetching frameworks process completed.");
+                triggerUpdate("regulatoryFrameworks", true); // Reset lastUpdated
                 setLoading(false);
+                setHasFetchedOnce(true);
             }
         };
 
-        fetchFrameworks();
-    }, [authLoading, isAuthenticated]);
+        if (!hasFetchedOnce || lastUpdated) {
+            fetchFrameworks();
+        }
+    }, [isAuthenticated, authLoading, lastUpdated, hasFetchedOnce, triggerUpdate]);
 
     return { frameworks, loading, error };
 };

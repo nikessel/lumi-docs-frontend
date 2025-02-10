@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useWasm } from "@/components/WasmProvider";
 import { fetchSectionsByRegulatoryFramework } from "@/utils/sections-utils";
 import { Section } from "@wasm";
@@ -6,6 +6,7 @@ import useCacheInvalidationStore from "@/stores/cache-validation-store";
 import { useRegulatoryFrameworksContext } from "@/contexts/regulatory-frameworks-context";
 import { useReportsContext } from "@/contexts/reports-context";
 import { useAuth } from "../auth-hook/Auth0Provider";
+import { logLumiDocsContext } from "@/utils/logging-utils";
 
 
 interface UseSections {
@@ -31,34 +32,15 @@ export const useSections = (): UseSections => {
     const lastUpdated = useCacheInvalidationStore((state) => state.lastUpdated["sections"]);
     const setBeingRefetched = useCacheInvalidationStore((state) => state.setBeingRefetched);
     const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate);
+    const [hasFetchedOnce, setHasFetchedOnce] = useState(false);
 
     useEffect(() => {
-        const fetchAllSections = async (isInitialLoad = false) => {
-            if (!wasmModule) {
-                return;
-            }
-
-            if (!isAuthenticated || authLoading) {
-                return
-            }
-
-            if (!frameworks.length) {
-                if (!frameWorksLoading) {
-                    setLoading(false)
-                }
-                return;
-            }
-
-            if (!isInitialLoad && !lastUpdated) {
-                return;
-            }
+        const fetchAllSections = async () => {
+            if (!wasmModule || !isAuthenticated || authLoading) return;
+            if (frameworks.length === 0 || frameWorksLoading) return;
 
             try {
-                if (isInitialLoad) {
-                    setLoading(true);
-                } else {
-                    setBeingRefetched("sections", true);
-                }
+                setLoading(true);
 
                 const sectionsMap: Record<string, Section[]> = {};
                 let allFetchedSections: Section[] = [];
@@ -67,7 +49,7 @@ export const useSections = (): UseSections => {
                     const { sections, error } = await fetchSectionsByRegulatoryFramework(wasmModule, framework.id);
 
                     if (error) {
-                        console.warn(`⚠️ Failed to fetch sections for framework ${framework.id}:`, error);
+                        logLumiDocsContext(`lumi-docs-context Failed to fetch sections for framework ${framework.id}: ${error}`, "warning")
                         setError(`Failed to fetch sections for some frameworks.`);
                     } else {
                         sectionsMap[framework.id] = sections;
@@ -77,28 +59,25 @@ export const useSections = (): UseSections => {
 
                 await Promise.all(fetchPromises);
 
-                console.log(`✅ Successfully fetched ${allFetchedSections.length} sections.`);
-
                 setSections(allFetchedSections);
                 setSectionsForRegulatoryFramework(sectionsMap);
-                triggerUpdate("sections", true);
-
+                logLumiDocsContext(`Sections updated: ${allFetchedSections.length}`, "success")
             } catch (err: unknown) {
-                console.error("❌ Error fetching sections:", err);
+                logLumiDocsContext(`lumi-docs-context Error fetching sections: ${err}`, "error")
                 setError((err as Error)?.message || "Failed to fetch sections.");
             } finally {
-                if (isInitialLoad) {
-                    setLoading(false);
-                } else {
-                    setBeingRefetched("sections", false);
-                }
+                triggerUpdate("sections", true); // Reset lastUpdated
+                setLoading(false);
+                setHasFetchedOnce(true);
             }
         };
 
-        fetchAllSections(loading);
-    }, [wasmModule, frameworks, frameWorksLoading, lastUpdated, loading, setBeingRefetched, triggerUpdate, authLoading, isAuthenticated]);
+        if (!hasFetchedOnce || lastUpdated) {
+            fetchAllSections();
+        }
+    }, [wasmModule, isAuthenticated, authLoading, frameworks, frameWorksLoading, lastUpdated, hasFetchedOnce, triggerUpdate]);
 
-    const filteredSelectedReportsSections = (() => {
+    const filteredSelectedReportsSections = useMemo(() => {
         if (!filteredSelectedReports.length) return sections;
 
         const selectedSectionIds = filteredSelectedReports.flatMap(report =>
@@ -106,7 +85,7 @@ export const useSections = (): UseSections => {
         );
 
         return sections.filter(section => selectedSectionIds.includes(section.id));
-    })();
+    }, [filteredSelectedReports, sections]);
 
     return {
         sections,

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Table, Input, Button, Modal, Breadcrumb, message, Tag } from 'antd';
+import { Table, Input, Button, Modal, Breadcrumb, message, Tag, Tooltip } from 'antd';
 import { SearchOutlined, FolderAddOutlined, LoadingOutlined, ExportOutlined, DownloadOutlined, FolderOpenOutlined } from '@ant-design/icons';
 import pdfIcon from '@/assets/pdf-icon.svg';
 import folderIcon from '@/assets/folder-icon.svg';
@@ -112,7 +112,7 @@ const FileManager: React.FC<{
         {
             render: (record) => (
                 <div className="flex gap-x-2 justify-end">
-                    {record.status === "uploading" ? <Tag color="geekblue">Uploading <LoadingOutlined style={{ marginLeft: 5 }} /></Tag> : record.status === "processing" ? <Tag color="geekblue">Processing <LoadingOutlined style={{ marginLeft: 5 }} /></Tag> : record.status === "ready" ? "" : <Tag color="red">Failed</Tag>}
+                    {record.status === "uploading" ? <Tag color="geekblue">Uploading <LoadingOutlined style={{ marginLeft: 5 }} /></Tag> : record.status === "processing" ? <Tag color="geekblue">Processing <LoadingOutlined style={{ marginLeft: 5 }} /></Tag> : record.status === "ready" ? "" : <Tooltip title={record.status?.processing_failed ? record.status?.processing_failed : record.status?.upload_failed ? record.status?.upload_failed : ""}><Tag color="red">Failed</Tag></Tooltip>}
                     <Button loading={viewLoading[record.id]} disabled={viewLoading[record.id]} icon={<ExportOutlined />} type="default" size="small" onClick={() => viewFile(record.id)}></Button>
                     <Button loading={downloadLoading[record.id]} disabled={downloadLoading[record.id]} icon={<DownloadOutlined />} type="default" size="small" onClick={() => downloadFile(record.id, record.title || record.path || record.id, "application/pdf")}></Button>
                 </div>),

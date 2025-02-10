@@ -74,6 +74,8 @@ const ReportCreator: React.FC<ReportCreatorProps> = () => {
         }
     }, [requirementsByGroupId, requirementsSetForGroups, selectedRequirementGroups, setRequirementsSetForGroups, setSelectedRequirements]);
 
+    console.log("sdasawd23213asdasd", requirementGroupsBySectionId)
+
     useEffect(() => {
         if (files.length > 0) {
             setSelectedDocumentNumbers(files.map(file => file.number));
@@ -139,11 +141,14 @@ const ReportCreator: React.FC<ReportCreatorProps> = () => {
                         You can select a subset of these groups to include in the report.
                     </Typography>
                     <SelectRequirementGroups
-                        requirementGroups={selectedRequirementGroups.map(groupId => ({
-                            id: groupId,
-                            name: requirementGroupsBySectionId[groupId]?.[0]?.name || "Unknown",
-                            price_for_group: getPriceForGroup(groupId, requirementsByGroupId),
-                        }))}
+                        requirementGroups={selectedSections
+                            .flatMap((sectionId) => requirementGroupsBySectionId[sectionId] || [])
+                            .map((group) => ({
+                                id: group.id,
+                                name: group.name || "Unknown",
+                                price_for_group: getPriceForGroup(group.id, requirementsByGroupId),
+                            }))
+                        }
                     />
                 </div>
             ),

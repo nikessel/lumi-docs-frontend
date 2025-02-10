@@ -7,6 +7,7 @@ import { useCreateReportStore } from '@/stores/create-report-store';
 import { useSearchParamsState } from '@/contexts/search-params-context';
 import { useAllRequirementsContext } from '@/contexts/requirements-context/all-requirements-context';
 import { useAuth } from '../auth-hook/Auth0Provider';
+import { logLumiDocsContext } from '@/utils/logging-utils';
 
 interface UseReports {
     reports: Report[];
@@ -33,8 +34,6 @@ export const useReports = (): UseReports => {
 
     const newReportCreated = useCreateReportStore((state) => state.newReportCreated);
     const setNewReportCreated = useCreateReportStore((state) => state.setNewReportCreated);
-
-    const [resolveRefreshPromise, setResolveRefreshPromise] = useState<(() => void) | null>(null);
 
     const { selectedReports, searchQuery, compliance } = useSearchParamsState();
     const { requirements, loading: requirementsLoading } = useAllRequirementsContext();
@@ -75,7 +74,7 @@ export const useReports = (): UseReports => {
                     const { reports: updatedReports, errors } = await fetchReportsByIds(wasmModule, staleReportIds);
 
                     if (Object.keys(errors).length > 0) {
-                        console.error("❌ Errors fetching some stale reports:", errors);
+                        logLumiDocsContext(`Errors fetching some stale reports: ${errors}`, "error")
                     }
 
                     fetchedReports = reports.map((existingReport) =>
@@ -83,7 +82,7 @@ export const useReports = (): UseReports => {
                     );
 
                     removeStaleReportIds(staleReportIds);
-                    console.log(`🟢 lumi-docs-context stale reports updated: ${fetchedReports.length}`);
+                    logLumiDocsContext(`Stale reports updated: ${fetchedReports.length}`, "success")
                 } else {
                     // Fetch all reports
                     const { reports: allReports, error } = await fetchReports(wasmModule);
@@ -93,19 +92,19 @@ export const useReports = (): UseReports => {
                     }
 
                     fetchedReports = allReports;
-                    console.log(`🟢 lumi-docs-context all reports updated: ${fetchedReports.length}`);
+                    logLumiDocsContext(`All reports updated: ${fetchedReports.length}`, "success")
                 }
 
                 setReports(fetchedReports);
 
                 const newReport = fetchedReports.find((report) => report.id === newReportCreated.id);
                 if (newReport) {
-                    console.log(`🔔 Detected new report with ID ${newReport.id}. Marking as processing.`);
+                    logLumiDocsContext(`🔔 lumi-docs-context Detected new report with ID ${newReport.id}. Marking as processing.`, "success")
                     setNewReportCreated({ id: newReport.id, status: "processing" });
                 }
 
             } catch (err) {
-                console.error("❌ Error fetching reports:", err);
+                logLumiDocsContext(`Error fetching reports: ${err}`, "error")
                 setError(err instanceof Error ? err.message : "Failed to fetch reports.");
             } finally {
                 triggerUpdate("reports", true); // Reset lastUpdated to avoid unnecessary refetches

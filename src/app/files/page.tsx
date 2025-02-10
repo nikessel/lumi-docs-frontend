@@ -21,7 +21,7 @@ const Page = () => {
     const [downloadLoading, setDownloadLoading] = useState<{ [id: string]: boolean }>({});
     const [isModalVisible, setIsModalVisible] = useState(false); // State for modal visibility
 
-    if (isLoading || wasmLoading) {
+    if ((isLoading && files.length < 1) || wasmLoading) {
         return (
             <div className="w-full h-full p-4">
                 <Space direction="vertical" size="large" style={{ width: '100%' }}>

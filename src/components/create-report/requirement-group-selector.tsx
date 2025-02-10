@@ -21,7 +21,6 @@ const SelectRequirementGroups: React.FC<SelectRequirementGroupsProps> = ({
     const [showGroups, setShowGroups] = useState(false);
 
     const [allGroupsSelected, setAllGroupsSelected] = useState(true);
-
     useEffect(() => {
         setAllGroupsSelected(selectedRequirementGroups.length === requirementGroups.length);
     }, [selectedRequirementGroups, requirementGroups]);

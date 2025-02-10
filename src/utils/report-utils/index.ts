@@ -9,8 +9,6 @@ export async function fetchReports(
     blobUrls: Record<string, string>;
     error: string | null;
 }> {
-    console.log("📌 Fetching reports...");
-
     const result: {
         reports: Report[];
         blobUrls: Record<string, string>;
@@ -34,7 +32,6 @@ export async function fetchReports(
             const reportsData = response.output.output;
             result.reports = reportsData;
 
-            console.log(`✅ Reports fetched successfully. Total reports: ${reportsData.length}`);
         } else if (response.error) {
             console.error(`❌ Error fetching reports: ${response.error.message}`);
             result.error = response.error.message;
