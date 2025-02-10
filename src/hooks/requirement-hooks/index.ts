@@ -8,6 +8,7 @@ import useCacheInvalidationStore from "@/stores/cache-validation-store";
 import { useAuth } from "../auth-hook/Auth0Provider";
 import { fetchRequirementsByGroupIds } from "@/utils/requirement-utils";
 import { logLumiDocsContext } from "@/utils/logging-utils";
+import { useUserContext } from "@/contexts/user-context";
 
 interface UseRequirements {
     requirements: RequirementWithGroupId[];
@@ -35,11 +36,14 @@ export const useRequirements = (): UseRequirements => {
     const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate);
 
     const [hasFetchedOnce, setHasFetchedOnce] = useState(false);
+    const { user } = useUserContext()
 
     useEffect(() => {
         const fetchRequirements = async () => {
+            console.log("GROUSP", groupsLoading)
             if (!wasmModule || !isAuthenticated || authLoading) return;
             if (requirementGroups.length === 0 || groupsLoading) return;
+            if (!user?.email) return
 
             try {
                 setLoading(true);
@@ -68,7 +72,7 @@ export const useRequirements = (): UseRequirements => {
         if (!hasFetchedOnce || lastUpdated) {
             fetchRequirements();
         }
-    }, [wasmModule, isAuthenticated, authLoading, requirementGroups, groupsLoading, lastUpdated, hasFetchedOnce, triggerUpdate]);
+    }, [wasmModule, isAuthenticated, authLoading, requirementGroups, groupsLoading, lastUpdated, hasFetchedOnce, triggerUpdate, user?.email]);
 
     const filteredSelectedRequirements = useMemo(() => {
         if (!filteredSelectedReports.length) return requirements;

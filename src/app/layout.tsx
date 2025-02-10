@@ -40,6 +40,8 @@ import { useTasksContext } from "@/contexts/tasks-context";
 import { AuthProvider, useAuth } from "@/hooks/auth-hook/Auth0Provider";
 // import { useAuth } from "@/components/Auth0";
 // import { AuthProvider } from "@/components/Auth0";
+import UserSignup from "@/components/sign-up";
+import { usePathname } from "next/navigation"
 
 const { Content } = Layout;
 
@@ -60,13 +62,16 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
 
 
   const router = useRouter()
-  const routesWithoutAuth = useMemo(() => ["/verify-email", "/callback", "/documentation", "/signup", "/logout"], []);
+  const routesWithoutAuth = useMemo(() => ["/verify-email", "/callback", "/documentation", "/signup", "/logout", "login"], []);
   const routesWithoutLayout = useMemo(() => ["/documentation", "/logout", "/signup", "/verify-email", "/callback"], []);
   const adminRoutes = useMemo(() => ["/test"], []);
 
   const [showNoPaymentWarning, setShowNoPaymentWarning] = useState(false)
+  const pathname = usePathname();
 
-  const noLayout = typeof window !== "undefined" && (routesWithoutLayout.indexOf(window.location.pathname) > -1);
+  const noLayout = useMemo(() => {
+    return routesWithoutLayout.includes(pathname);
+  }, [pathname, routesWithoutLayout]);
 
   const reportsRef = useRef(null);
   const regulatoryFrameworksRef = useRef(null);
@@ -84,6 +89,21 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  const [waitForAuth, setWaitForAuth] = useState(true);
+
+  useEffect(() => {
+    if (isCheckingSession || authLoading) {
+      setWaitForAuth(true);
+    } else {
+      const timeout = setTimeout(() => {
+        setWaitForAuth(false);
+      }, 500);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [isCheckingSession, authLoading]);
+
+
   // useEffect(() => {
   //   if ((!wasmLoading && !reportsLoading && !userLoading && window.location.pathname !== "/callback" && !initialLoadCompleted && !groupsLoading && !requirementsLoading && !sectionsLoading && !tasksLoading) || (routesWithoutAuth.indexOf(window.location.pathname) > -1)) {
   //     setGlobalLoading(false)
@@ -97,23 +117,9 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
   //   }
   // }, [adminRoutes, router, user])
 
-  if (isCheckingSession || authLoading) {
+  if (waitForAuth && routesWithoutAuth.indexOf(pathname) < 0) {
     return <LoadingLogoScreen />;
   }
-
-  // if (routesWithoutAuth.indexOf(window.location.pathname) > -1) {
-  //   return <div>{children}</div>;
-  // }
-
-  // if (globalLoading || window.location.pathname === "/callback") {
-  //   return <LoadingLogoScreen>{window.location.pathname === "/callback" ? children : ""}</LoadingLogoScreen>;
-  // }
-
-
-  // if (!globalLoading && !isAuthenticated && routesWithoutAuth.indexOf(window.location.pathname) < 0) {
-  //   return <LoginPrompt />
-  // }
-
 
   return (
     <AntdRegistry>
@@ -135,8 +141,23 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
         </ConfigProvider>
       </Elements>
     </AntdRegistry >
-
   );
+
+
+
+  // if (routesWithoutAuth.indexOf(window.location.pathname) > -1) {
+  //   return <div>{children}</div>;
+  // }
+
+  // if (globalLoading || window.location.pathname === "/callback") {
+  //   return <LoadingLogoScreen>{window.location.pathname === "/callback" ? children : ""}</LoadingLogoScreen>;
+  // }
+
+
+  // if (!globalLoading && !isAuthenticated && routesWithoutAuth.indexOf(window.location.pathname) < 0) {
+  //   return <LoginPrompt />
+  // }
+
 }
 
 export default function RootLayout({

@@ -8,6 +8,7 @@ import useCacheInvalidationStore from "@/stores/cache-validation-store";
 import { useAuth } from "../auth-hook/Auth0Provider";
 import { fetchGroupsBySectionIds } from "@/utils/requirement-group-utils";
 import { logLumiDocsContext } from "@/utils/logging-utils";
+import { useUserContext } from "@/contexts/user-context";
 
 interface UseRequirementGroups {
     requirementGroups: RequirementGroupWithSectionId[];
@@ -35,11 +36,14 @@ export const useRequirementGroups = (): UseRequirementGroups => {
     const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate);
 
     const [hasFetchedOnce, setHasFetchedOnce] = useState(false);
+    const { user } = useUserContext()
 
     useEffect(() => {
         const fetchRequirementGroups = async () => {
+            console.log("sectionbssss", sectionsLoading)
             if (!wasmModule || !isAuthenticated || authLoading) return;
             if (sections.length === 0 || sectionsLoading) return;
+            if (!user?.email) return
 
             try {
                 setLoading(true);
@@ -68,7 +72,7 @@ export const useRequirementGroups = (): UseRequirementGroups => {
         if (!hasFetchedOnce || lastUpdated) {
             fetchRequirementGroups();
         }
-    }, [wasmModule, isAuthenticated, authLoading, sections, sectionsLoading, lastUpdated, hasFetchedOnce, triggerUpdate]);
+    }, [wasmModule, isAuthenticated, authLoading, sections, sectionsLoading, lastUpdated, hasFetchedOnce, triggerUpdate, user?.email]);
 
     const filteredSelectedRequirementGroups = useMemo(() => {
         if (!filteredSelectedReports.length) return requirementGroups;

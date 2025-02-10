@@ -7,7 +7,7 @@ import { useRegulatoryFrameworksContext } from "@/contexts/regulatory-frameworks
 import { useReportsContext } from "@/contexts/reports-context";
 import { useAuth } from "../auth-hook/Auth0Provider";
 import { logLumiDocsContext } from "@/utils/logging-utils";
-
+import { useUserContext } from "@/contexts/user-context";
 
 interface UseSections {
     sections: Section[];
@@ -33,12 +33,13 @@ export const useSections = (): UseSections => {
     const setBeingRefetched = useCacheInvalidationStore((state) => state.setBeingRefetched);
     const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate);
     const [hasFetchedOnce, setHasFetchedOnce] = useState(false);
+    const { user } = useUserContext()
 
     useEffect(() => {
         const fetchAllSections = async () => {
             if (!wasmModule || !isAuthenticated || authLoading) return;
             if (frameworks.length === 0 || frameWorksLoading) return;
-
+            if (!user?.email) return
             try {
                 setLoading(true);
 
@@ -75,7 +76,7 @@ export const useSections = (): UseSections => {
         if (!hasFetchedOnce || lastUpdated) {
             fetchAllSections();
         }
-    }, [wasmModule, isAuthenticated, authLoading, frameworks, frameWorksLoading, lastUpdated, hasFetchedOnce, triggerUpdate]);
+    }, [wasmModule, isAuthenticated, authLoading, frameworks, frameWorksLoading, lastUpdated, hasFetchedOnce, triggerUpdate, user?.email]);
 
     const filteredSelectedReportsSections = useMemo(() => {
         if (!filteredSelectedReports.length) return sections;

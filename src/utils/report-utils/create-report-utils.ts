@@ -3,11 +3,10 @@ import { RegulatoryFramework } from "@wasm";
 import type * as WasmModule from "@wasm";
 import { CreateReportInput } from "@wasm";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
-import { PRICE_PER_REQUIREMENT_IN_EURO } from "../payment";
 
-export const calculateReportPrice = (): number => {
+export const calculateReportPrice = (pricePerReq: number): number => {
     const { selectedRequirements } = useCreateReportStore.getState();
-    return selectedRequirements.length * PRICE_PER_REQUIREMENT_IN_EURO;
+    return selectedRequirements.length * pricePerReq;
 };
 
 export const validateReportInput = (): { error: true; messages: string[] } | { error: false; input: CreateReportInput } => {

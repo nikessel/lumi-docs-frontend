@@ -5,6 +5,7 @@ import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
 import { useAuthConfig } from "./auth-config";
 import { useWasm } from "@/components/WasmProvider";
 import LoadingLogoScreen from "@/components/loading-screen";
+import { useRouter } from "next/navigation";
 
 interface AuthContextType {
     loginWithRedirect: () => void;
@@ -12,6 +13,8 @@ interface AuthContextType {
     isAuthenticated: boolean;
     isCheckingSession: boolean;
     isLoading: boolean;
+    clearTokens: () => void,
+    triggerReAuth: () => void
 }
 
 // Create Context with Default Empty Values
@@ -52,7 +55,7 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
     const [isLoading, setIsLoading] = useState(true)
     const hasFetched = useRef(false);
     const { authConfig, isLoading: configLoading, error } = useAuthConfig();
-
+    const router = useRouter();
 
     const didSendRequestRef = useRef<boolean>(false)
 
@@ -75,6 +78,17 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
             },
         });
     }, [logout, authConfig]);
+
+    const clearTokens = useCallback(async () => {
+        await Promise.resolve(); // Ensures the function behaves asynchronously
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("id_token");
+        localStorage.removeItem("auth_state");
+        setIsAuthenticated(false);
+        setIsCheckingSession(false);
+    }, []);
+
+
 
     const login = useCallback(async () => {
         if (!wasmModule) {
@@ -141,24 +155,25 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
                     code: code.replace(/^"|"$/g, ""),
                 });
 
-                console.log("ASDASDASDASDASD", exchangeResult)
-
                 if (!exchangeResult?.output?.output) {
                     throw new Error("No output received from identity exchange");
                 }
 
                 const tokens = exchangeResult.output.output;
 
-                console.log("ASDASDASDASDASD", tokens)
-
-
                 if (!tokens.id_token || !tokens.access_token) {
                     throw new Error("Missing tokens in response");
                 }
 
                 storeTokens(tokens.access_token, tokens.id_token);
-                setIsAuthenticated(true)
-                console.log("✅ signed in:", tokens.access_token)
+
+                const user = await wasmModule.get_user()
+
+                if (user.error?.kind === "NotFound") {
+                    router.push("/signup")
+                } else {
+                    setIsAuthenticated(true)
+                }
 
             } catch (err) {
                 localStorage.removeItem("auth_state");
@@ -175,40 +190,42 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
         checkSession();
     }, [checkSession]);
 
-    //check if user has valid tokens in localstorage 
-    useEffect(() => {
-        const fetchUser = async () => {
-            if (!wasmModule || hasFetched.current) return; // Ensure wasmModule is loaded and prevent re-fetching
+    const checkAuthStatus = useCallback(async () => {
+        if (!wasmModule || hasFetched.current) return; // Ensure wasmModule is loaded and prevent re-fetching
+        try {
+            setIsLoading(true)
+            hasFetched.current = true; // Mark as fetched
 
-            try {
-                hasFetched.current = true; // Mark as fetched
-                const res = await wasmModule.get_user();
+            const res = await wasmModule.get_user();
 
-                if (res?.output?.output && !res.error?.kind) {
-                    setIsAuthenticated((prev) => {
-                        if (!prev) return true; // Only update state if it has changed
-                        return prev;
-                    });
-                } else {
-                    setIsAuthenticated((prev) => {
-                        if (prev) return false;
-                        return prev;
-                    });
-                }
-            } catch (error) {
-                console.error("Error fetching user:", error);
-            } finally {
-                setIsLoading(false); // Ensure loading state is turned off only once
+            console.log("askjnadkjansdkljnasdkjnasd", res)
+
+
+            console.log("🔍 Fetching user:", res);
+
+            if (res?.output?.output && !res.error?.kind) {
+                setIsAuthenticated((prev) => (!prev ? true : prev));
+            } else {
+                setIsAuthenticated((prev) => (prev ? false : prev));
             }
-        };
+        } catch (error) {
+            console.error("❌ Error fetching user:", error);
+        } finally {
+            setIsLoading(false); // Ensure loading state is turned off only once
+        }
+    }, [wasmModule]);
 
-        fetchUser();
-    }, [wasmModule]); // Only depend on wasmModule
+    const triggerReAuth = useCallback(() => {
+        hasFetched.current = false; // Allow re-fetching
+        checkAuthStatus(); // Manually trigger the user fetch
+    }, [checkAuthStatus]);
 
-
+    useEffect(() => {
+        checkAuthStatus();
+    }, [checkAuthStatus]);
 
     return (
-        <AuthContext.Provider value={{ loginWithRedirect: login, isLoading, logout: logoutUser, isAuthenticated, isCheckingSession }}>
+        <AuthContext.Provider value={{ triggerReAuth, loginWithRedirect: login, isLoading, logout: logoutUser, isAuthenticated, isCheckingSession, clearTokens }}>
             {children}
         </AuthContext.Provider>
     );

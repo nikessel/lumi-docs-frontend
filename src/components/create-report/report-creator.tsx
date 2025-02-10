@@ -14,6 +14,7 @@ import { useCreateReportStore } from "@/stores/create-report-store";
 import EmbeddedPaymentForm from "../payment/embedded-payment-form";
 import { validateReportInput } from "@/utils/report-utils/create-report-utils";
 import { getPriceForSection, getPriceForGroup } from "@/utils/payment";
+import { useRequirementPrice } from "@/hooks/use-requirement-price";
 
 const { Step } = Steps;
 
@@ -50,6 +51,8 @@ const ReportCreator: React.FC<ReportCreatorProps> = () => {
     const { requirementGroupsBySectionId } = useRequirementGroupsContext();
     const { requirementsByGroupId } = useRequirementsContext();
     const { files } = useFilesContext();
+
+    const { price, loading: priceLoading } = useRequirementPrice()
 
     useEffect(() => {
         if (sectionsForRegulatoryFramework[selectedFramework] && sectionsSetForFramework !== selectedFramework) {
@@ -124,7 +127,8 @@ const ReportCreator: React.FC<ReportCreatorProps> = () => {
                             price_for_section: getPriceForSection(
                                 section.id,
                                 requirementGroupsBySectionId,
-                                requirementsByGroupId
+                                requirementsByGroupId,
+                                price ? price : 0
                             ),
                         }))}
                     />
@@ -146,7 +150,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = () => {
                             .map((group) => ({
                                 id: group.id,
                                 name: group.name || "Unknown",
-                                price_for_group: getPriceForGroup(group.id, requirementsByGroupId),
+                                price_for_group: getPriceForGroup(group.id, requirementsByGroupId, price ? price : 0),
                             }))
                         }
                     />

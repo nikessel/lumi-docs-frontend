@@ -1,45 +1,46 @@
 "use client";
 import { useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-// import { useAuth } from "@/components/Auth0";
+import { useSearchParams } from "next/navigation";
 import { Typography, Alert } from "antd";
 import Image from "next/image";
-// import { useNewAuth } from "@/hooks/auth-hook";
-
+import { useAuth } from "@/hooks/auth-hook/Auth0Provider";
+import { useUserContext } from "@/contexts/user-context";
 
 const { Title, Text } = Typography;
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
-  // const { login } = useAuth();
-  // const router = useRouter();
+  const { loginWithRedirect, clearTokens, logout } = useAuth();
+  const { user } = useUserContext()
 
-  // useEffect(() => {
-  //   if (!email) return;
 
-  //   const interval = setInterval(async () => {
-  //     try {
-  //       const response = await fetch(`/api/auth/check-email?email=${encodeURIComponent(email)}`);
-  //       if (!response.ok) throw new Error("Failed to check verification status");
+  useEffect(() => {
+    if (!email) return
 
-  //       const data = await response.json();
-  //       console.log("VERIFIEDDD", data);
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/auth/check-email?email=milsoe1992@gmail.com`);
+        console.log("ADASDSDASD234234", response)
 
-  //       if (data.email_verified) {
-  //         clearInterval(interval);
+        if (!response.ok) throw new Error("Failed to check verification status");
+        const data = await response.json();
 
-  //         console.log("✅ Email verified. Redirecting...");
-  //         login();  // Automatically log in the user
-  //         setTimeout(() => router.push("/dashboard"), 2000); // Redirect after login
-  //       }
-  //     } catch (error) {
-  //       console.error("Error checking email verification:", error);
-  //     }
-  //   }, 2000); // Poll every 5 seconds
 
-  //   return () => clearInterval(interval);
-  // }, [email, login, router]);
+        if (data.email_verified) {
+          clearInterval(interval);
+          console.log("✅ Email verified. Redirecting...");
+          logout()
+          clearTokens()
+          loginWithRedirect();  // Automatically log in the user
+        }
+      } catch (error) {
+        console.error("Error checking email verification:", error);
+      }
+    }, 2000); // Poll every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [email, loginWithRedirect, clearTokens]);
 
   return (
     <div className="flex items-center justify-center py-12 px-4 ">

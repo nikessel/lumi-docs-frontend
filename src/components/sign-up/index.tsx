@@ -3,14 +3,14 @@ import { useWasm } from "@/components/WasmProvider";
 import { useStorage } from "@/storage";
 import { Card, Form, Input, Button, Typography, Spin, message, Alert } from "antd";
 import { UserSignupForm } from "@wasm";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/auth-hook/Auth0Provider";
+import useCacheInvalidationStore from "@/stores/cache-validation-store";
 
 const { Title } = Typography;
 
-interface UserSignupProps {
-    onProfileUpdate: () => void;
-}
 
-const UserSignup: React.FC<UserSignupProps> = ({ onProfileUpdate }) => {
+const UserSignup: React.FC = () => {
     const { wasmModule, isLoading } = useWasm();
     const [idToken] = useStorage("id_token");
     const [error, setError] = useState<string | null>(null);
@@ -20,6 +20,9 @@ const UserSignup: React.FC<UserSignupProps> = ({ onProfileUpdate }) => {
     const [isCheckingUser, setIsCheckingUser] = useState(true);
     const [form] = Form.useForm();
     const [messageApi, contextHolder] = message.useMessage()
+    const router = useRouter()
+    const { triggerReAuth } = useAuth()
+    const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate)
 
     useEffect(() => {
         const initializeComponent = async () => {
@@ -62,7 +65,11 @@ const UserSignup: React.FC<UserSignupProps> = ({ onProfileUpdate }) => {
 
             if (response.output || response?.error?.kind === "AlreadyExists") {
                 messageApi.success("Profile created successfully!");
-                onProfileUpdate();
+                triggerReAuth()
+                triggerUpdate("user")
+                setTimeout(() => {
+                    router.push("/dashboard")
+                }, 1000);
             }
         } catch (err) {
             setError("Failed to create user.");
@@ -91,7 +98,7 @@ const UserSignup: React.FC<UserSignupProps> = ({ onProfileUpdate }) => {
 
     return (
 
-        <Card className="w-full max-w-2xl mx-auto">
+        <Card className="mt-24 w-full max-w-2xl mx-auto">
             {contextHolder}
             <Title level={3} style={{ textAlign: "center" }}>
                 Please complete your profile

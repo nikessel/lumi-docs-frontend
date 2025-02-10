@@ -27,7 +27,7 @@ export const useTasks = (): UseTasks => {
     const [tasks, setTasks] = useState<TaskWithReportId[]>([]);
     const [tasksByReportId, setTasksByReportId] = useState<Record<string, TaskWithReportId[]>>({});
     const [selectedFilteredReportsTasks, setSelectedFilteredReportsTasks] = useState<Task[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
+    const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const { isAuthenticated, isLoading: authLoading } = useAuth();
 

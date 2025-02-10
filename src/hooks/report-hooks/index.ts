@@ -8,6 +8,7 @@ import { useSearchParamsState } from '@/contexts/search-params-context';
 import { useAllRequirementsContext } from '@/contexts/requirements-context/all-requirements-context';
 import { useAuth } from '../auth-hook/Auth0Provider';
 import { logLumiDocsContext } from '@/utils/logging-utils';
+import { useUserContext } from '@/contexts/user-context';
 
 interface UseReports {
     reports: Report[];
@@ -41,6 +42,7 @@ export const useReports = (): UseReports => {
 
     const [hasFetchedOnce, setHasFetchedOnce] = useState(false);
 
+    const { user } = useUserContext()
 
     useEffect(() => {
         const filteredReports = filterReports(reports, selectedReports, searchQuery, compliance, requirements);
@@ -63,7 +65,9 @@ export const useReports = (): UseReports => {
 
     useEffect(() => {
         const fetchReportsData = async () => {
+            console.log("asdasd234234asdas", requirementsLoading)
             if (!wasmModule || !isAuthenticated || authLoading || requirementsLoading) return;
+            if (!user?.email) return
 
             try {
                 setLoading(true);
@@ -116,7 +120,7 @@ export const useReports = (): UseReports => {
         if (!hasFetchedOnce || lastUpdated) {
             fetchReportsData();
         }
-    }, [wasmModule, isAuthenticated, authLoading, lastUpdated, hasFetchedOnce, staleReportIds, reports, removeStaleReportIds, newReportCreated.id, setNewReportCreated, triggerUpdate, requirementsLoading]);
+    }, [wasmModule, isAuthenticated, authLoading, lastUpdated, hasFetchedOnce, staleReportIds, reports, removeStaleReportIds, newReportCreated.id, setNewReportCreated, triggerUpdate, requirementsLoading, user?.email]);
 
     return { reports, filteredSelectedReports, loading, error };
 };

@@ -4,11 +4,13 @@ import { useCreateReportStore } from "@/stores/create-report-store";
 import { calculateReportPrice } from "@/utils/report-utils/create-report-utils";
 import { useSpring, animated } from "@react-spring/web";
 import { formatPrice } from "@/utils/payment";
+import { useRequirementPrice } from "@/hooks/use-requirement-price";
 
 const PriceTracker: React.FC = () => {
     const { selectedSections, selectedRequirementGroups, selectedRequirements } = useCreateReportStore(); // Access Zustand store
+    const { price } = useRequirementPrice()
 
-    let totalPrice = calculateReportPrice();
+    let totalPrice = calculateReportPrice(price ? price : 0);
 
     if (selectedSections.length === 0 || selectedRequirementGroups.length === 0) {
         totalPrice = 0;

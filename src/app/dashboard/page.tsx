@@ -16,6 +16,9 @@ const Page = () => {
     const { tasks, loading: tasksLoading } = useTasksContext()
     const isLoading = tasksLoading || reportsLoading || userLoading
 
+
+    console.log("Asdasdasd", tasksLoading, reportsLoading, userLoading)
+
     return (
         <div className="flex" style={{ height: "75vh" }}>
             <div className="w-2/3 pr-4 flex flex-col gap-6">

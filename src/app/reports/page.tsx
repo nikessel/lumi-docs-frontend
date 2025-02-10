@@ -41,7 +41,7 @@ const Page = () => {
         return 0;
     });
 
-    if (loading || isLoading) {
+    if ((loading || isLoading) && reports.length < 1) {
         return (
             <div>
                 <div className="flex justify-between items-center">
@@ -83,7 +83,8 @@ const Page = () => {
                 </div>
             </div>
             <Divider className="border-thin mt-2 mb-2" />
-            {reports.length > 0 ? <div className="flex justify-between items-center">
+
+            {reports.length > 0 && (!loading && !isLoading) ? <div className="flex justify-between items-center">
                 <Typography color="secondary">
                     Open a single report or check more for merged view
                 </Typography>

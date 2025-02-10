@@ -4,8 +4,6 @@ import Stripe from "stripe";
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
 const price = process.env.STRIPE_REQUIREMENT_PRICE_ID
 
-console.log("ASDASD2143123asdasd", price, stripe)
-
 
 export async function POST(req: Request) {
     try {

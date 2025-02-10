@@ -1,34 +1,35 @@
 import { Section, RequirementGroup, Requirement } from "@wasm";
 
-export const PRICE_PER_REQUIREMENT_IN_EURO = 5;
-
 export const getPriceForSection = (
     sectionId: string,
     requirementGroupsBySectionId: Record<string, RequirementGroup[]>,
-    requirementsByGroupId: Record<string, Requirement[]>
+    requirementsByGroupId: Record<string, Requirement[]>,
+    pricePerReq: number
 ): number => {
     const groupsForSection = requirementGroupsBySectionId[sectionId] || [];
     const relatedRequirements = groupsForSection.flatMap(group => requirementsByGroupId[group.id] || []);
-    return PRICE_PER_REQUIREMENT_IN_EURO * relatedRequirements.length;
+    return pricePerReq * relatedRequirements.length;
 };
 
 export const getPriceForGroup = (
     groupId: string,
-    requirementsByGroupId: Record<string, Requirement[]>
+    requirementsByGroupId: Record<string, Requirement[]>,
+    pricePerReq: number
 ): number => {
     const requirementsForGroup = requirementsByGroupId[groupId] || [];
-    return PRICE_PER_REQUIREMENT_IN_EURO * requirementsForGroup.length;
+    return pricePerReq * requirementsForGroup.length;
 };
 
 export const getPriceForFramework = (
     frameworkId: string,
     sectionsByRegulatoryFramework: Record<string, Section[]>,
     requirementGroupsBySectionId: Record<string, RequirementGroup[]>,
-    requirementsByGroupId: Record<string, Requirement[]>
+    requirementsByGroupId: Record<string, Requirement[]>,
+    pricePerReq: number
 ): number => {
     const sectionsForFramework = sectionsByRegulatoryFramework[frameworkId] || [];
     return sectionsForFramework.reduce((totalPrice, section) => {
-        return totalPrice + getPriceForSection(section.id, requirementGroupsBySectionId, requirementsByGroupId);
+        return totalPrice + getPriceForSection(section.id, requirementGroupsBySectionId, requirementsByGroupId, pricePerReq);
     }, 0);
 };
 
