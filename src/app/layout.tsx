@@ -151,8 +151,8 @@ export default function RootLayout({
           {/* <OldAuthProvider> */}
           <AuthProvider>
             <UserProvider>
-              <SearchParamsProvider>
-                <AllRequirementsProvider>
+              <AllRequirementsProvider>
+                <SearchParamsProvider>
                   <ReportsProvider>
                     <RegulatoryFrameworksProvider>
                       <SectionsProvider>
@@ -168,8 +168,8 @@ export default function RootLayout({
                       </SectionsProvider>
                     </RegulatoryFrameworksProvider>
                   </ReportsProvider>
-                </AllRequirementsProvider>
-              </SearchParamsProvider>
+                </SearchParamsProvider>
+              </AllRequirementsProvider>
             </UserProvider>
           </AuthProvider>
           {/* </OldAuthProvider> */}

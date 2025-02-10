@@ -141,11 +141,16 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
                     code: code.replace(/^"|"$/g, ""),
                 });
 
+                console.log("ASDASDASDASDASD", exchangeResult)
+
                 if (!exchangeResult?.output?.output) {
                     throw new Error("No output received from identity exchange");
                 }
 
                 const tokens = exchangeResult.output.output;
+
+                console.log("ASDASDASDASDASD", tokens)
+
 
                 if (!tokens.id_token || !tokens.access_token) {
                     throw new Error("Missing tokens in response");

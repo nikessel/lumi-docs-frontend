@@ -7,7 +7,7 @@ import { useRequirementGroupsContext } from "@/contexts/requirement-group-contex
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
 import { useAuth } from "../auth-hook/Auth0Provider";
 import { fetchRequirementsByGroupIds } from "@/utils/requirement-utils";
-
+import { useUserContext } from "@/contexts/user-context";
 interface UseRequirements {
     requirements: RequirementWithGroupId[];
     filteredSelectedRequirements: RequirementWithGroupId[];
@@ -138,39 +138,20 @@ export const useAllRequirements = (): UseAllRequirements => {
     const [requirements, setRequirements] = useState<Requirement[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    // const { isAuthenticated, isLoading: authLoading } = useNewAuth()
-
+    const { isAuthenticated, isLoading: authLoading } = useAuth();
 
     const lastUpdated = useCacheInvalidationStore((state) => state.lastUpdated["allRequirements"]);
-    const setBeingRefetched = useCacheInvalidationStore((state) => state.setBeingRefetched);
     const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate);
 
+    const [hasFetchedOnce, setHasFetchedOnce] = useState(false);
+
     useEffect(() => {
-        const fetchAllRequirements = async (isInitialLoad = false) => {
-            console.log(`🔄 Fetching all requirements... (Initial Load: ${isInitialLoad})`);
+        const fetchAllRequirements = async () => {
 
-            if (!wasmModule) {
-                setError("WASM module not loaded");
-                return;
-            }
-
-            // if (!isAuthenticated && !authLoading) {
-            //     setError("User not authenticated");
-            //     setLoading(false)
-            //     return
-            // }
-
-            if (!isInitialLoad && !lastUpdated) {
-                return;
-            }
+            if (!wasmModule || !isAuthenticated || authLoading) return;
 
             try {
-                if (isInitialLoad) {
-                    setLoading(true);
-                } else {
-                    setBeingRefetched("allRequirements", true);
-                }
-
+                setLoading(true);
                 const response = await wasmModule.get_all_requirements();
 
                 if (response.error) {
@@ -178,25 +159,24 @@ export const useAllRequirements = (): UseAllRequirements => {
                     throw new Error(response.error.message);
                 }
 
-                console.log(`✅ Fetched ${response.output?.output?.length || 0} requirements`);
                 setRequirements(response.output?.output || []);
+                console.log(`🟢 lumi-docs-context all requirements updated ${response.output?.output?.length || 0}`);
 
-                // **Important:** Mark fetch as completed
-                triggerUpdate("allRequirements", true);
             } catch (err: unknown) {
                 console.error("❌ Failed to fetch all requirements:", err);
-                setError((err as Error)?.message || "Failed to fetch requirements.");
+                setError(err instanceof Error ? err.message : "Failed to fetch requirements.");
             } finally {
-                if (isInitialLoad) {
-                    setLoading(false);
-                } else {
-                    setBeingRefetched("allRequirements", false);
-                }
+                triggerUpdate("allRequirements", true); // Set lastUpdated to null
+                setLoading(false);
+                setHasFetchedOnce(true);
             }
         };
 
-        fetchAllRequirements(loading);
-    }, [wasmModule, lastUpdated, loading, setBeingRefetched, triggerUpdate]);
+        if (!hasFetchedOnce || lastUpdated) {
+            fetchAllRequirements();
+        }
+    }, [wasmModule, isAuthenticated, authLoading, lastUpdated, hasFetchedOnce, triggerUpdate]);
 
     return { requirements, loading, error };
 };
+
