@@ -37,8 +37,7 @@ import { useRequirementGroupsContext } from "@/contexts/requirement-group-contex
 import { useRequirementsContext } from "@/contexts/requirements-context";
 import { useSectionsContext } from "@/contexts/sections-context";
 import { useTasksContext } from "@/contexts/tasks-context";
-import { AuthProvider } from "@/hooks/auth-hook/Auth0Provider";
-import { useAuth } from "@/hooks/auth-hook";
+import { AuthProvider, useAuth } from "@/hooks/auth-hook/Auth0Provider";
 // import { useAuth } from "@/components/Auth0";
 // import { AuthProvider } from "@/components/Auth0";
 
@@ -47,17 +46,18 @@ const { Content } = Layout;
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) : null;
 
 function LayoutWithWasm({ children }: { children: ReactNode }) {
-  const [globalLoading, setGlobalLoading] = useState(true)
-  const [initialLoadCompleted, setInitialLoadCompleted] = useState(false)
-  const { isLoading: wasmLoading } = useWasm();
-  // const { isLoading: AuthLoading, isAuthenticated } = useAuth()
+  // const [globalLoading, setGlobalLoading] = useState(true)
+  // const [initialLoadCompleted, setInitialLoadCompleted] = useState(false)
+  // const { isLoading: wasmLoading } = useWasm();
+  const { isLoading: authLoading, isAuthenticated } = useAuth()
 
-  const { loading: reportsLoading } = useReportsContext()
+  // const { loading: reportsLoading } = useReportsContext()
   const { user, loading: userLoading } = useUserContext()
-  const { loading: groupsLoading } = useRequirementGroupsContext()
-  const { loading: requirementsLoading } = useRequirementsContext()
-  const { loading: sectionsLoading } = useSectionsContext()
-  const { loading: tasksLoading } = useTasksContext()
+  // const { loading: groupsLoading } = useRequirementGroupsContext()
+  // const { loading: requirementsLoading } = useRequirementsContext()
+  // const { loading: sectionsLoading } = useSectionsContext()
+  // const { loading: tasksLoading } = useTasksContext()
+
 
   const router = useRouter()
   const routesWithoutAuth = useMemo(() => ["/verify-email", "/callback", "/documentation", "/signup", "/logout"], []);
@@ -84,27 +84,21 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  useEffect(() => {
-    if (isCheckingSession) {
-      console.log("234234easd242134 Checking session...");
-    }
-  }, [isCheckingSession]);
+  // useEffect(() => {
+  //   if ((!wasmLoading && !reportsLoading && !userLoading && window.location.pathname !== "/callback" && !initialLoadCompleted && !groupsLoading && !requirementsLoading && !sectionsLoading && !tasksLoading) || (routesWithoutAuth.indexOf(window.location.pathname) > -1)) {
+  //     setGlobalLoading(false)
+  //     setInitialLoadCompleted(true)
+  //   }
+  // }, [wasmLoading, reportsLoading, initialLoadCompleted, userLoading, groupsLoading, requirementsLoading, sectionsLoading, tasksLoading, routesWithoutAuth])
 
-  useEffect(() => {
-    if ((!wasmLoading && !reportsLoading && !userLoading && window.location.pathname !== "/callback" && !initialLoadCompleted && !groupsLoading && !requirementsLoading && !sectionsLoading && !tasksLoading) || (routesWithoutAuth.indexOf(window.location.pathname) > -1)) {
-      setGlobalLoading(false)
-      setInitialLoadCompleted(true)
-    }
-  }, [wasmLoading, reportsLoading, initialLoadCompleted, userLoading, groupsLoading, requirementsLoading, sectionsLoading, tasksLoading, routesWithoutAuth])
+  // useEffect(() => {
+  //   if (adminRoutes.indexOf(window.location.pathname) && user && !user.config?.admin) {
+  //     router.push("/dashboard")
+  //   }
+  // }, [adminRoutes, router, user])
 
-  useEffect(() => {
-    if (adminRoutes.indexOf(window.location.pathname) && user && !user.config?.admin) {
-      router.push("/dashboard")
-    }
-  }, [adminRoutes, router, user])
-
-  if (isCheckingSession) {
-    return <div className="w-full h-full bg-red-500"></div>;
+  if (isCheckingSession || authLoading) {
+    return <LoadingLogoScreen />;
   }
 
   // if (routesWithoutAuth.indexOf(window.location.pathname) > -1) {
@@ -154,33 +148,31 @@ export default function RootLayout({
     <html lang="en" className="h-full">
       <body className="h-full">
         <WasmProviderComponent>
-          <Suspense fallback={<LoadingLogoScreen />}>
-            {/* <OldAuthProvider> */}
-            <AuthProvider>
-              <UserProvider>
-                <SearchParamsProvider>
-                  <AllRequirementsProvider>
-                    <ReportsProvider>
-                      <RegulatoryFrameworksProvider>
-                        <SectionsProvider>
-                          <RequirementGroupsProvider>
-                            <RequirementsProvider>
-                              <FilesProvider>
-                                <TasksProvider>
-                                  <LayoutWithWasm>{children}</LayoutWithWasm>
-                                </TasksProvider>
-                              </FilesProvider>
-                            </RequirementsProvider>
-                          </RequirementGroupsProvider>
-                        </SectionsProvider>
-                      </RegulatoryFrameworksProvider>
-                    </ReportsProvider>
-                  </AllRequirementsProvider>
-                </SearchParamsProvider>
-              </UserProvider>
-            </AuthProvider>
-            {/* </OldAuthProvider> */}
-          </Suspense>
+          {/* <OldAuthProvider> */}
+          <AuthProvider>
+            <UserProvider>
+              <SearchParamsProvider>
+                <AllRequirementsProvider>
+                  <ReportsProvider>
+                    <RegulatoryFrameworksProvider>
+                      <SectionsProvider>
+                        <RequirementGroupsProvider>
+                          <RequirementsProvider>
+                            <FilesProvider>
+                              <TasksProvider>
+                                <LayoutWithWasm>{children}</LayoutWithWasm>
+                              </TasksProvider>
+                            </FilesProvider>
+                          </RequirementsProvider>
+                        </RequirementGroupsProvider>
+                      </SectionsProvider>
+                    </RegulatoryFrameworksProvider>
+                  </ReportsProvider>
+                </AllRequirementsProvider>
+              </SearchParamsProvider>
+            </UserProvider>
+          </AuthProvider>
+          {/* </OldAuthProvider> */}
         </WasmProviderComponent>
       </body>
     </html>

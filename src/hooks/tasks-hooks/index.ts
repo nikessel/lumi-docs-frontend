@@ -9,6 +9,7 @@ import { useReportsContext } from "@/contexts/reports-context";
 import { filterReports } from "@/utils/report-utils";
 import { useRequirementsContext } from "@/contexts/requirements-context";
 // import { useNewAuth } from "@/hooks/auth-hook";
+import { useAuth } from "../auth-hook/Auth0Provider";
 
 
 export interface TaskWithReportId extends Task {
@@ -29,7 +30,8 @@ export const useTasks = (): UseTasks => {
     const [selectedFilteredReportsTasks, setSelectedFilteredReportsTasks] = useState<Task[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    // const { isAuthenticated, isLoading: authLoading } = useNewAuth()
+    const { isAuthenticated, isLoading: authLoading } = useAuth()
+
 
     const lastUpdated = useCacheInvalidationStore((state) => state.lastUpdated["tasks"]);
     const setBeingRefetched = useCacheInvalidationStore((state) => state.setBeingRefetched);
@@ -47,15 +49,12 @@ export const useTasks = (): UseTasks => {
         const fetchAllTasks = async (isInitialLoad = false) => {
 
             if (!wasmModule) {
-                setError("WASM module not loaded");
                 return;
             }
 
-            // if (!isAuthenticated && !authLoading) {
-            //     setError("User not authenticated");
-            //     setLoading(false)
-            //     return
-            // }
+            if (!isAuthenticated || authLoading) {
+                return
+            }
 
             if (!reports.length) {
                 if (!reportsLoading) {
@@ -71,7 +70,6 @@ export const useTasks = (): UseTasks => {
             try {
                 triggerUpdate("tasks", true);
                 if (isInitialLoad) {
-                    console.log("🔄 Initial task fetch started...");
                     setLoading(true);
                 } else {
                     console.log("🔄 Refetching tasks...");
@@ -81,8 +79,6 @@ export const useTasks = (): UseTasks => {
                 let updatedTasksByReport: Record<string, TaskWithReportId[]> = { ...tasksByReportId };
 
                 if (staleTaskIds.length > 0) {
-                    console.log(`🔄 Fethced ${staleTaskIds.length} stale tasks: ${staleTaskIds.join(", ")}`);
-
                     // Fetch only the stale tasks by their ID
                     const updatedTasks = await Promise.all(
                         staleTaskIds.map(async taskId => {
@@ -162,14 +158,11 @@ export const useTasks = (): UseTasks => {
         };
 
         fetchAllTasks(loading);
-    }, [wasmModule, reports, reportsLoading, lastUpdated, staleTaskIds, loading, setBeingRefetched, triggerUpdate, isBeingRefetched, removeStaleTaskIds, tasksByReportId]);
+    }, [wasmModule, reports, reportsLoading, lastUpdated, staleTaskIds, loading, setBeingRefetched, triggerUpdate, isBeingRefetched, removeStaleTaskIds, tasksByReportId, authLoading, isAuthenticated]);
 
 
-    /**
-     * 🎯 **Filter Selected Tasks Using Stored `tasksByReportId`**
-     */
+    console.log("TESTSTSTSTSTSTSTS", tasks)
     useEffect(() => {
-        console.log("🔄 Filtering tasks based on selected reports and filters...");
 
         const filteredReports = filterReports(reports, selectedReports, searchQuery, compliance, requirements);
         const reportIds = filteredReports.map(report => report.id);

@@ -3,8 +3,7 @@ import { fetchUser } from "@/utils/user-utils";
 import type { User } from "@wasm";
 import { useWasm } from '@/components/WasmProvider';
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
-// import { useNewAuth } from "@/hooks/auth-hook";
-
+import { useAuth } from "../auth-hook/Auth0Provider";
 
 interface UseUserReturn {
     user: User | null;
@@ -24,6 +23,7 @@ export const useUser = (): UseUserReturn => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     // const { isAuthenticated, isLoading: authLoading } = useNewAuth()
+    const { isAuthenticated, isLoading: authLoading } = useAuth()
 
     const lastUpdated = useCacheInvalidationStore((state) => state.lastUpdated["user"]);
     const beingRefetched = useCacheInvalidationStore((state) => state.beingRefetched["user"]);
@@ -33,21 +33,17 @@ export const useUser = (): UseUserReturn => {
 
     useEffect(() => {
         const fetchUserData = async (isInitialLoad = false) => {
-
-            // if (!isAuthenticated && !authLoading) {
-            //     setLoading(false)
-            //     setError("User not authenticated");
-            //     return
-            // }
+            if (!isAuthenticated || authLoading) {
+                return
+            }
 
             if (!wasmModule) {
-                setError("WASM module not provided");
-                setLoading(false);
                 return;
             }
 
             if (isInitialLoad || lastUpdated) {
                 try {
+                    setLoading(true)
                     if (isInitialLoad) {
                         setLoading(true);
                     } else {
@@ -86,7 +82,7 @@ export const useUser = (): UseUserReturn => {
         };
 
         fetchUserData(loading);
-    }, [wasmModule, lastUpdated, loading, setBeingRefetched, triggerUpdate, beingRefetched]);
+    }, [wasmModule, lastUpdated, loading, setBeingRefetched, triggerUpdate, beingRefetched, isAuthenticated, authLoading]);
 
     return { user, loading, error };
 };

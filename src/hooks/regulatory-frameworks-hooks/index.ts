@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { getSupportedFrameworks } from "@/utils/regulatory-frameworks-utils";
 import { RegulatoryFramework } from "@wasm";
-// import { useNewAuth } from "../auth-hook";
-
+import { useAuth } from "../auth-hook/Auth0Provider";
 
 interface FrameworkInfo {
     id: RegulatoryFramework;
@@ -19,10 +18,14 @@ export const useRegulatoryFrameworks = (): UseRegulatoryFrameworks => {
     const [frameworks, setFrameworks] = useState<FrameworkInfo[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    // const { isAuthenticated, isLoading: authLoading } = useNewAuth()
+    const { isAuthenticated, isLoading: authLoading } = useAuth()
 
     useEffect(() => {
         const fetchFrameworks = async () => {
+
+            if (!isAuthenticated || authLoading) {
+                return
+            }
 
             try {
                 setLoading(true);
@@ -46,7 +49,7 @@ export const useRegulatoryFrameworks = (): UseRegulatoryFrameworks => {
         };
 
         fetchFrameworks();
-    }, []);
+    }, [authLoading, isAuthenticated]);
 
     return { frameworks, loading, error };
 };

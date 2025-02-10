@@ -6,7 +6,7 @@ export async function fetchTasksByReport(
     wasmModule: typeof WasmModule | null,
     reportId: string
 ): Promise<Task[]> {
-    
+
     console.log(`📌 Fetching tasks for report ID: ${reportId}...`);
 
     if (!wasmModule) {
@@ -38,10 +38,8 @@ export async function fetchTaskById(
     wasmModule: typeof WasmModule | null,
     taskId: string
 ): Promise<Task | null> {
-    console.log(`📌 Fetching task for ID: ${taskId}...`);
 
     if (!wasmModule) {
-        console.error("❌ WASM module not loaded.");
         throw new Error("WASM module not loaded");
     }
 
@@ -49,7 +47,6 @@ export async function fetchTaskById(
         const response = await wasmModule.get_task({ input: taskId });
 
         if (response.output) {
-            console.log(`✅ Successfully fetched Task ID: ${taskId}`);
             return response.output.output;
         }
 

@@ -6,7 +6,7 @@ import useCacheInvalidationStore from '@/stores/cache-validation-store';
 import { useCreateReportStore } from '@/stores/create-report-store';
 import { useSearchParamsState } from '@/contexts/search-params-context';
 import { useAllRequirementsContext } from '@/contexts/requirements-context/all-requirements-context';
-// import { useNewAuth } from "../auth-hook";
+import { useAuth } from '../auth-hook/Auth0Provider';
 
 interface UseReports {
     reports: Report[];
@@ -20,7 +20,7 @@ export const useReports = (): UseReports => {
     const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    // const { isAuthenticated, isLoading: authLoading } = useNewAuth()
+    const { isAuthenticated, isLoading: authLoading } = useAuth()
 
 
     const cacheStore = useCacheInvalidationStore.getState();
@@ -64,15 +64,12 @@ export const useReports = (): UseReports => {
     useEffect(() => {
         const fetchReportsData = async (isInitialLoad = false) => {
             if (!wasmModule) {
-                setError("WasmModule not loaded")
                 return;
             }
 
-            // if (!isAuthenticated && !authLoading) {
-            //     setError("User not authenticated");
-            //     setLoading(false)
-            //     return
-            // }
+            if (!isAuthenticated || authLoading) {
+                return
+            }
 
             if (!lastUpdated && !isInitialLoad) {
                 return;
@@ -119,10 +116,12 @@ export const useReports = (): UseReports => {
                 setReports(fetchedReports);
 
                 const newReport = fetchedReports.find((report) => report.id === newReportCreated.id);
+
                 if (newReport) {
                     console.log(`🔔 Detected new report with ID ${newReport.id}. Marking as processing.`);
                     setNewReportCreated({ id: newReport.id, status: "processing" });
                 }
+
             } catch (err) {
                 console.error("❌ Error fetching reports:", err);
                 setError((err as Error)?.message || "Failed to fetch reports.");
@@ -130,9 +129,9 @@ export const useReports = (): UseReports => {
                 if (isInitialLoad) {
                     setLoading(false);
                 } else {
+                    setLoading(false);
                     setBeingRefetched("reports", false);
                 }
-
                 if (resolveRefreshPromise) {
                     console.log("✅ Resolving refresh promise...");
                     resolveRefreshPromise();
@@ -144,7 +143,7 @@ export const useReports = (): UseReports => {
         };
 
         fetchReportsData(loading);
-    }, [wasmModule, lastUpdated, loading, newReportCreated.id, removeStaleReportIds, reports, resolveRefreshPromise, setBeingRefetched, setNewReportCreated, staleReportIds, triggerUpdate]);
+    }, [wasmModule, lastUpdated, loading, newReportCreated.id, removeStaleReportIds, reports, resolveRefreshPromise, setBeingRefetched, setNewReportCreated, staleReportIds, triggerUpdate, authLoading, isAuthenticated]);
 
     return { reports, filteredSelectedReports, loading, error };
 };

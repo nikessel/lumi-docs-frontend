@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Typography from "@/components/typography";
-import { useAuth } from "@/hooks/auth-hook";
+import { useAuth } from "@/hooks/auth-hook/Auth0Provider";
 
 export default function LogoutScreen() {
-  const { loginWithRedirect, logout, user, isAuthenticated } = useAuth();
+  const { loginWithRedirect } = useAuth();
   const router = useRouter();
 
   return (

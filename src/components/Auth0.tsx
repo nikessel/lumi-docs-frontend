@@ -365,7 +365,6 @@
 //       return;
 //     }
 
-
 //     (async () => {
 //       try {
 
@@ -412,7 +411,6 @@
 
 //         storage.set(SK.id_token, tokens.id_token);
 //         storage.set(SK.access_token, tokens.access_token);
-
 
 //         const claimsResult = await wasmModule.token_to_claims({
 //           token: tokens.id_token,

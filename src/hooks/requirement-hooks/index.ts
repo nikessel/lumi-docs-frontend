@@ -5,7 +5,8 @@ import { Requirement } from "@wasm";
 import { useReportsContext } from "@/contexts/reports-context";
 import { useRequirementGroupsContext } from "@/contexts/requirement-group-context";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
-// import { useNewAuth } from "../auth-hook";
+import { useAuth } from "../auth-hook/Auth0Provider";
+import { fetchRequirementsByGroupIds } from "@/utils/requirement-utils";
 
 interface UseRequirements {
     requirements: RequirementWithGroupId[];
@@ -23,7 +24,7 @@ export const useRequirements = (): UseRequirements => {
     const { wasmModule } = useWasm();
     const { reports, filteredSelectedReports } = useReportsContext();
     const { requirementGroups, loading: groupsLoading } = useRequirementGroupsContext();
-    // const { isAuthenticated, isLoading: authLoading } = useNewAuth()
+    const { isAuthenticated, isLoading: authLoading } = useAuth()
 
 
     const [requirements, setRequirements] = useState<RequirementWithGroupId[]>([]);
@@ -36,22 +37,18 @@ export const useRequirements = (): UseRequirements => {
 
     useEffect(() => {
         const fetchRequirements = async (isInitialLoad = false) => {
-            console.log(`🔄 Fetching requirements... (Initial Load: ${isInitialLoad})`);
 
             if (!wasmModule) {
-                setError("WASM module not loaded");
                 return;
             }
 
-            // if (!isAuthenticated && !authLoading) {
-            //     setError("User not authenticated");
-            //     setLoading(false)
-            //     return
-            // }
+            if (!isAuthenticated || authLoading) {
+                return;
+            }
 
             if (!requirementGroups.length) {
                 if (!groupsLoading) {
-                    setLoading(false)
+                    setLoading(false);
                 }
                 return;
             }
@@ -67,31 +64,20 @@ export const useRequirements = (): UseRequirements => {
                     setBeingRefetched("requirements", true);
                 }
 
-                const allRequirements: RequirementWithGroupId[] = [];
+                const { requirements: fetchedRequirements, errors } = await fetchRequirementsByGroupIds(
+                    wasmModule,
+                    requirementGroups.map(group => group.id)
+                );
 
-                for (const group of requirementGroups) {
-                    const response = await wasmModule.get_requirements_by_group({ input: group.id });
-
-                    if (response.error) {
-                        console.warn(`⚠️ Failed to fetch requirements for group ${group.id}: ${response.error.message}`);
-                        continue;
-                    }
-
-                    // Add `group_id` to each requirement
-                    const requirementsWithGroupId = (response.output?.output || []).map((req: Requirement) => ({
-                        ...req,
-                        group_id: group.id,
-                    }));
-
-                    allRequirements.push(...requirementsWithGroupId);
+                if (Object.keys(errors).length > 0) {
+                    console.warn("⚠️ Some groups failed to fetch:", errors);
                 }
 
-                console.log(`✅ Fetched ${allRequirements.length} requirements`);
-                setRequirements(allRequirements);
+                setRequirements(fetchedRequirements);
+                console.log(`✅ Fetched ${fetchedRequirements.length} requirements`);
 
                 // **Important:** Mark fetch as completed
                 triggerUpdate("requirements", true);
-
             } catch (err: unknown) {
                 console.error("❌ Error fetching requirements:", err);
                 setError((err as Error)?.message || "Failed to fetch requirements.");
@@ -105,7 +91,8 @@ export const useRequirements = (): UseRequirements => {
         };
 
         fetchRequirements(loading);
-    }, [wasmModule, requirementGroups, groupsLoading, lastUpdated, loading, setBeingRefetched, triggerUpdate]);
+    }, [wasmModule, requirementGroups, groupsLoading, lastUpdated, loading, setBeingRefetched, triggerUpdate, authLoading, isAuthenticated]);
+
 
     const filteredSelectedRequirements = (() => {
         if (!filteredSelectedReports.length) return requirements;

@@ -1,5 +1,6 @@
 import type { Requirement } from "@wasm";
 import type * as WasmModule from "@wasm";
+import { RequirementWithGroupId } from "@/hooks/requirement-hooks";
 
 export async function fetchRequirementsByIds(
     wasmModule: typeof WasmModule | null,
@@ -41,3 +42,41 @@ export async function fetchRequirementsByIds(
 }
 
 
+export async function fetchRequirementsByGroupIds(
+    wasmModule: typeof WasmModule | null,
+    groupIds: string[]
+): Promise<{ requirements: RequirementWithGroupId[]; errors: { [id: string]: string } }> {
+
+    const result: { requirements: RequirementWithGroupId[]; errors: { [id: string]: string } } = {
+        requirements: [],
+        errors: {},
+    };
+
+    if (!wasmModule) {
+        return result;
+    }
+
+    const fetchPromises = groupIds.map(async (groupId) => {
+        try {
+            const response = await wasmModule.get_requirements_by_group({ input: groupId });
+
+            if (response.output?.output) {
+                const fetchedRequirements = response.output.output.map((req) => ({
+                    ...req,
+                    group_id: groupId, // Ensure each requirement has group_id
+                }));
+
+                result.requirements.push(...fetchedRequirements);
+            } else if (response.error) {
+                console.error(`❌ Error fetching requirements for group ID ${groupId}: ${response.error.message}`);
+                result.errors[groupId] = response.error.message;
+            }
+        } catch (err) {
+            console.error(`❌ Failed to fetch requirements for group ID ${groupId}:`, err);
+            result.errors[groupId] = "Failed to fetch requirements";
+        }
+    });
+
+    await Promise.all(fetchPromises);
+    return result;
+}

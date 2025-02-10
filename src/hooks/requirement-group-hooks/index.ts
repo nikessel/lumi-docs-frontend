@@ -5,7 +5,8 @@ import { RequirementGroup } from "@wasm";
 import { useReportsContext } from "@/contexts/reports-context";
 import { useSectionsContext } from "@/contexts/sections-context";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
-// import { useNewAuth } from "../auth-hook";
+import { useAuth } from "../auth-hook/Auth0Provider";
+import { fetchGroupsBySectionIds } from "@/utils/requirement-group-utils";
 
 interface UseRequirementGroups {
     requirementGroups: RequirementGroupWithSectionId[];
@@ -23,8 +24,7 @@ export const useRequirementGroups = (): UseRequirementGroups => {
     const { wasmModule } = useWasm();
     const { reports, filteredSelectedReports } = useReportsContext();
     const { sections, loading: sectionsLoading } = useSectionsContext();
-    // const { isAuthenticated, isLoading: authLoading } = useNewAuth()
-
+    const { isAuthenticated, isLoading: authLoading } = useAuth()
 
     const [requirementGroups, setRequirementGroups] = useState<RequirementGroupWithSectionId[]>([]);
     const [loading, setLoading] = useState(true);
@@ -39,19 +39,16 @@ export const useRequirementGroups = (): UseRequirementGroups => {
             console.log(`🔄 Fetching requirement groups... (Initial Load: ${isInitialLoad})`);
 
             if (!wasmModule) {
-                setError("WASM module not provided");
                 return;
             }
 
-            // if (!isAuthenticated && !authLoading) {
-            //     setError("User not authenticated");
-            //     setLoading(false)
-            //     return
-            // }
+            if (!isAuthenticated || authLoading) {
+                return;
+            }
 
             if (sections.length === 0) {
                 if (!sectionsLoading) {
-                    setLoading(false)
+                    setLoading(false);
                 }
                 return;
             }
@@ -67,27 +64,18 @@ export const useRequirementGroups = (): UseRequirementGroups => {
                     setBeingRefetched("requirementGroups", true);
                 }
 
-                const allGroups: RequirementGroupWithSectionId[] = [];
+                // Use the new utility function
+                const { requirementGroups: fetchedGroups, errors } = await fetchGroupsBySectionIds(
+                    wasmModule,
+                    sections.map(section => section.id)
+                );
 
-                for (const section of sections) {
-                    const response = await wasmModule.get_requirement_groups_by_section({ input: section.id });
-
-                    if (response.error) {
-                        console.error(`⚠️ Error fetching requirement groups for section ${section.id}:`, response.error.message);
-                        throw new Error(response.error.message);
-                    }
-
-                    const groupsWithSectionId = (response.output?.output || []).map((group: RequirementGroup) => ({
-                        ...group,
-                        section_id: section.id,
-                    }));
-
-                    allGroups.push(...groupsWithSectionId);
+                if (Object.keys(errors).length > 0) {
+                    console.warn("⚠️ Some sections failed to fetch requirement groups:", errors);
                 }
 
-                console.log(`✅ Fetched ${allGroups.length} requirement groups`);
-
-                setRequirementGroups(allGroups);
+                setRequirementGroups(fetchedGroups);
+                console.log(`✅ Fetched ${fetchedGroups.length} requirement groups`);
 
                 // **Important:** Mark fetch as completed
                 triggerUpdate("requirementGroups", true);
@@ -104,7 +92,8 @@ export const useRequirementGroups = (): UseRequirementGroups => {
         };
 
         fetchRequirementGroups(loading);
-    }, [wasmModule, sections, sectionsLoading, lastUpdated, loading, setBeingRefetched, triggerUpdate]);
+    }, [wasmModule, sections, sectionsLoading, lastUpdated, loading, setBeingRefetched, triggerUpdate, authLoading, isAuthenticated]);
+
 
     const filteredSelectedRequirementGroups = (() => {
         if (!filteredSelectedReports.length) return requirementGroups;

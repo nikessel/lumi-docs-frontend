@@ -3,10 +3,8 @@ import type { User, SavedView, UserPreferences } from "@wasm";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
 
 export async function fetchUser(wasmModule: typeof WasmModule | null): Promise<User | null> {
-    console.log("📌 Fetching user...");
 
     if (!wasmModule) {
-        console.error("❌ WASM module not provided");
         return null;
     }
 
@@ -14,7 +12,6 @@ export async function fetchUser(wasmModule: typeof WasmModule | null): Promise<U
         const response = await wasmModule.get_user();
 
         if (response.output) {
-            console.log("✅ User fetched successfully.");
             return response.output.output;
         } else if (response.error) {
             console.error("❌ Error fetching user:", response.error.message);
@@ -30,10 +27,8 @@ export async function saveViewToUser(
     wasmModule: typeof WasmModule | null,
     savedView: SavedView
 ): Promise<{ success: boolean; message: string }> {
-    console.log("📌 Saving view to user...");
 
     if (!wasmModule) {
-        console.error("❌ WASM module not loaded");
         return { success: false, message: "WASM module not loaded" };
     }
 
@@ -60,8 +55,6 @@ export async function saveViewToUser(
             task_management: updatedTaskManagement,
         };
 
-        console.log("🔄 Updating user with new view preferences:", updatedUser);
-
         // Update user in WASM module
         const res = await wasmModule.update_user({ input: updatedUser });
 
@@ -80,12 +73,10 @@ export async function updateUserTourPreference(
     userId: string,
     tourEnabled: boolean
 ): Promise<{ success: boolean; message: string }> {
-    console.log(`📌 Updating user tour preference for user: ${userId}...`);
 
     const { addStaleId } = useCacheInvalidationStore.getState();
 
     if (!wasmModule) {
-        console.error("❌ WASM module not loaded");
         return { success: false, message: "WASM module not loaded" };
     }
 
@@ -100,8 +91,6 @@ export async function updateUserTourPreference(
         }
 
         addStaleId(user.id);
-
-        console.log(`🔄 Updating tour preference: ${tourEnabled}`);
 
         // Ensure all required preferences properties are set correctly
         const updatedPreferences: UserPreferences = {

@@ -5,7 +5,8 @@ import { Section } from "@wasm";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
 import { useRegulatoryFrameworksContext } from "@/contexts/regulatory-frameworks-context";
 import { useReportsContext } from "@/contexts/reports-context";
-// import { useNewAuth } from "../auth-hook";
+import { useAuth } from "../auth-hook/Auth0Provider";
+
 
 interface UseSections {
     sections: Section[];
@@ -19,7 +20,7 @@ export const useSections = (): UseSections => {
     const { wasmModule } = useWasm();
     const { filteredSelectedReports } = useReportsContext();
     const { frameworks, loading: frameWorksLoading } = useRegulatoryFrameworksContext();
-    // const { isAuthenticated, isLoading: authLoading } = useNewAuth()
+    const { isAuthenticated, isLoading: authLoading } = useAuth()
 
 
     const [sections, setSections] = useState<Section[]>([]);
@@ -33,18 +34,13 @@ export const useSections = (): UseSections => {
 
     useEffect(() => {
         const fetchAllSections = async (isInitialLoad = false) => {
-            console.log(`🔄 Fetching all sections for all frameworks... (Initial Load: ${isInitialLoad})`);
-
             if (!wasmModule) {
-                setError("WASM module not loaded");
                 return;
             }
 
-            // if (!isAuthenticated && !authLoading) {
-            //     setError("User not authenticated");
-            //     setLoading(false)
-            //     return
-            // }
+            if (!isAuthenticated || authLoading) {
+                return
+            }
 
             if (!frameworks.length) {
                 if (!frameWorksLoading) {
@@ -100,7 +96,7 @@ export const useSections = (): UseSections => {
         };
 
         fetchAllSections(loading);
-    }, [wasmModule, frameworks, frameWorksLoading, lastUpdated, loading, setBeingRefetched, triggerUpdate]);
+    }, [wasmModule, frameworks, frameWorksLoading, lastUpdated, loading, setBeingRefetched, triggerUpdate, authLoading, isAuthenticated]);
 
     const filteredSelectedReportsSections = (() => {
         if (!filteredSelectedReports.length) return sections;
