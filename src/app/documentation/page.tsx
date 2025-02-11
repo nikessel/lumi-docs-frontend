@@ -3,7 +3,7 @@ import React from "react";
 import { Anchor, Alert, Affix } from "antd";
 import Typography from "@/components/typography";
 import Image from "next/image";
-import { useAuth } from "@/components/Auth0";
+import { useAuth } from "@/hooks/auth-hook/Auth0Provider";
 
 const generateAnchorItems = () => {
     return [

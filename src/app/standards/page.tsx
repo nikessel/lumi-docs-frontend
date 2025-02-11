@@ -9,7 +9,8 @@ import { formatPrice } from '@/utils/payment';
 import { useSectionsContext } from '@/contexts/sections-context';
 import { useRequirementGroupsContext } from '@/contexts/requirement-group-context';
 import { useRequirementsContext } from '@/contexts/requirements-context';
-import { useRequirementPrice } from '@/hooks/use-requirement-price';
+import { useRequirementPriceContext } from '@/contexts/price-context/use-requirement-price-context';
+
 const RegulatoryFrameworksTable: React.FC = () => {
     const { frameworks, loading: frameworksLoading } = useRegulatoryFrameworksContext();
 
@@ -19,7 +20,7 @@ const RegulatoryFrameworksTable: React.FC = () => {
 
     const { requirementsByGroupId, loading: requirementsLoading } = useRequirementsContext();
 
-    const { price } = useRequirementPrice()
+    const { price } = useRequirementPriceContext()
     const [isLoading, setIsLoading] = useState(true);
     const [breadcrumb, setBreadcrumb] = useState<{ name: string; id: string | null }[]>([{ name: 'Frameworks', id: null }]);
     const [view, setView] = useState<'frameworks' | 'sections' | 'groups' | 'requirements'>('frameworks');

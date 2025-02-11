@@ -4,7 +4,6 @@ import React, { createContext, useContext, useEffect, useState, useCallback, use
 import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
 import { useAuthConfig } from "./auth-config";
 import { useWasm } from "@/components/WasmProvider";
-import LoadingLogoScreen from "@/components/loading-screen";
 import { useRouter } from "next/navigation";
 
 interface AuthContextType {
@@ -14,7 +13,8 @@ interface AuthContextType {
     isCheckingSession: boolean;
     isLoading: boolean;
     clearTokens: () => void,
-    triggerReAuth: () => void
+    triggerReAuth: () => void,
+    signup: () => void
 }
 
 // Create Context with Default Empty Values
@@ -127,6 +127,36 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }, [wasmModule, authConfig]);
 
+
+    const signup = useCallback(async () => {
+        if (!wasmModule) {
+            return;
+        }
+
+        try {
+            const response = await wasmModule.get_public_auth0_config();
+            if (response.error || !response.output) {
+                throw new Error(response.error?.message || "No Auth0 config received");
+            }
+
+            const config = response.output.output;
+            const state = Math.random().toString(36).substring(7);
+            localStorage.setItem("auth_state", state);
+
+            const authUrl = new URL(`https://${config.domain}/authorize`);
+            authUrl.searchParams.append("response_type", "code");
+            authUrl.searchParams.append("client_id", config.client_id);
+            authUrl.searchParams.append("redirect_uri", config.login_redirect_uri);
+            authUrl.searchParams.append("scope", "openid profile email");
+            authUrl.searchParams.append("state", state);
+            authUrl.searchParams.append("screen_hint", "signup"); // 👈 **Forces Auth0 to show Sign-Up page**
+
+            window.location.href = authUrl.toString();
+        } catch (err) {
+            console.error("Signup error:", err);
+        }
+    }, [wasmModule]);
+
     const checkSession = useCallback(async () => {
         const params = new URLSearchParams(window.location.search);
         const code = params.get("code");
@@ -220,7 +250,7 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
     }, [checkAuthStatus]);
 
     return (
-        <AuthContext.Provider value={{ triggerReAuth, loginWithRedirect: login, isLoading, logout: logoutUser, isAuthenticated, isCheckingSession, clearTokens }}>
+        <AuthContext.Provider value={{ triggerReAuth, signup, loginWithRedirect: login, isLoading, logout: logoutUser, isAuthenticated, isCheckingSession, clearTokens }}>
             {children}
         </AuthContext.Provider>
     );

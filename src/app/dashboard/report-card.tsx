@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Progress } from "antd";
-import Typography from "@/components/typography";
 import RegulatoryFrameworkTag from "@/components/regulatory-framework-tag";
 import { useRouter } from "next/navigation";
 import type { Report } from "@wasm";

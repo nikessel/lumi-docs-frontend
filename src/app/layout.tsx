@@ -2,14 +2,13 @@
 
 import { useState, useEffect, useRef, useMemo, Suspense } from "react";
 import type { ReactNode } from "react";
-// import { AuthProvider as OldAuthProvider } from "@/components/Auth0";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { ConfigProvider, Layout } from "antd";
 import { antdconfig } from "@/../antd-config";
 import AppSider from "@/components/sidebar";
 import "@/styles/globals.css";
 import LoadingLogoScreen from "@/components/loading-screen";
-import WasmProviderComponent, { useWasm } from "@/components/WasmProvider";
+import WasmProviderComponent from "@/components/WasmProvider";
 import '@syncfusion/ej2-base/styles/material.css';
 import '@syncfusion/ej2-react-filemanager/styles/material.css';
 import '@caldwell619/react-kanban/dist/styles.css';
@@ -19,13 +18,8 @@ import { FilesProvider } from '@/contexts/files-context';
 import { UserProvider } from "@/contexts/user-context";
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
-// import { useAuth } from "@/components/Auth0";
-import { useReportsContext } from "@/contexts/reports-context";
 import { SearchParamsProvider } from "@/contexts/search-params-context";
 import TourComponent from "@/components/user-guide-components/tour";
-import { useUserContext } from "@/contexts/user-context";
-import LoginPrompt from "@/components/login-prompt";
-import { useRouter } from "next/navigation";
 import { Alert } from "antd";
 import UploadIndicator from "@/components/upload-files/upload-indicator";
 import { SectionsProvider } from "@/contexts/sections-context";
@@ -33,38 +27,19 @@ import { RequirementGroupsProvider } from "@/contexts/requirement-group-context"
 import { RequirementsProvider } from "@/contexts/requirements-context";
 import { AllRequirementsProvider } from "@/contexts/requirements-context/all-requirements-context";
 import { TasksProvider } from "@/contexts/tasks-context";
-import { useRequirementGroupsContext } from "@/contexts/requirement-group-context";
-import { useRequirementsContext } from "@/contexts/requirements-context";
-import { useSectionsContext } from "@/contexts/sections-context";
-import { useTasksContext } from "@/contexts/tasks-context";
 import { AuthProvider, useAuth } from "@/hooks/auth-hook/Auth0Provider";
-// import { useAuth } from "@/components/Auth0";
-// import { AuthProvider } from "@/components/Auth0";
-import UserSignup from "@/components/sign-up";
 import { usePathname } from "next/navigation"
+import { RequirementPriceProvider } from "@/contexts/price-context/use-requirement-price-context";
+
 
 const { Content } = Layout;
 
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) : null;
 
 function LayoutWithWasm({ children }: { children: ReactNode }) {
-  // const [globalLoading, setGlobalLoading] = useState(true)
-  // const [initialLoadCompleted, setInitialLoadCompleted] = useState(false)
-  // const { isLoading: wasmLoading } = useWasm();
-  const { isLoading: authLoading, isAuthenticated } = useAuth()
-
-  // const { loading: reportsLoading } = useReportsContext()
-  const { user, loading: userLoading } = useUserContext()
-  // const { loading: groupsLoading } = useRequirementGroupsContext()
-  // const { loading: requirementsLoading } = useRequirementsContext()
-  // const { loading: sectionsLoading } = useSectionsContext()
-  // const { loading: tasksLoading } = useTasksContext()
-
-
-  const router = useRouter()
+  const { isLoading: authLoading } = useAuth()
   const routesWithoutAuth = useMemo(() => ["/verify-email", "/callback", "/documentation", "/signup", "/logout", "login"], []);
   const routesWithoutLayout = useMemo(() => ["/documentation", "/logout", "/signup", "/verify-email", "/callback"], []);
-  const adminRoutes = useMemo(() => ["/test"], []);
 
   const [showNoPaymentWarning, setShowNoPaymentWarning] = useState(false)
   const pathname = usePathname();
@@ -103,20 +78,6 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
     }
   }, [isCheckingSession, authLoading]);
 
-
-  // useEffect(() => {
-  //   if ((!wasmLoading && !reportsLoading && !userLoading && window.location.pathname !== "/callback" && !initialLoadCompleted && !groupsLoading && !requirementsLoading && !sectionsLoading && !tasksLoading) || (routesWithoutAuth.indexOf(window.location.pathname) > -1)) {
-  //     setGlobalLoading(false)
-  //     setInitialLoadCompleted(true)
-  //   }
-  // }, [wasmLoading, reportsLoading, initialLoadCompleted, userLoading, groupsLoading, requirementsLoading, sectionsLoading, tasksLoading, routesWithoutAuth])
-
-  // useEffect(() => {
-  //   if (adminRoutes.indexOf(window.location.pathname) && user && !user.config?.admin) {
-  //     router.push("/dashboard")
-  //   }
-  // }, [adminRoutes, router, user])
-
   if (waitForAuth && routesWithoutAuth.indexOf(pathname) < 0) {
     return <LoadingLogoScreen />;
   }
@@ -143,21 +104,6 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
     </AntdRegistry >
   );
 
-
-
-  // if (routesWithoutAuth.indexOf(window.location.pathname) > -1) {
-  //   return <div>{children}</div>;
-  // }
-
-  // if (globalLoading || window.location.pathname === "/callback") {
-  //   return <LoadingLogoScreen>{window.location.pathname === "/callback" ? children : ""}</LoadingLogoScreen>;
-  // }
-
-
-  // if (!globalLoading && !isAuthenticated && routesWithoutAuth.indexOf(window.location.pathname) < 0) {
-  //   return <LoginPrompt />
-  // }
-
 }
 
 export default function RootLayout({
@@ -179,11 +125,13 @@ export default function RootLayout({
                       <SectionsProvider>
                         <RequirementGroupsProvider>
                           <RequirementsProvider>
-                            <FilesProvider>
-                              <TasksProvider>
-                                <LayoutWithWasm>{children}</LayoutWithWasm>
-                              </TasksProvider>
-                            </FilesProvider>
+                            <RequirementPriceProvider>
+                              <FilesProvider>
+                                <TasksProvider>
+                                  <LayoutWithWasm>{children}</LayoutWithWasm>
+                                </TasksProvider>
+                              </FilesProvider>
+                            </RequirementPriceProvider>
                           </RequirementsProvider>
                         </RequirementGroupsProvider>
                       </SectionsProvider>

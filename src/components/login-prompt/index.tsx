@@ -3,11 +3,11 @@
 import React from "react";
 import { Button } from "antd";
 import Image from "next/image";
-import { useAuth } from "@/components/Auth0";
+import { useAuth } from "@/hooks/auth-hook/Auth0Provider";
 import Typography from "../typography";
 
 const LoginPrompt: React.FC = () => {
-    const { login } = useAuth();
+    const { loginWithRedirect } = useAuth();
 
     return (
         <div className="mt-8 mb-16">
@@ -24,7 +24,7 @@ const LoginPrompt: React.FC = () => {
                 />
             </div>
             <div className="flex justify-center">
-                <Button type="primary" onClick={login}>Login</Button>
+                <Button type="primary" onClick={loginWithRedirect}>Login</Button>
             </div>
         </div>
     );

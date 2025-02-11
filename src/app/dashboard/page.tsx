@@ -23,6 +23,8 @@ const Page = () => {
         if (!tasksLoading && !reportsLoading && !reportsLoading) {
             if (reports.length === 0) {
                 setShowInitialScreen(true)
+            } else {
+                setShowInitialScreen(false)
             }
         }
     }, [tasksLoading, reportsLoading, userLoading, reports.length])

@@ -2,13 +2,13 @@
 import { useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { AuthProvider, LoginButton, useAuth } from "@/components/Auth0";
 import { Button } from "@/components/ui/button";
 import { FileSelector } from "@/components/test/FileSelector";
 import { ReportCreator } from "@/components/test/ReportCreator";
 import { ReportList } from "@/components/test/ReportList";
 import { FileList } from "@/components/test/FileList";
-
+import { useAuth } from "@/hooks/auth-hook/Auth0Provider";
+import { useUserContext } from "@/contexts/user-context";
 
 // Dynamic imports for components
 const WasmProvider = dynamic(() => import("@/components/WasmProvider"), {
@@ -79,7 +79,8 @@ interface ProtectedContentProps {
 
 // Protected content wrapper
 const ProtectedContent = ({ children }: ProtectedContentProps) => {
-  const { isAuthenticated, isLoading, user, logout, login } = useAuth();
+  const { isAuthenticated, isLoading, logout, loginWithRedirect } = useAuth();
+  const { user } = useUserContext()
 
   if (isLoading) {
     return (
@@ -90,20 +91,12 @@ const ProtectedContent = ({ children }: ProtectedContentProps) => {
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <div className="text-center p-8">
-        <h2 className="text-xl mb-4">Please login to access this content</h2>
-        <LoginButton />
-      </div>
-    );
-  }
 
   return (
     <div>
       <div className="flex justify-between items-center ">
         <div>
-          <p className="text-sm text-gray-600">Welcome, {user?.given_name}</p>
+          {/* <p className="text-sm text-gray-600">Welcome, {user?.given_name}</p> */}
           <p className="text-xs text-gray-500">{user?.email}</p>
         </div>
         <button
@@ -114,7 +107,7 @@ const ProtectedContent = ({ children }: ProtectedContentProps) => {
         </button>
         <div className="text-center p-8">
           <h2 className="text-xl mb-4">Test re-login</h2>
-          <Button onClick={login}>LOGIN AGAIN</Button>
+          <Button onClick={loginWithRedirect}>LOGIN AGAIN</Button>
         </div>
       </div>
       {children}
@@ -145,107 +138,97 @@ export default function TestPage() {
 
   return (
     <WasmProvider>
-      <AuthProvider>
+      <div className="">
         <div className="">
-          <div className="">
-            <div className="flex justify-between items-center mb-8">
-              <h1 className="text-3xl font-bold">Test Components</h1>
-              <Link href="/">
-                <Button variant="outline">Back to Home</Button>
-              </Link>
-            </div>
-
-            {/* Unauthenticated Section */}
-            <h2 className="text-2xl font-semibold mb-6">
-              Unauthenticated Components
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <div className="mb-8">
-                <TestComponent title="App Version">
-                  <AppVersion />
-                </TestComponent>
-              </div>
-
-              <div className="mb-8">
-                <TestComponent title="Authentication">
-                  <div className="p-4 border rounded">
-                    <LoginButton />
-                  </div>
-                </TestComponent>
-              </div>
-
-              <div className="mb-8">
-                <TestComponent title="Auth0 Config">
-                  <Auth0Config />
-                </TestComponent>
-              </div>
-
-              <div className="mb-8">
-                <TestComponent title="Echo Test">
-                  <Echo />
-                </TestComponent>
-              </div>
-            </div>
-
-            {/* Authenticated Section */}
-            <h2 className="text-2xl font-semibold mb-6">
-              Authenticated Components
-            </h2>
-            <ProtectedContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <TestComponent title="User Signup">
-                  <UserSignup onProfileUpdate={handleProfileUpdate} />
-                </TestComponent>
-
-                <TestComponent title="User Profile">
-                  <UserProfile refreshProfile={refreshProfile} />
-                </TestComponent>
-
-                <TestComponent title="Token Exchange">
-                  <TokenExchange />
-                </TestComponent>
-
-                <TestComponent title="Token Claims">
-                  <TokenClaims />
-                </TestComponent>
-
-                <TestComponent title="File Upload">
-                  <FileSelector />
-                </TestComponent>
-
-                <TestComponent title="Create Report">
-                  <ReportCreator />
-                </TestComponent>
-
-                <TestComponent title="Reports">
-                  <ReportList />
-                </TestComponent>
-
-                <TestComponent title="Files">
-                  <FileList />
-                </TestComponent>
-
-                <TestComponent title="Admin Report Upload">
-                  <AdminUploadReport />
-                </TestComponent>
-
-                <TestComponent title="Update User Preferences">
-                  <UpdateUserPreferences />
-                </TestComponent>
-
-                <TestComponent title="Fetch Tasks">
-                  <FetchTasks />
-                </TestComponent>
-
-                <TestComponent title="Update Task Misc Field">
-                  <UpdateTaskMisc />
-                </TestComponent>
-
-              </div>
-            </ProtectedContent>
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold">Test Components</h1>
+            <Link href="/">
+              <Button variant="outline">Back to Home</Button>
+            </Link>
           </div>
+
+          {/* Unauthenticated Section */}
+          <h2 className="text-2xl font-semibold mb-6">
+            Unauthenticated Components
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="mb-8">
+              <TestComponent title="App Version">
+                <AppVersion />
+              </TestComponent>
+            </div>
+
+            <div className="mb-8">
+              <TestComponent title="Auth0 Config">
+                <Auth0Config />
+              </TestComponent>
+            </div>
+
+            <div className="mb-8">
+              <TestComponent title="Echo Test">
+                <Echo />
+              </TestComponent>
+            </div>
+          </div>
+
+          {/* Authenticated Section */}
+          <h2 className="text-2xl font-semibold mb-6">
+            Authenticated Components
+          </h2>
+          <ProtectedContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <TestComponent title="User Signup">
+                <UserSignup onProfileUpdate={handleProfileUpdate} />
+              </TestComponent>
+
+              <TestComponent title="User Profile">
+                <UserProfile refreshProfile={refreshProfile} />
+              </TestComponent>
+
+              <TestComponent title="Token Exchange">
+                <TokenExchange />
+              </TestComponent>
+
+              <TestComponent title="Token Claims">
+                <TokenClaims />
+              </TestComponent>
+
+              <TestComponent title="File Upload">
+                <FileSelector />
+              </TestComponent>
+
+              <TestComponent title="Create Report">
+                <ReportCreator />
+              </TestComponent>
+
+              <TestComponent title="Reports">
+                <ReportList />
+              </TestComponent>
+
+              <TestComponent title="Files">
+                <FileList />
+              </TestComponent>
+
+              <TestComponent title="Admin Report Upload">
+                <AdminUploadReport />
+              </TestComponent>
+
+              <TestComponent title="Update User Preferences">
+                <UpdateUserPreferences />
+              </TestComponent>
+
+              <TestComponent title="Fetch Tasks">
+                <FetchTasks />
+              </TestComponent>
+
+              <TestComponent title="Update Task Misc Field">
+                <UpdateTaskMisc />
+              </TestComponent>
+
+            </div>
+          </ProtectedContent>
         </div>
-      </AuthProvider>
+      </div>
     </WasmProvider>
   );
 }

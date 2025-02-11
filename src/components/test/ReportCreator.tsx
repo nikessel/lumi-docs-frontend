@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useWasm } from "@/components/WasmProvider";
-import { useAuth } from "@/components/Auth0";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -21,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { Section, Requirement, RequirementGroup, IdType, RegulatoryFramework } from "@wasm";
+import { useAuth } from "@/hooks/auth-hook/Auth0Provider";
 
 type Step = "framework" | "initial" | "sections" | "requirements";
 
@@ -48,24 +48,24 @@ export function ReportCreator() {
   const { isAuthenticated } = useAuth();
   const [currentStep, setCurrentStep] = useState<Step>("framework");
   const [selectedFramework, setSelectedFramework] = useState<RegulatoryFramework | null>(null);
-  
+
   // Data states
   const [sections, setSections] = useState<Section[]>([]);
   const [requirementGroups, setRequirementGroups] = useState<RequirementGroup[]>([]);
   const [requirements, setRequirements] = useState<Requirement[]>([]);
-  
+
   // Total counts state
   const [totalCounts, setTotalCounts] = useState({
     sections: 0,
     requirementGroups: 0,
     requirements: 0,
   });
-  
+
   // Selection states
   const [selectedSections, setSelectedSections] = useState<IdType[]>([]);
   const [selectedGroups, setSelectedGroups] = useState<IdType[]>([]);
   const [selectedRequirements, setSelectedRequirements] = useState<IdType[]>([]);
-  
+
   // UI states
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -93,12 +93,12 @@ export function ReportCreator() {
         const groupsPromises = frameworkSections.map(section =>
           wasmModule.get_requirement_groups_by_section({ input: section.id })
         );
-        
+
         const groupResponses = await Promise.all(groupsPromises);
-        const allGroups = groupResponses.flatMap(response => 
+        const allGroups = groupResponses.flatMap(response =>
           response.output ? response.output.output : []
         );
-        
+
         // Remove duplicate groups
         const uniqueGroups = Array.from(
           new Map(allGroups.map(group => [group.id, group])).values()
@@ -133,7 +133,7 @@ export function ReportCreator() {
 
         setRequirementGroups(uniqueGroups);
         setRequirements(uniqueRequirements);
-        
+
         // Set initial counts with all available items
         const newCounts = {
           sections: frameworkSections.length,
@@ -162,19 +162,19 @@ export function ReportCreator() {
 
   const loadRequirementGroups = useCallback(async () => {
     if (!wasmModule || selectedSections.length === 0) return;
-    
+
     console.log('🔄 Loading requirement groups for sections:', selectedSections);
     try {
       // First get all requirement groups for selected sections
       const groupsPromises = selectedSections.map(sectionId =>
         wasmModule.get_requirement_groups_by_section({ input: sectionId })
       );
-      
+
       const groupResponses = await Promise.all(groupsPromises);
-      const allGroups = groupResponses.flatMap(response => 
+      const allGroups = groupResponses.flatMap(response =>
         response.output ? response.output.output : []
       );
-      
+
       // Remove duplicate groups
       const uniqueGroups = Array.from(
         new Map(allGroups.map(group => [group.id, group])).values()
@@ -200,7 +200,7 @@ export function ReportCreator() {
       const uniqueRequirements = Array.from(
         new Map(allRequirements.map(req => [req.id, req])).values()
       );
-      
+
       console.log('📊 Loaded requirements:', {
         total: allRequirements.length,
         unique: uniqueRequirements.length,
@@ -211,7 +211,7 @@ export function ReportCreator() {
       setRequirements(uniqueRequirements);
       setSelectedGroups([]);
       setSelectedRequirements([]);
-      
+
       // Update total counts
       const newCounts = {
         sections: selectedSections.length,
@@ -229,34 +229,34 @@ export function ReportCreator() {
   // When a group is selected, we need to fetch its requirements
   const loadChildGroups = useCallback(async () => {
     if (!wasmModule || selectedGroups.length === 0) return;
-    
+
     console.log('🔄 Loading requirements for groups:', selectedGroups);
     try {
       // Get requirements for selected groups
       const requirementPromises = selectedGroups.map(groupId =>
         wasmModule.get_requirements_by_group({ input: groupId })
       );
-      
+
       const requirementResponses = await Promise.all(requirementPromises);
       const allRequirements = requirementResponses.flatMap(response =>
         response.output ? response.output.output : []
       );
-      
+
       // Remove duplicates
       const uniqueRequirements = Array.from(
         new Map(allRequirements.map(req => [req.id, req])).values()
       );
-      
+
       console.log('📊 Loaded requirements:', {
         total: allRequirements.length,
         unique: uniqueRequirements.length,
         requirements: uniqueRequirements.map(r => ({ id: r.id, name: r.name }))
       });
-      
+
       setRequirements(uniqueRequirements);
       // Clear requirement selections when groups change
       setSelectedRequirements([]);
-      
+
       // Update requirements count
       const newCounts = {
         ...totalCounts,
@@ -364,7 +364,7 @@ export function ReportCreator() {
 
   const handleCreateReport = async () => {
     if (!selectedFramework) return;
-    
+
     setError("");
     setSuccessMessage("");
     setIsSubmitting(true);
@@ -432,7 +432,7 @@ export function ReportCreator() {
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Select Regulatory Framework</label>
-              <Select 
+              <Select
                 onValueChange={(value) => handleFrameworkSelection(value as RegulatoryFramework)}
                 value={selectedFramework || undefined}
               >
@@ -469,8 +469,8 @@ export function ReportCreator() {
                 Change
               </Button>
             </div>
-            <Button 
-              onClick={() => handleConfirmCreation()} 
+            <Button
+              onClick={() => handleConfirmCreation()}
               className="w-full"
             >
               Create Full Report
@@ -680,40 +680,40 @@ export function ReportCreator() {
                 {(selectionSummary.sections.length > 0 ||
                   selectionSummary.requirementGroups.length > 0 ||
                   selectionSummary.requirements.length > 0) && (
-                  <div className="pt-4 border-t">
-                    <div className="text-sm font-medium mb-2">Selected Items:</div>
-                    {selectionSummary.sections.length > 0 && (
-                      <div className="mb-2">
-                        <div className="text-sm text-muted-foreground">Sections:</div>
-                        <ul className="list-disc pl-5 space-y-1">
-                          {selectionSummary.sections.map(s => (
-                            <li key={s.id} className="text-sm text-muted-foreground">{s.name}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {selectionSummary.requirementGroups.length > 0 && (
-                      <div className="mb-2">
-                        <div className="text-sm text-muted-foreground">Requirement Groups:</div>
-                        <ul className="list-disc pl-5 space-y-1">
-                          {selectionSummary.requirementGroups.map(g => (
-                            <li key={g.id} className="text-sm text-muted-foreground">{g.name}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {selectionSummary.requirements.length > 0 && (
-                      <div>
-                        <div className="text-sm text-muted-foreground">Requirements:</div>
-                        <ul className="list-disc pl-5 space-y-1">
-                          {selectionSummary.requirements.map(r => (
-                            <li key={r.id} className="text-sm text-muted-foreground">{r.name}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                )}
+                    <div className="pt-4 border-t">
+                      <div className="text-sm font-medium mb-2">Selected Items:</div>
+                      {selectionSummary.sections.length > 0 && (
+                        <div className="mb-2">
+                          <div className="text-sm text-muted-foreground">Sections:</div>
+                          <ul className="list-disc pl-5 space-y-1">
+                            {selectionSummary.sections.map(s => (
+                              <li key={s.id} className="text-sm text-muted-foreground">{s.name}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {selectionSummary.requirementGroups.length > 0 && (
+                        <div className="mb-2">
+                          <div className="text-sm text-muted-foreground">Requirement Groups:</div>
+                          <ul className="list-disc pl-5 space-y-1">
+                            {selectionSummary.requirementGroups.map(g => (
+                              <li key={g.id} className="text-sm text-muted-foreground">{g.name}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {selectionSummary.requirements.length > 0 && (
+                        <div>
+                          <div className="text-sm text-muted-foreground">Requirements:</div>
+                          <ul className="list-disc pl-5 space-y-1">
+                            {selectionSummary.requirements.map(r => (
+                              <li key={r.id} className="text-sm text-muted-foreground">{r.name}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
               </div>
             )}
 

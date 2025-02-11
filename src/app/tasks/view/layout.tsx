@@ -17,6 +17,7 @@ import { useRequirements } from '@/hooks/requirement-hooks';
 import { filterReports } from '@/utils/report-utils';
 import { useWasm } from '@/components/WasmProvider';
 import { Report } from "@wasm"
+import SaveViewButton from '@/components/save-view';
 
 interface LayoutProps {
     children: React.ReactNode;
@@ -55,7 +56,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     }
                 </div>
                 <div className="flex items-center space-x-2">
-                    <Button icon={<SaveOutlined />}>Save view</Button>
+                    <SaveViewButton />
                     <Button icon={<ArrowRightOutlined />} type="primary" onClick={handleGoToReports}>
                         Go to Reports
                     </Button>

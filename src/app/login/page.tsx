@@ -15,7 +15,7 @@ const AutoLogin = () => {
         };
 
         initiateLogin();
-    }, [loginWithRedirect, clearTokens]);
+    }, [loginWithRedirect, clearTokens, logout]);
 
     return null;
 };

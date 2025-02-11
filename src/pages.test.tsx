@@ -2,8 +2,9 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ReactNode } from 'react';
-import { AuthProvider, LoginButton, useAuth } from "@/components/Auth0";
-import { Button } from "@/components/ui/button";
+import { useAuth } from "./hooks/auth-hook/Auth0Provider";
+import { Button } from "antd";
+import { useUserContext } from "./contexts/user-context";
 
 // Dynamic imports for components
 const WasmProvider = dynamic(() => import("@/components/WasmProvider"), {
@@ -47,7 +48,8 @@ type ProtectedContentProps = {
 };
 
 const ProtectedContent = ({ children }: ProtectedContentProps) => {
-  const { isAuthenticated, isLoading, user, logout } = useAuth();
+  const { isAuthenticated, isLoading, logout, loginWithRedirect } = useAuth();
+  const { user } = useUserContext()
 
   if (isLoading) {
     return (
@@ -62,7 +64,7 @@ const ProtectedContent = ({ children }: ProtectedContentProps) => {
     return (
       <div className="text-center p-8">
         <h2 className="text-xl mb-4">Please login to access this content</h2>
-        <LoginButton />
+        <Button onClick={loginWithRedirect} />
       </div>
     );
   }
@@ -71,7 +73,6 @@ const ProtectedContent = ({ children }: ProtectedContentProps) => {
     <div>
       <div className="flex justify-between items-center mb-8 p-4 bg-gray-50 rounded">
         <div>
-          <p className="text-sm text-gray-600">Welcome, {user?.given_name}</p>
           <p className="text-xs text-gray-500">{user?.email}</p>
         </div>
         <button
@@ -100,6 +101,9 @@ const TestComponent = ({ title, children }: TestComponentProps) => (
 );
 
 export default function TestPage() {
+  const { loginWithRedirect } = useAuth();
+
+
   const handleProfileUpdate = () => {
     // No parameters needed since UserSignupProps expects a function with no parameters
     console.log('Profile updated');
@@ -108,56 +112,54 @@ export default function TestPage() {
 
   return (
     <WasmProvider>
-      <AuthProvider>
-        <div className="min-h-screen bg-gray-50">
-          <div className="container mx-auto p-8">
-            <div className="flex justify-between items-center mb-8">
-              <h1 className="text-3xl font-bold">Test Components</h1>
-              <Link href="/">
-                <Button variant="outline">Back to Home</Button>
-              </Link>
-            </div>
-
-            <div className="mb-8">
-              <TestComponent title="App Version">
-                <AppVersion />
-              </TestComponent>
-            </div>
-
-            <div className="mb-8">
-              <TestComponent title="Authentication">
-                <div className="p-4 border rounded">
-                  <LoginButton />
-                </div>
-              </TestComponent>
-            </div>
-
-            <ProtectedContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <TestComponent title="User Signup">
-                  <UserSignup onProfileUpdate={handleProfileUpdate} />
-                </TestComponent>
-
-                <TestComponent title="Auth0 Config">
-                  <Auth0Config />
-                </TestComponent>
-
-                <TestComponent title="Echo Test">
-                  <Echo />
-                </TestComponent>
-
-                <TestComponent title="Token Exchange">
-                  <TokenExchange />
-                </TestComponent>
-
-                <TestComponent title="Token Claims">
-                  <TokenClaims />
-                </TestComponent>
-              </div>
-            </ProtectedContent>
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto p-8">
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-3xl font-bold">Test Components</h1>
+            <Link href="/">
+              <Button>Back to Home</Button>
+            </Link>
           </div>
+
+          <div className="mb-8">
+            <TestComponent title="App Version">
+              <AppVersion />
+            </TestComponent>
+          </div>
+
+          <div className="mb-8">
+            <TestComponent title="Authentication">
+              <div className="p-4 border rounded">
+                <Button onClick={loginWithRedirect} />
+              </div>
+            </TestComponent>
+          </div>
+
+          <ProtectedContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              <TestComponent title="User Signup">
+                <UserSignup onProfileUpdate={handleProfileUpdate} />
+              </TestComponent>
+
+              <TestComponent title="Auth0 Config">
+                <Auth0Config />
+              </TestComponent>
+
+              <TestComponent title="Echo Test">
+                <Echo />
+              </TestComponent>
+
+              <TestComponent title="Token Exchange">
+                <TokenExchange />
+              </TestComponent>
+
+              <TestComponent title="Token Claims">
+                <TokenClaims />
+              </TestComponent>
+            </div>
+          </ProtectedContent>
         </div>
-      </AuthProvider>
+      </div>
     </WasmProvider>
   );
 }

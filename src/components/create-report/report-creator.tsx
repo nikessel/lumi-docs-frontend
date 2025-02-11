@@ -14,8 +14,7 @@ import { useCreateReportStore } from "@/stores/create-report-store";
 import EmbeddedPaymentForm from "../payment/embedded-payment-form";
 import { validateReportInput } from "@/utils/report-utils/create-report-utils";
 import { getPriceForSection, getPriceForGroup } from "@/utils/payment";
-import { useRequirementPrice } from "@/hooks/use-requirement-price";
-
+import { useRequirementPriceContext } from "@/contexts/price-context/use-requirement-price-context";
 const { Step } = Steps;
 
 interface ReportCreatorProps {
@@ -52,7 +51,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = () => {
     const { requirementsByGroupId } = useRequirementsContext();
     const { files } = useFilesContext();
 
-    const { price, loading: priceLoading } = useRequirementPrice()
+    const { price, loading: priceLoading } = useRequirementPriceContext()
 
     useEffect(() => {
         if (sectionsForRegulatoryFramework[selectedFramework] && sectionsSetForFramework !== selectedFramework) {
