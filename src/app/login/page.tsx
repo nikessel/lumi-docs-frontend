@@ -10,7 +10,7 @@ const AutoLogin = () => {
     useEffect(() => {
         const initiateLogin = async () => {
             logout()
-            await clearTokens();
+            clearTokens();
             loginWithRedirect();
         };
 

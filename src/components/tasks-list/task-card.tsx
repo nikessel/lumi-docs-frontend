@@ -54,11 +54,12 @@ const DocumentTaskCard: React.FC<DocumentTaskCardProps> = ({
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-2" >
                 <div className="flex items-center">
                     <div
-                        className="flex items-center justify-center w-10 h-10 rounded-full mr-3"
+                        className="flex items-center justify-center w-10 h-10 rounded-full mr-4 text-xs"
                         style={{
                             color: genColor(document_title).color,
-                            backgroundColor: genColor(document_title).backgroundColor,
+                            backgroundColor: genColor(document_title).backgroundColor
                         }}
+
                     >
                         {document_icon_letters}
                     </div>

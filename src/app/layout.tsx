@@ -30,6 +30,8 @@ import { TasksProvider } from "@/contexts/tasks-context";
 import { AuthProvider, useAuth } from "@/hooks/auth-hook/Auth0Provider";
 import { usePathname } from "next/navigation"
 import { RequirementPriceProvider } from "@/contexts/price-context/use-requirement-price-context";
+import LoginPrompt from "@/components/login-prompt";
+import { useAllRequirementsContext } from "@/contexts/requirements-context/all-requirements-context";
 
 
 const { Content } = Layout;
@@ -37,7 +39,8 @@ const { Content } = Layout;
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) : null;
 
 function LayoutWithWasm({ children }: { children: ReactNode }) {
-  const { isLoading: authLoading } = useAuth()
+  const { isLoading: authLoading, isAuthenticated } = useAuth()
+  const { loading: requirementsLoading } = useAllRequirementsContext()
   const routesWithoutAuth = useMemo(() => ["/verify-email", "/callback", "/documentation", "/signup", "/logout", "login"], []);
   const routesWithoutLayout = useMemo(() => ["/documentation", "/logout", "/signup", "/verify-email", "/callback"], []);
 
@@ -78,8 +81,12 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
     }
   }, [isCheckingSession, authLoading]);
 
-  if (waitForAuth && routesWithoutAuth.indexOf(pathname) < 0) {
+  if ((waitForAuth) && routesWithoutAuth.indexOf(pathname) < 0) {
     return <LoadingLogoScreen />;
+  }
+
+  if (!isAuthenticated && !authLoading && routesWithoutAuth.indexOf(pathname) < 0) {
+    return <LoginPrompt />
   }
 
   return (

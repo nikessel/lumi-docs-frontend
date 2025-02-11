@@ -9,25 +9,30 @@ import { useRouter } from "next/navigation";
 import { useReportsContext } from "@/contexts/reports-context";
 import { useTasksContext } from "@/contexts/tasks-context";
 import InitialSteps from "@/components/user-guide-components/initial-screen";
+import { useAllRequirementsContext } from "@/contexts/requirements-context/all-requirements-context";
 
 const Page = () => {
     const router = useRouter();
     const { loading: userLoading } = useUserContext()
     const { reports, loading: reportsLoading } = useReportsContext()
     const { tasks, loading: tasksLoading } = useTasksContext()
+    const { loading: requirementsLoading } = useAllRequirementsContext()
 
     const isLoading = tasksLoading || reportsLoading || userLoading
     const [showInitialScreen, setShowInitialScreen] = useState(false)
 
+
+
+
     useEffect(() => {
-        if (!tasksLoading && !reportsLoading && !reportsLoading) {
-            if (reports.length === 0) {
+        if (!tasksLoading && !userLoading && !reportsLoading && !requirementsLoading) {
+            if (!reports) {
                 setShowInitialScreen(true)
             } else {
                 setShowInitialScreen(false)
             }
         }
-    }, [tasksLoading, reportsLoading, userLoading, reports.length])
+    }, [tasksLoading, reportsLoading, userLoading, requirementsLoading, reports])
 
     if (showInitialScreen) {
         return <InitialSteps />

@@ -1,20 +1,14 @@
 "use client";
 
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  return (
-    <main className="">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-8">Welcome</h1>
-        <Link href="/test">
-          <Button size="lg" variant="outline">
-            View Test Components
-          </Button>
-        </Link>
+  const router = useRouter();
 
-      </div>
-    </main>
-  );
+  useEffect(() => {
+    router.push("/dashboard");
+  }, [router]);
+
+  return null;
 }

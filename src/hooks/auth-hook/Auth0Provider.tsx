@@ -65,6 +65,7 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
     }, []);
 
     const logoutUser = useCallback(() => {
+        setIsLoading(true)
         localStorage.removeItem("access_token");
         localStorage.removeItem("id_token");
 
@@ -77,6 +78,7 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
                 returnTo: authConfig.logout_redirect_uri,
             },
         });
+        setIsLoading(false)
     }, [logout, authConfig]);
 
     const clearTokens = useCallback(async () => {
@@ -204,6 +206,11 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
                 } else {
                     setIsAuthenticated(true)
                 }
+
+                const newUrl = new URL(window.location.href);
+                newUrl.searchParams.delete("code");
+                newUrl.searchParams.delete("state");
+                window.history.replaceState({}, document.title, newUrl.toString());
 
             } catch (err) {
                 localStorage.removeItem("auth_state");

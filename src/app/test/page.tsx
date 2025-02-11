@@ -1,5 +1,5 @@
 "use client";
-import { useState, type ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,8 @@ import { ReportList } from "@/components/test/ReportList";
 import { FileList } from "@/components/test/FileList";
 import { useAuth } from "@/hooks/auth-hook/Auth0Provider";
 import { useUserContext } from "@/contexts/user-context";
+import { useRouter } from "next/navigation";
+import { useWasm } from "@/components/WasmProvider";
 
 // Dynamic imports for components
 const WasmProvider = dynamic(() => import("@/components/WasmProvider"), {
@@ -130,6 +132,23 @@ const TestComponent = ({ title, children }: TestComponentProps) => (
 
 export default function TestPage() {
   const [refreshProfile, setRefreshProfile] = useState(false);
+  const { user } = useUserContext()
+
+  const router = useRouter()
+  const { wasmModule } = useWasm()
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      if (user?.email && wasmModule) {
+        const res = await wasmModule?.is_admin();
+        console.log("reasdasdasdasda", res)
+        if (res?.output?.output) {
+          router.push("/dashboard");
+        }
+      }
+    };
+    checkAdmin();
+  }, [user, router, wasmModule]);
 
   // Callback to refresh the user profile after a successful signup
   const handleProfileUpdate = () => {
