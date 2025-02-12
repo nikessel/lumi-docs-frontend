@@ -7,9 +7,6 @@ const __dirname = path.dirname(__filename);
 
 const nextConfig = {
   output: 'standalone',
-  experimental: {
-    serverExternalPackages: ['next'],
-  },
   webpack: (config, { dev, isServer }) => {
     config.experiments = {
       asyncWebAssembly: true,
@@ -48,37 +45,30 @@ const nextConfig = {
     }
     return config;
   },
-  rewrites: () => {
-    return async () => {
-      console.log('Runtime API_URL:', process.env.API_URL);
-      console.log('Runtime API_URL_PATH:', process.env.API_URL_PATH);
-      
-      return {
-        beforeFiles: [],
-        afterFiles: [
+  async rewrites() {
+    console.log('Runtime API_URL:', process.env.API_URL);
+    console.log('Runtime API_URL_PATH:', process.env.API_URL_PATH);
+    
+    return [
+      {
+        source: process.env.API_URL_PATH || '/api/:path*',
+        destination: process.env.API_URL || 'http://127.0.0.1:8180/api/:path*',
+        basePath: false,
+        has: [
           {
-            source: process.env.API_URL_PATH || '/api/:path*',
-            destination: process.env.API_URL || 'http://127.0.0.1:8180/api/:path*',
-            basePath: false,
-            has: [
-              {
-                type: 'header',
-                key: 'host',
-                value: '(?<host>.*)',
-              },
-            ],
-          }
+            type: 'header',
+            key: 'host',
+            value: '(?<host>.*)',
+          },
         ],
-        fallback: [
-          {
-            source: process.env.API_URL_PATH || '/api/:path*',
-            destination: process.env.API_URL || 'http://localhost:8180/api/:path*',
-          }
-        ]
-      };
-    };
+      },
+      {
+        source: process.env.API_URL_PATH || '/api/:path*',
+        destination: process.env.API_URL || 'http://localhost:8180/api/:path*',
+      }
+    ];
   },
-  headers: async () => {
+  async headers() {
     console.log('Runtime FORWARDED_HOST:', process.env.FORWARDED_HOST);
     console.log('Runtime FORWARDED_PROTO:', process.env.FORWARDED_PROTO);
     
