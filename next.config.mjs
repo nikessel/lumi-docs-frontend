@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 const nextConfig = {
   output: 'standalone',
   experimental: {
-    serverComponentsExternalPackages: ['next'],
+    serverExternalPackages: ['next'],
   },
   webpack: (config, { dev, isServer }) => {
     config.experiments = {
@@ -78,31 +78,29 @@ const nextConfig = {
       };
     };
   },
-  headers: () => {
-    return async () => {
-      console.log('Runtime FORWARDED_HOST:', process.env.FORWARDED_HOST);
-      console.log('Runtime FORWARDED_PROTO:', process.env.FORWARDED_PROTO);
-      
-      return [
-        {
-          source: process.env.API_URL_PATH || '/api/:path*',
-          headers: [
-            {
-              key: 'x-next-proxy-debug',
-              value: 'true',
-            },
-            {
-              key: 'x-forwarded-host',
-              value: process.env.FORWARDED_HOST || 'localhost:3000',
-            },
-            {
-              key: 'x-forwarded-proto',
-              value: process.env.FORWARDED_PROTO || 'http',
-            }
-          ],
-        },
-      ];
-    };
+  headers: async () => {
+    console.log('Runtime FORWARDED_HOST:', process.env.FORWARDED_HOST);
+    console.log('Runtime FORWARDED_PROTO:', process.env.FORWARDED_PROTO);
+    
+    return [
+      {
+        source: process.env.API_URL_PATH || '/api/:path*',
+        headers: [
+          {
+            key: 'x-next-proxy-debug',
+            value: 'true',
+          },
+          {
+            key: 'x-forwarded-host',
+            value: process.env.FORWARDED_HOST || 'localhost:3000',
+          },
+          {
+            key: 'x-forwarded-proto',
+            value: process.env.FORWARDED_PROTO || 'http',
+          }
+        ],
+      },
+    ];
   },
 };
 
