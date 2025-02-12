@@ -44,58 +44,11 @@ const nextConfig = {
       config.output.webassemblyModuleFilename = "static/wasm/[modulehash].wasm";
     }
     return config;
-  },
-  async rewrites() {
-    console.log('Runtime API_URL:', process.env.API_URL);
-    console.log('Runtime API_URL_PATH:', process.env.API_URL_PATH);
-    
-    return [
-      {
-        source: process.env.API_URL_PATH || '/api/:path*',
-        destination: process.env.API_URL || 'http://127.0.0.1:8180/api/:path*',
-        basePath: false,
-        has: [
-          {
-            type: 'header',
-            key: 'host',
-            value: '(?<host>.*)',
-          },
-        ],
-      },
-      {
-        source: process.env.API_URL_PATH || '/api/:path*',
-        destination: process.env.API_URL || 'http://localhost:8180/api/:path*',
-      }
-    ];
-  },
-  async headers() {
-    console.log('Runtime FORWARDED_HOST:', process.env.FORWARDED_HOST);
-    console.log('Runtime FORWARDED_PROTO:', process.env.FORWARDED_PROTO);
-    
-    return [
-      {
-        source: process.env.API_URL_PATH || '/api/:path*',
-        headers: [
-          {
-            key: 'x-next-proxy-debug',
-            value: 'true',
-          },
-          {
-            key: 'x-forwarded-host',
-            value: process.env.FORWARDED_HOST || 'localhost:3000',
-          },
-          {
-            key: 'x-forwarded-proto',
-            value: process.env.FORWARDED_PROTO || 'http',
-          }
-        ],
-      },
-    ];
-  },
+  }
 };
 
 if (process.env.HOSTNAME) {
-  process.env.HOST = process.env.HOSTNAME;  // Ensure HOST is also set
+  process.env.HOST = process.env.HOSTNAME;
 }
 
 export default nextConfig;
