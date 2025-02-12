@@ -1,11 +1,15 @@
 /** @type {import('next').NextConfig} */
 import path from "path";
 import { fileURLToPath } from "url";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const nextConfig = {
-  output: 'standalone', // Add this line
+  output: 'standalone',
+  experimental: {
+    serverComponentsExternalPackages: ['next'],
+  },
   webpack: (config, { dev, isServer }) => {
     config.experiments = {
       asyncWebAssembly: true,
@@ -18,8 +22,7 @@ const nextConfig = {
     // Configure module rules
     config.module.rules.push({
       test: /\.wasm$/,
-      type: "asset/resource",  // Changed from "asset/resource"
-      //type: "webassembly/async",  // Changed from "asset/resource"
+      type: "asset/resource",
       generator: {
         filename: "static/wasm/[hash][ext][query]",
       },
@@ -45,55 +48,63 @@ const nextConfig = {
     }
     return config;
   },
-  async rewrites() {
-    console.log('Configuring rewrites...');
-    return {
-      beforeFiles: [],
-      afterFiles: [
-        {
-          source: process.env.API_URL_PATH || '/api/:path*',
-          destination: process.env.API_URL || 'http://127.0.0.1:8180/api/:path*', // Make API URL configurable
-          basePath: false,
-          has: [
-            {
-              type: 'header',
-              key: 'host',
-              value: '(?<host>.*)',
-            },
-          ],
-        }
-      ],
-      fallback: [
-        {
-          source: process.env.API_URL_PATH || '/api/:path*',
-          destination: process.env.API_URL || 'http://localhost:8180/api/:path*', // Make API URL configurable
-        }
-      ]
-    };
-  },
-  async headers() {
-    return [
-      {
-        source: process.env.API_URL_PATH || '/api/:path*',
-        headers: [
+  rewrites: () => {
+    return async () => {
+      console.log('Runtime API_URL:', process.env.API_URL);
+      console.log('Runtime API_URL_PATH:', process.env.API_URL_PATH);
+      
+      return {
+        beforeFiles: [],
+        afterFiles: [
           {
-            key: 'x-next-proxy-debug',
-            value: 'true',
-          },
-          {
-            key: 'x-forwarded-host',
-            value: process.env.FORWARDED_HOST || 'localhost:3000', // Make host configurable
-          },
-          {
-            key: 'x-forwarded-proto',
-            value: process.env.FORWARDED_PROTO || 'http', // Make protocol configurable
+            source: process.env.API_URL_PATH || '/api/:path*',
+            destination: process.env.API_URL || 'http://127.0.0.1:8180/api/:path*',
+            basePath: false,
+            has: [
+              {
+                type: 'header',
+                key: 'host',
+                value: '(?<host>.*)',
+              },
+            ],
           }
         ],
-      },
-    ];
+        fallback: [
+          {
+            source: process.env.API_URL_PATH || '/api/:path*',
+            destination: process.env.API_URL || 'http://localhost:8180/api/:path*',
+          }
+        ]
+      };
+    };
+  },
+  headers: () => {
+    return async () => {
+      console.log('Runtime FORWARDED_HOST:', process.env.FORWARDED_HOST);
+      console.log('Runtime FORWARDED_PROTO:', process.env.FORWARDED_PROTO);
+      
+      return [
+        {
+          source: process.env.API_URL_PATH || '/api/:path*',
+          headers: [
+            {
+              key: 'x-next-proxy-debug',
+              value: 'true',
+            },
+            {
+              key: 'x-forwarded-host',
+              value: process.env.FORWARDED_HOST || 'localhost:3000',
+            },
+            {
+              key: 'x-forwarded-proto',
+              value: process.env.FORWARDED_PROTO || 'http',
+            }
+          ],
+        },
+      ];
+    };
   },
 };
-
 
 if (process.env.HOSTNAME) {
   process.env.HOST = process.env.HOSTNAME;  // Ensure HOST is also set
