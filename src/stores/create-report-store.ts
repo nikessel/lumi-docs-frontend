@@ -33,7 +33,6 @@ interface ReportState {
 export const useCreateReportStore = create<ReportState>()(
     persist(
         (set) => ({
-            // Initial state
             currentStep: 0,
             selectedFramework: "mdr",
             selectedSections: [],
@@ -42,13 +41,10 @@ export const useCreateReportStore = create<ReportState>()(
             selectedRequirements: [],
             newReportCreated: { id: "", status: undefined },
 
-            // help to persist state correctly 
             sectionsSetForFramework: "",
             groupsSetForSections: [],
             requirementsSetForGroups: [],
 
-
-            // Setters
             setCurrentStep: (step) => set(() => ({ currentStep: step })),
             setSelectedFramework: (framework) => set(() => ({ selectedFramework: framework })),
             setSelectedSections: (sections) => set(() => ({ selectedSections: sections })),
@@ -73,20 +69,17 @@ export const useCreateReportStore = create<ReportState>()(
                     },
                 })),
 
-
-            // Reset state
             resetState: () =>
                 set(() => ({
                     currentStep: 0,
                     selectedFramework: "mdr",
                     selectedSections: [],
-                    selectedDocumentNumbers: [],
                     selectedRequirementGroups: [],
                 })),
         }),
         {
-            name: "report-creation-store", // Key for localStorage
-            storage: createJSONStorage(() => localStorage), // Use localStorage for persistence
+            name: "report-creation-store",
+            storage: createJSONStorage(() => localStorage),
         }
     )
 );
