@@ -21,12 +21,11 @@ const Page = () => {
     const isLoading = tasksLoading || reportsLoading || userLoading
     const [showInitialScreen, setShowInitialScreen] = useState(false)
 
-
-
+    console.log("asdasdasdasd!", tasksLoading, userLoading, reportsLoading, requirementsLoading)
 
     useEffect(() => {
         if (!tasksLoading && !userLoading && !reportsLoading && !requirementsLoading) {
-            if (!reports) {
+            if (!reports.length) {
                 setShowInitialScreen(true)
             } else {
                 setShowInitialScreen(false)
