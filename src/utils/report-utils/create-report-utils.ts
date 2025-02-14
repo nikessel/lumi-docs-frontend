@@ -9,7 +9,7 @@ export const calculateReportPrice = (pricePerReq: number): number => {
     return selectedRequirements.length * pricePerReq;
 };
 
-export const validateReportInput = (): { error: true; messages: string[] } | { error: false; input: CreateReportInput } => {
+export const validateReportInput = async (wasmModule: typeof WasmModule | null): Promise<{ error: true; messages: string[] } | { error: false; input: CreateReportInput }> => {
     const {
         selectedFramework,
         selectedSections,
@@ -39,6 +39,16 @@ export const validateReportInput = (): { error: true; messages: string[] } | { e
         };
     }
 
+    const resBackendCheck = await wasmModule?.get_report_prerequisites_status()
+
+    if (resBackendCheck?.output?.output === "device_not_ready") {
+        errorMessages.push("Please wait for the system to run an initial analysis of the documents to identify non-applicable requirements. This can take up to 30 minutes")
+    }
+
+    if (resBackendCheck?.output?.output === "documents_not_ready") {
+        errorMessages.push("Please wait for the uploaded documents to finish processing")
+    }
+
     const input: CreateReportInput = {
         regulatory_framework: selectedFramework as RegulatoryFramework,
         filter: {
@@ -65,15 +75,10 @@ export const createReport = async (wasmModule: typeof WasmModule | null, input: 
 
     const newReportId = response.output?.output
     const cacheStore = useCacheInvalidationStore.getState();
-    const createReportStore = useCreateReportStore.getState()
+    // const createReportStore = useCreateReportStore.getState()
     newReportId && cacheStore.addStaleReportId(newReportId);
     cacheStore.triggerUpdate("reports");
-    newReportId && createReportStore.setNewReportCreated({ id: newReportId, status: "pending" })
-
-    if (response.error) {
-        createReportStore.setNewReportCreated({ id: undefined, status: "error", message: response.error.message })
-        throw new Error(response.error.message);
-    }
+    // newReportId && createReportStore.setNewReportCreated({ id: newReportId, status: "pending" })
 
     return response;
 };

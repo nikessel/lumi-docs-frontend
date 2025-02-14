@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { Button, Steps, Select } from "antd";
+import React, { useEffect, useState } from "react";
+import { Button, Steps, Select, message } from "antd";
 import SelectSections from "./section-selector";
 import SelectDocuments from "./document-selector";
 import Typography from "../typography";
@@ -11,10 +11,13 @@ import { useRequirementGroupsContext } from "@/contexts/requirement-group-contex
 import { useRequirementsContext } from "@/contexts/requirements-context";
 import SelectRequirementGroups from "./requirement-group-selector";
 import { useCreateReportStore } from "@/stores/create-report-store";
-import EmbeddedPaymentForm from "../payment/embedded-payment-form";
 import { validateReportInput } from "@/utils/report-utils/create-report-utils";
 import { getPriceForSection, getPriceForGroup } from "@/utils/payment";
 import { useRequirementPriceContext } from "@/contexts/price-context/use-requirement-price-context";
+import { createReport } from "@/utils/report-utils/create-report-utils";
+import { useWasm } from "../WasmProvider";
+import { ValidateReportOutput } from "@/utils/report-utils/create-report-utils";
+
 const { Step } = Steps;
 
 interface ReportCreatorProps {
@@ -24,7 +27,7 @@ interface ReportCreatorProps {
 const arraysAreEqual = (arr1: string[], arr2: string[]): boolean =>
     arr1.length === arr2.length && arr1.every((item) => arr2.includes(item));
 
-const ReportCreator: React.FC<ReportCreatorProps> = () => {
+const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
     const {
         currentStep,
         selectedFramework,
@@ -50,8 +53,19 @@ const ReportCreator: React.FC<ReportCreatorProps> = () => {
     const { requirementGroupsBySectionId } = useRequirementGroupsContext();
     const { requirementsByGroupId } = useRequirementsContext();
     const { files } = useFilesContext();
+    const { wasmModule } = useWasm()
+    const { price } = useRequirementPriceContext()
+    const [messageApi, contextHolder] = message.useMessage()
+    const [isGeneratingReport, setIsGeneratingReport] = useState(false)
+    const [validationResult, setValidationResult] = useState<ValidateReportOutput | null>(null);
 
-    const { price, loading: priceLoading } = useRequirementPriceContext()
+    useEffect(() => {
+        const validate = async () => {
+            const result = await validateReportInput(wasmModule);
+            setValidationResult(result);
+        };
+        validate();
+    }, [selectedSections, selectedRequirementGroups, selectedRequirements, files, wasmModule]);
 
     useEffect(() => {
         if (sectionsForRegulatoryFramework[selectedFramework] && sectionsSetForFramework !== selectedFramework) {
@@ -172,42 +186,68 @@ const ReportCreator: React.FC<ReportCreatorProps> = () => {
                     />
                 </div>
             ),
-        },
-        {
-            title: "Payment",
-            content: (
-                <div>
-                    <EmbeddedPaymentForm
-                        quantity={selectedRequirements.length}
-                    />
-                </div>
-            ),
-        },
+        }
     ];
+
+    const handleCreateReport = async () => {
+        if (!wasmModule) return
+        setIsGeneratingReport(true)
+
+        const valRep = await validateReportInput(wasmModule)
+
+        const createReportInput = !valRep.error ? valRep.input : undefined
+
+        if (createReportInput) {
+            const res = await createReport(wasmModule, createReportInput)
+            if (res.error) {
+                messageApi.error("An error occured creating the report")
+                setIsGeneratingReport(false)
+            } else {
+                messageApi.success("Report is being generated")
+                onReportSubmitted()
+                setIsGeneratingReport(false)
+                const { resetState } = useCreateReportStore.getState();
+                resetState()
+            }
+        } else {
+            messageApi.error("An input error ocurred when creating the report")
+            setIsGeneratingReport(false)
+
+        }
+    }
 
     const next = () => setCurrentStep(currentStep + 1);
     const prev = () => setCurrentStep(currentStep - 1);
-    const validationResult = validateReportInput();
 
     return (
         <div className="pt-4">
+            {contextHolder}
             <Steps current={currentStep} className="mb-6" size="small">
                 {steps.map((step, index) => (
                     <Step key={index} title={step.title} />
                 ))}
             </Steps>
 
-            <div className="mb-4">{steps[currentStep].content}</div>
+            <div className="mb-4">{steps[currentStep]?.content}</div>
 
             <div className="flex justify-between">
                 <Button disabled={currentStep === 0} onClick={prev}>Back</Button>
-                {currentStep === steps.length - 2 && validationResult.error && (
-                    <div className="bg-red-50 text-red-500 p-2 rounded-md">
-                        To create a report, select at least 1 section, 1 group, and 1 document.
+                {currentStep === steps.length - 1 && validationResult?.error && (
+                    <div className="bg-red-50 text-red-500 p-2 rounded-md mb-2">
+                        <ul className="list-disc pl-4">
+                            {validationResult?.messages.map((err, index) => (
+                                <li key={index}>{err}</li>
+                            ))}
+                        </ul>
                     </div>
                 )}
-                {currentStep < steps.length - 1 && (
-                    <Button type="primary" onClick={next} disabled={validationResult.error && currentStep === steps.length - 2}>
+
+                {currentStep === steps.length - 1 ? (
+                    <Button loading={isGeneratingReport} type="primary" disabled={validationResult?.error} onClick={handleCreateReport}>
+                        Create Report
+                    </Button>
+                ) : (
+                    <Button type="primary" onClick={next} >
                         Next
                     </Button>
                 )}

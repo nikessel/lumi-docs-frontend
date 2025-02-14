@@ -10,7 +10,6 @@ import { useUrlSelectedReports } from '@/hooks/url-hooks';
 import CreateReportModal from "@/components/create-report/create-report-modal";
 import { useWasm } from '@/components/WasmProvider';
 import { isArchived } from "@/utils/report-utils";
-import PaymentChecker from "@/components/payment/payment-checker";
 import { useReportsContext } from "@/contexts/reports-context";
 
 const Page = () => {
@@ -88,7 +87,6 @@ const Page = () => {
 
     return (
         <div>
-            <PaymentChecker />
             {/* Header Section */}
             <div className="flex justify-between items-center">
                 <Typography textSize="h4">Reports</Typography>
