@@ -87,11 +87,9 @@ const Page = () => {
 
     return (
         <div>
-            {/* Header Section */}
             <div className="flex justify-between items-center">
                 <Typography textSize="h4">Reports</Typography>
                 <div className="flex items-center space-x-2" data-tour="new-report-button">
-                    {/* New Button */}
                     <CreateReportModal />
                 </div>
             </div>
@@ -114,7 +112,7 @@ const Page = () => {
                         type="primary"
                         disabled={selectedCount === 0}
                         onClick={(e) => {
-                            e.stopPropagation(); // Prevent event from propagating to the parent div
+                            e.stopPropagation(); 
                             if (selectedReports.length > 0) {
                                 router.push(`/reports/view/overview?selectedReports=${encodeURIComponent(selectedReports.join(','))}`);
                             }

@@ -16,7 +16,7 @@ import { getPriceForSection, getPriceForGroup } from "@/utils/payment";
 import { useRequirementPriceContext } from "@/contexts/price-context/use-requirement-price-context";
 import { createReport } from "@/utils/report-utils/create-report-utils";
 import { useWasm } from "../WasmProvider";
-import { ValidateReportOutput } from "@/utils/report-utils/create-report-utils";
+import { ValidateReportOutput as ValidateReportOutputType } from "@/utils/report-utils/create-report-utils";
 
 const { Step } = Steps;
 
@@ -57,7 +57,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
     const { price } = useRequirementPriceContext()
     const [messageApi, contextHolder] = message.useMessage()
     const [isGeneratingReport, setIsGeneratingReport] = useState(false)
-    const [validationResult, setValidationResult] = useState<ValidateReportOutput | null>(null);
+    const [validationResult, setValidationResult] = useState<ValidateReportOutputType | null>(null);
 
     useEffect(() => {
         const validate = async () => {
@@ -235,7 +235,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                 {currentStep === steps.length - 1 && validationResult?.error && (
                     <div className="bg-red-50 text-red-500 p-2 rounded-md mb-2">
                         <ul className="list-disc pl-4">
-                            {validationResult?.messages.map((err, index) => (
+                            {validationResult?.messages.map((err: string, index: number) => (
                                 <li key={index}>{err}</li>
                             ))}
                         </ul>
