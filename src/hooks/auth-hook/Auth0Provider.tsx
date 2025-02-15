@@ -14,7 +14,7 @@ interface AuthContextType {
     isLoading: boolean;
     clearTokens: () => void,
     triggerReAuth: () => void,
-    signup: () => void
+    signup: () => void,
 }
 
 // Create Context with Default Empty Values
@@ -129,7 +129,6 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
         }
     }, [wasmModule, authConfig]);
 
-
     const signup = useCallback(async () => {
         if (!wasmModule) {
             return;
@@ -202,7 +201,10 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
                 const user = await wasmModule.get_user()
 
                 if (user.error?.kind === "NotFound") {
-                    router.push("/signup")
+                    console.log("checkingsessisonsnsns", user)
+                    setTimeout(() => {
+                        router.push("/signup")
+                    });
                 } else {
                     setIsAuthenticated(true)
                 }
@@ -234,6 +236,8 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
             hasFetched.current = true; // Mark as fetched
 
             const res = await wasmModule.get_user();
+            console.log("CHECKINGSESSION", res)
+
 
             if (res?.output?.output && !res.error?.kind) {
                 setIsAuthenticated((prev) => (!prev ? true : prev));

@@ -142,7 +142,7 @@ export default function TestPage() {
       if (user?.email && wasmModule) {
         const res = await wasmModule?.is_admin();
         console.log("reasdasdasdasda", res)
-        if (res?.output?.output) {
+        if (!res?.output?.output) {
           router.push("/dashboard");
         }
       }

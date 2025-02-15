@@ -41,7 +41,7 @@ const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? loadStrip
 function LayoutWithWasm({ children }: { children: ReactNode }) {
   const { isLoading: authLoading, isAuthenticated } = useAuth()
   const { loading: requirementsLoading } = useAllRequirementsContext()
-  const routesWithoutAuth = useMemo(() => ["/verify-email", "/callback", "/documentation", "/signup", "/logout", "login"], []);
+  const routesWithoutAuth = useMemo(() => ["/verify-email", "/callback", "/documentation", "/signup", "/logout", "/login"], []);
   const routesWithoutLayout = useMemo(() => ["/documentation", "/logout", "/signup", "/verify-email", "/callback"], []);
 
   const [showNoPaymentWarning, setShowNoPaymentWarning] = useState(false)

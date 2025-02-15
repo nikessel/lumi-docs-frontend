@@ -1,5 +1,4 @@
 import { createContext, useContext, ReactNode } from "react";
-import { useRequirementPrice } from "@/hooks/use-requirement-price";
 
 interface RequirementPriceContextType {
     price: number | null;
@@ -10,7 +9,7 @@ interface RequirementPriceContextType {
 const RequirementPriceContext = createContext<RequirementPriceContextType | undefined>(undefined);
 
 export const RequirementPriceProvider = ({ children }: { children: ReactNode }) => {
-    const priceData = useRequirementPrice();
+    const priceData = { price: 5, loading: false, error: null }
 
     return (
         <RequirementPriceContext.Provider value={priceData}>
