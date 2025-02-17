@@ -1,11 +1,12 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Upload, Button, List, message } from "antd";
-import { DeleteOutlined, InboxOutlined, FilePdfOutlined, FolderAddOutlined } from "@ant-design/icons";
+import { DeleteOutlined, InboxOutlined, FilePdfOutlined, FolderAddOutlined, LoadingOutlined } from "@ant-design/icons";
 import { useUploadManager } from "@/components/upload-files/upload-manager";
 import { FileExtension } from "@wasm";
 import { UploadFile } from "antd/es/upload/interface";
 import { formatFileSize } from "@/utils/helpers";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
+import { Form } from "antd";
 
 const SUPPORTED_EXTENSIONS: FileExtension[] = ["pdf", "txt", "md", "zip"];
 const IGNORED_PATHS = ["__MACOSX", ".DS_Store"];
@@ -21,6 +22,11 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
     const uploadManager = useUploadManager();
     const addStaleFileId = useCacheInvalidationStore((state) => state.addStaleFileId);
     const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate);
+    const [form] = Form.useForm(); // Create form instance
+
+    const [isProcessingFiles, setIsProcessingFiles] = useState(false)
+
+    const fileChangeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const shouldIgnoreFile = (file: UploadFile): boolean => {
         const webkitPath = file.originFileObj?.webkitRelativePath || "";
@@ -28,12 +34,15 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
     };
 
     const processFiles = useCallback((files: UploadFile[]) => {
+        setIsProcessingFiles(true)
+
         const validFiles = files.filter((file) => {
             const ext = file.name.split(".").pop()?.toLowerCase() as FileExtension;
             return ext && SUPPORTED_EXTENSIONS.includes(ext) && !shouldIgnoreFile(file);
         });
 
         const fileMap = new Map<string, UploadFile>();
+
         validFiles.forEach((file) => {
             if (!fileMap.has(file.name)) {
                 fileMap.set(file.name, file);
@@ -44,20 +53,36 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
             ...prev,
             ...Array.from(fileMap.values()).filter((newFile) => !prev.some((existingFile) => existingFile.name === newFile.name))
         ]);
+        setIsProcessingFiles(false)
     }, []);
 
-    const handleFileChange = useCallback(({ fileList }: { fileList: UploadFile[] }) => {
-        console.log("sdasdasd", fileList)
-        const files = fileList.map((item: UploadFile) => ({
-            ...item,
-            originFileObj: item.originFileObj || item,
-        }));
-        processFiles(files as UploadFile[]);
-    }, [processFiles]);
+    const handleFileChange = ({ fileList }: { fileList: UploadFile[] }) => {
+        setIsProcessingFiles(true)
+        // Clear existing timeout to debounce
+        if (fileChangeTimeout.current) {
+            clearTimeout(fileChangeTimeout.current);
+        }
+
+        // Set a timeout to process files after 500ms
+        fileChangeTimeout.current = setTimeout(() => {
+            const files = fileList.map((item: UploadFile) => ({
+                ...item,
+                originFileObj: item.originFileObj || item,
+            }));
+            processFiles(files as UploadFile[]);
+        }, 500);
+    };
+
+    const handleRefetchFiles = () => {
+        addStaleFileId("all");
+        triggerUpdate("files");
+    }
+
+    const handleResetSelectedFiles = () => {
+        setSelectedFiles([])
+    }
 
     const handleUpload = async () => {
-        console.log("sdasdasd", selectedFiles)
-
         if (!selectedFiles.length) {
             message.error("No files selected for upload.");
             return;
@@ -65,10 +90,8 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
 
         try {
             const nativeFiles = selectedFiles.map((file) => new File([file.originFileObj as Blob], file.name, { type: file.type }));
-            uploadManager.uploadFiles(nativeFiles);
-            addStaleFileId("all");
-            triggerUpdate("files");
-            setSelectedFiles([]);
+            uploadManager.uploadFiles(nativeFiles, handleResetSelectedFiles, handleRefetchFiles);
+            handleResetSelectedFiles()
             onClose()
         } catch (error) {
             console.error("Upload error:", error);
@@ -82,42 +105,72 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
 
     return (
         <>
-            <Dragger maxCount={100} showUploadList={false} className="w-full" multiple beforeUpload={() => false} onChange={handleFileChange}>
-                <p className="ant-upload-drag-icon">
-                    <InboxOutlined />
-                </p>
-                <p className="ant-upload-text">Click or drag file to this area to upload</p>
-                <p className="ant-upload-hint">
-                    Supports single or multiple .pdf or .zip files. To upload entire directory, click button below.
-                </p>
-            </Dragger>
+            <Form form={form}>
+                <Form.Item name="upload" valuePropName="fileList">
+                    <Dragger
+                        fileList={[]}
+                        showUploadList={false}
+                        className="w-full"
+                        multiple
+                        beforeUpload={() => setIsProcessingFiles(true)}
+                        onChange={handleFileChange}
+                        hasControlInside={true}
+                    >
+                        <p className="ant-upload-drag-icon">
+                            <InboxOutlined />
+                        </p>
+                        <p className="ant-upload-text">Click or drag file to this area to upload</p>
+                        <p className="ant-upload-hint">
+                            Supports single or multiple .pdf or .zip files. To upload entire directory, click button below.
+                        </p>
+                    </Dragger>
+                </Form.Item>
+            </Form>
+
 
             <div className="flex justify-between mt-4">
                 <div className="flex gap-4">
-                    <Upload showUploadList={false} multiple beforeUpload={() => false} onChange={handleFileChange} maxCount={100}>
+                    <Upload fileList={[]} showUploadList={false} multiple beforeUpload={() => setIsProcessingFiles(true)} onChange={handleFileChange} >
                         <Button icon={<FilePdfOutlined />}>Select Files</Button>
                     </Upload>
-                    <Upload showUploadList={false} multiple beforeUpload={() => false} onChange={handleFileChange} directory maxCount={100}>
+                    <Upload fileList={[]} showUploadList={false} multiple beforeUpload={() => setIsProcessingFiles(true)} onChange={handleFileChange} directory >
                         <Button icon={<FolderAddOutlined />}>Select Directory</Button>
                     </Upload>
                 </div>
             </div>
 
+            {isProcessingFiles ? <div className="mt-2 text-text_secondary"><LoadingOutlined className="mr-2" /> Preparing files</div> : ""}
+
             {selectedFiles.length > 0 && (
-                <List className="mt-4 overflow-auto" size="small" bordered style={{ maxHeight: 200 }} dataSource={selectedFiles}
-                    renderItem={(file) => (
-                        <List.Item>
-                            <span>{file.name}</span>
-                            <div className="flex gap-4">
-                                <span>{file.size ? formatFileSize(file.size) : "-"}</span>
-                                <div className="cursor-pointer hover:opacity-60" onClick={() => handleRemoveSelectedFile(file.uid)}>
-                                    <DeleteOutlined className="text-red-500" />
+                selectedFiles.length > 50 ? (
+                    <div className="mt-4 text-gray-600">
+                        {selectedFiles.length} files selected
+                    </div>
+                ) : (
+                    <List
+                        className="mt-4 overflow-auto"
+                        size="small"
+                        bordered
+                        style={{ maxHeight: 200 }}
+                        dataSource={selectedFiles}
+                        renderItem={(file) => (
+                            <List.Item>
+                                <span>{file.name}</span>
+                                <div className="flex gap-4">
+                                    <span>{file.size ? formatFileSize(file.size) : "-"}</span>
+                                    <div
+                                        className="cursor-pointer hover:opacity-60"
+                                        onClick={() => handleRemoveSelectedFile(file.uid)}
+                                    >
+                                        <DeleteOutlined className="text-red-500" />
+                                    </div>
                                 </div>
-                            </div>
-                        </List.Item>
-                    )}
-                />
+                            </List.Item>
+                        )}
+                    />
+                )
             )}
+
 
             <div className="w-full mt-8 flex justify-end">
                 <Button

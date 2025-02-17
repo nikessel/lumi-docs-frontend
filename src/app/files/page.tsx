@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Button, Divider, Space, Skeleton } from 'antd';
+import { Button, Divider, Space, Skeleton, Tooltip } from 'antd';
 import { UploadOutlined } from "@ant-design/icons";
 import Typography from '@/components/typography';
 import { useWasm } from "@/components/WasmProvider";
@@ -9,6 +9,7 @@ import FileManager from './file-manager';
 import FileUploadModal from '@/components/upload-files/file-upload-modal';
 import { useFilesContext } from '@/contexts/files-context';
 import { viewFile, downloadFile, fetchFileData } from '@/utils/files-utils';
+import { useUploadManager } from '@/components/upload-files/upload-manager';
 
 const Page = () => {
     const { files, isLoading, error } = useFilesContext();
@@ -22,6 +23,7 @@ const Page = () => {
     const [isModalVisible, setIsModalVisible] = useState(false); // State for modal visibility
 
     const [firstRenderCompleted, setFirstRenderCompleted] = useState(false)
+    const uploadManager = useUploadManager()
 
     useEffect(() => {
         if (!isLoading && wasmLoading && !firstRenderCompleted)
@@ -58,13 +60,14 @@ const Page = () => {
                 <div>
                     <Typography textSize="h4">Files</Typography>
                 </div>
-                <Button
+                <Tooltip title={uploadManager.isUploading ? "Please wait for current session to finish uploading" : ""}><Button
                     type="primary"
                     icon={<UploadOutlined />}
                     onClick={handleOpenModal}
+                    disabled={uploadManager.isUploading}
                 >
                     Upload
-                </Button>
+                </Button></Tooltip>
             </div>
             <Divider className="border-thin mt-2 mb-2" />
 
