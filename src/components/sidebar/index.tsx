@@ -74,12 +74,6 @@ const AppSiderComponent: React.FC<{ reportsRef: MutableRefObject<null>; regulato
             ref: reportsRef
         },
         {
-            key: "/tasks",
-            icon: <ProjectOutlined />,
-            label: <Link href="/tasks">Tasks</Link>,
-            ref: tasksRef
-        },
-        {
             key: "/files",
             icon: <FilePdfOutlined />,
             label: <Link href="/files">Files</Link>,

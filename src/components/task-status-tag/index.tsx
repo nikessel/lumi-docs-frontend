@@ -13,6 +13,7 @@ const TaskStatusTag: React.FC<TaskStatusTagProps> = ({ status }) => {
         completed: "green",
         open: "blue",
         ignored: "red",
+        unseen: "gray",
     };
 
     return (

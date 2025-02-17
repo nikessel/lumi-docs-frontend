@@ -94,7 +94,6 @@ export async function updateTaskStatus(
     task: Task,
     newStatus: TaskStatus
 ): Promise<UpdateTaskResponse> {
-    console.log(`📌 Updating status for Task ID: ${task.id} to "${newStatus}"...`);
 
     if (!wasmModule) {
         console.error("❌ WASM module is required to update the task status.");
@@ -119,6 +118,7 @@ export async function updateTaskStatus(
         const response = await wasmModule.update_task(input);
 
         const cacheStore = useCacheInvalidationStore.getState();
+
         if (updatedTask.id) {
             cacheStore.addStaleTaskId(updatedTask.id);
             cacheStore.triggerUpdate("tasks");
@@ -131,7 +131,6 @@ export async function updateTaskStatus(
         throw new Error("Error updating task status.");
     }
 }
-
 
 export async function updateTask(
     wasmModule: typeof WasmModule | null,

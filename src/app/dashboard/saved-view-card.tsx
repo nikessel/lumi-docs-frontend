@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button, Skeleton } from "antd";
 import Typography from "@/components/typography";
 import { genColor } from "@/utils/styling-utils";
 import { useRouter } from "next/navigation";
 import type { SavedView } from "@wasm";
+import { deleteSavedView } from "@/utils/user-utils";
+import { useWasm } from "@/components/WasmProvider";
+import { DeleteOutlined } from "@ant-design/icons";
 
 interface SavedViewRenderProps {
     view: SavedView | null;
@@ -12,6 +15,26 @@ interface SavedViewRenderProps {
 
 const SavedViewRender: React.FC<SavedViewRenderProps> = ({ view, isLoading }) => {
     const router = useRouter();
+    const { wasmModule } = useWasm();
+    const [isDeleting, setIsDeleting] = useState(false)
+
+    const handleDelete = async () => {
+        if (!view) return;
+
+        setIsDeleting(true);
+        try {
+            const result = await deleteSavedView(wasmModule, view.title, view.link);
+            if (result.success) {
+                console.log("View deleted successfully");
+            } else {
+                console.error(result.message);
+            }
+        } catch (error) {
+            console.error("Error deleting view:", error);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
 
     if (isLoading) {
         return (
@@ -52,13 +75,23 @@ const SavedViewRender: React.FC<SavedViewRenderProps> = ({ view, isLoading }) =>
                 </div>
 
                 {/* View Button */}
-                <Button
-                    type="link"
-                    className="text-blue-500"
-                    onClick={() => router.push(view!.link)}
-                >
-                    View
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button
+                        type="link"
+                        className="text-blue-500"
+                        onClick={() => router.push(view!.link)}
+                    >
+                        View
+                    </Button>
+                    <Button
+                        type="link"
+                        danger
+
+                        icon={<DeleteOutlined />}
+                        loading={isDeleting}
+                        onClick={handleDelete}
+                    />
+                </div>
             </div>
         );
     };

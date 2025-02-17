@@ -25,11 +25,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     const router = useRouter();
 
-    const handleGoToTasks = () => {
-        const tasksUrl = createUrlWithParams('/tasks/view/overview', searchParams);
-        router.push(tasksUrl);
-    };
-
     return (
         <div>
             <div className="flex justify-between items-center">
@@ -40,13 +35,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
                 <div className="flex items-center space-x-2">
                     <SaveViewButton />
-                    <Button
-                        icon={<ArrowRightOutlined />}
-                        type="primary"
-                        onClick={handleGoToTasks}
-                    >
-                        Go to tasks
-                    </Button>
                 </div>
             </div>
             <Divider className="border-thin mt-2 mb-2" />

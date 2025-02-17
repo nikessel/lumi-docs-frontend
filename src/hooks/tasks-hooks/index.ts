@@ -58,7 +58,7 @@ export const useTasks = (): UseTasks => {
                         staleTaskIds.map(async (taskId) => {
                             try {
                                 const updatedTask = await fetchTaskById(wasmModule, taskId);
-                                return updatedTask ? (updatedTask as TaskWithReportId) : null;
+                                return updatedTask ? updatedTask : null;
                             } catch (error) {
                                 logLumiDocsContext(`Error fetching task ID: ${taskId}`, "error");
                                 return null;
@@ -69,17 +69,18 @@ export const useTasks = (): UseTasks => {
                     const validUpdatedTasks = updatedTasks.filter((task): task is TaskWithReportId => task !== null);
 
                     validUpdatedTasks.forEach((updatedTask) => {
-                        const reportId = Object.keys(tasksByReportId).find((reportId) =>
-                            tasksByReportId[reportId].some((task) => task.id === updatedTask.id)
-                        );
+                        const existingTask = tasks.find(task => task.id === updatedTask.id);
 
-                        if (reportId) {
-                            updatedTasksByReport[reportId] = updatedTasksByReport[reportId].map((task) =>
-                                task.id === updatedTask.id ? updatedTask : task
+                        if (existingTask) {
+                            const mergedTask = { ...existingTask, ...updatedTask }; // Overwrite properties but retain reportId
+
+                            const reportId = existingTask.reportId;
+                            updatedTasksByReport[reportId] = updatedTasksByReport[reportId].map(task =>
+                                task.id === updatedTask.id ? mergedTask : task
                             );
 
-                            setTasks((prevTasks) =>
-                                prevTasks.map((task) => (task.id === updatedTask.id ? updatedTask : task))
+                            setTasks(prevTasks =>
+                                prevTasks.map(task => (task.id === updatedTask.id ? mergedTask : task))
                             );
                         }
                     });
@@ -101,7 +102,6 @@ export const useTasks = (): UseTasks => {
 
                     logLumiDocsContext(`All tasks updated: ${Object.values(updatedTasksByReport).flat().length}`, "success");
                 }
-
                 setTasks(Object.values(updatedTasksByReport).flat());
                 setTasksByReportId(updatedTasksByReport);
                 triggerUpdate("tasks", true);

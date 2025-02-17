@@ -17,11 +17,13 @@ const TaskTable: React.FC<TaskTableProps> = ({ tasks }) => {
         const newStatus: TaskStatus = completed ? "completed" : "open";
         try {
             await updateTaskStatus(wasmModule, task, newStatus);
-            console.log(`Status updated for task ${task.id} to ${newStatus}`);
         } catch (error) {
             console.error(`Failed to update task ${task.id}:`, error);
         }
     };
+
+    const filteredTasks = tasks.filter(task => task.status !== "unseen");
+
 
     const columns = [
         {
@@ -36,14 +38,19 @@ const TaskTable: React.FC<TaskTableProps> = ({ tasks }) => {
             ),
         },
         {
-            title: 'Title',
+            title: 'Task',
             dataIndex: 'title',
             key: 'title',
-        },
-        {
-            title: 'Description',
-            dataIndex: 'description',
-            key: 'description',
+            render: (_: unknown, record: Task) => (
+                <div>
+                    <div className={record.status === "ignored" ? "line-through" : ""} style={{ fontWeight: "bold" }}>
+                        {record.title}
+                    </div>
+                    {(record.status !== "completed" && record.status !== "ignored") && (
+                        <div style={{ color: "#888" }}>{record.description}</div>
+                    )}
+                </div>
+            ),
         },
         {
             title: 'Actions',
@@ -57,7 +64,7 @@ const TaskTable: React.FC<TaskTableProps> = ({ tasks }) => {
 
     return (
         <Table
-            dataSource={tasks}
+            dataSource={filteredTasks}
             columns={columns}
             rowKey="id"
             pagination={{ pageSize: 10 }}

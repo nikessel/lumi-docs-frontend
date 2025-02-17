@@ -3,16 +3,14 @@ import { Button } from "antd";
 import ReportCard from "./report-card";
 import Typography from "@/components/typography";
 import type { Report } from "@wasm";
-import { TaskWithReportId } from "@/hooks/tasks-hooks";
 
 interface ReportListProps {
     reports: Report[];
-    allTasks: TaskWithReportId[],
     isLoading: boolean
     onViewAll: () => void;
 }
 
-const ReportList: React.FC<ReportListProps> = ({ reports, onViewAll, isLoading, allTasks }) => {
+const ReportList: React.FC<ReportListProps> = ({ reports, onViewAll, isLoading }) => {
     const displayedReports = reports.length < 4 ? [...reports, ...Array(4 - reports.length).fill(null)] : reports.slice(0, 4);
 
     return (
@@ -26,12 +24,12 @@ const ReportList: React.FC<ReportListProps> = ({ reports, onViewAll, isLoading, 
             </div>
 
             <div className="flex justify-between w-100">
-                <ReportCard key={0} tasks={allTasks.filter((task) => task.reportId === displayedReports[0]?.id)} report={displayedReports[0]} isLoading={isLoading} />
-                <ReportCard key={1} tasks={allTasks.filter((task) => task.reportId === displayedReports[1]?.id)} report={displayedReports[1]} isLoading={isLoading} />
+                <ReportCard key={0} report={displayedReports[0]} isLoading={isLoading} />
+                <ReportCard key={1} report={displayedReports[1]} isLoading={isLoading} />
             </div>
             <div className="flex justify-between w-100 mt-4">
-                <ReportCard key={2} tasks={allTasks.filter((task) => task.reportId === displayedReports[2]?.id)} report={displayedReports[2]} isLoading={isLoading} />
-                <ReportCard key={3} tasks={allTasks.filter((task) => task.reportId === displayedReports[3]?.id)} report={displayedReports[3]} isLoading={isLoading} />
+                <ReportCard key={2} report={displayedReports[2]} isLoading={isLoading} />
+                <ReportCard key={3} report={displayedReports[3]} isLoading={isLoading} />
             </div>
         </div>
     );

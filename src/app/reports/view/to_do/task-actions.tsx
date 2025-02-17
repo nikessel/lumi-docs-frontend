@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Space, Button, Modal, Typography, Tag } from 'antd';
 import { Task } from "@wasm";
+import { useWasm } from '@/components/WasmProvider';
+import { updateTaskStatus } from '@/utils/tasks-utils';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -25,6 +27,10 @@ const getSuggestionTagColor = (kind: string) => {
 
 const TaskActions: React.FC<TaskActionsProps> = ({ task }) => {
     const [isModalVisible, setIsModalVisible] = useState(false);
+    const [isIgnoring, setIsIgnoring] = useState(false);
+    const [isReopening, setIsReopening] = useState(false);
+
+    const { wasmModule } = useWasm();
 
     const handleViewSuggestion = () => {
         setIsModalVisible(true);
@@ -32,6 +38,30 @@ const TaskActions: React.FC<TaskActionsProps> = ({ task }) => {
 
     const handleCloseModal = () => {
         setIsModalVisible(false);
+    };
+
+    const handleIgnore = async () => {
+        setIsIgnoring(true);
+        try {
+            await updateTaskStatus(wasmModule, task, "ignored");
+            console.log(`Task ${task.id} marked as ignored`);
+        } catch (error) {
+            console.error(`Failed to ignore task ${task.id}:`, error);
+        } finally {
+            setIsIgnoring(false);
+        }
+    };
+
+    const handleReopen = async () => {
+        setIsReopening(true);
+        try {
+            await updateTaskStatus(wasmModule, task, "open");
+            console.log(`Task ${task.id} marked as ignored`);
+        } catch (error) {
+            console.error(`Failed to ignore task ${task.id}:`, error);
+        } finally {
+            setIsReopening(false);
+        }
     };
 
     return (
@@ -45,14 +75,26 @@ const TaskActions: React.FC<TaskActionsProps> = ({ task }) => {
                 >
                     View Suggestion
                 </Button>
-                <Button
-                    type="default"
-                    size="small"
-                    danger
-                    onClick={() => console.log(task.id!, 'ignore')}
-                >
-                    Ignore
-                </Button>
+                {task.status !== "ignored" ?
+                    <Button
+                        type="default"
+                        size="small"
+                        danger
+                        loading={isIgnoring}
+                        onClick={handleIgnore}
+                    >
+                        Ignore
+                    </Button> :
+                    <Button
+                        type="default"
+                        size="small"
+                        loading={isReopening}
+                        onClick={handleReopen}
+                    >
+                        Re-open
+                    </Button>
+
+                }
             </Space>
 
             {/* Modal for Viewing Suggestion */}
