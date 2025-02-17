@@ -20,7 +20,7 @@ interface UploadManagerState {
     setProgress: (progress: number) => void;
     setUploadedFiles: (uploadedFiles: number) => void;
     setTotalFiles: (totalFiles: number) => void;
-    uploadFiles: (files: File[]) => Promise<void>;
+    uploadFiles: (files: File[], onUploadComplete: () => void, handleRefetchFiles: () => void) => Promise<void>;
     resetUploadSession: () => void
 }
 
@@ -152,7 +152,7 @@ export const useUploadManager = create<UploadManagerState>()((set, get) => ({
     setUploadedFiles: (uploadedFiles: number) => set({ uploadedFiles }),
     setTotalFiles: (totalFiles: number) => set({ totalFiles }),
 
-    uploadFiles: async (files: File[]) => {
+    uploadFiles: async (files: File[], onUploadComplete: () => void, handleRefetchFiles: () => void) => {
         const state = get();
 
         set({ filesAlreadyExisted: 0 });
@@ -210,6 +210,7 @@ export const useUploadManager = create<UploadManagerState>()((set, get) => ({
                                     uploadedFiles: get().uploadedFiles + 1,
                                 });
                             }, set);
+                            handleRefetchFiles()
                         } catch (error) {
                             failedFiles.push(file.name);
                             console.error(`Failed to upload ${file.name}:`, error);
@@ -222,14 +223,15 @@ export const useUploadManager = create<UploadManagerState>()((set, get) => ({
             }
 
             if (failedFiles.length > 0) {
+
                 toast.error(`Upload completed with ${failedFiles.length} failed files`);
             } else {
                 toast.success(`Successfully uploaded ${allFiles.length} files`);
             }
         } catch (error) {
             console.error("Upload error:", error);
-            toast.error(error instanceof Error ? error.message : "Failed to upload files");
         } finally {
+            onUploadComplete()
             set({ isUploading: false });
         }
     },
