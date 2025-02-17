@@ -11,7 +11,7 @@ import NATag from '@/components/non-applicable-tag';
 import { useReportsContext } from '@/contexts/reports-context';
 import { useRequirementsContext } from '@/contexts/requirements-context';
 
-type RequirementAssessmentWithId = RequirementAssessment & { id: string, reportId: string, regulatoryFramework: RegulatoryFramework };
+export type RequirementAssessmentWithId = RequirementAssessment & { id: string, reportId: string, regulatoryFramework: RegulatoryFramework };
 
 const Page = () => {
     const { filteredSelectedReports, loading: reportsLoading } = useReportsContext();

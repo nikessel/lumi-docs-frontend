@@ -67,6 +67,55 @@ export async function saveViewToUser(
     }
 }
 
+export async function deleteSavedView(
+    wasmModule: typeof WasmModule | null,
+    viewTitle: string,
+    viewLink: string
+): Promise<{ success: boolean; message: string }> {
+
+    if (!wasmModule) {
+        return { success: false, message: "WASM module not loaded" };
+    }
+
+    try {
+        const response = await wasmModule.get_user();
+        const user: User | undefined = response.output?.output;
+
+        if (!user) {
+            console.error("❌ User not found");
+            return { success: false, message: "User not found" };
+        }
+
+        // Filter views by matching both title and link
+        const updatedViews = user.task_management?.saved_views?.filter(
+            view => view.title !== viewTitle || view.link !== viewLink
+        ) || [];
+
+        const updatedUser: User = {
+            ...user,
+            task_management: {
+                ...user.task_management,
+                saved_views: updatedViews,
+                kanban: user.task_management?.kanban || { columns: [] },
+                tags: user.task_management?.tags || [],
+            },
+        };
+
+        const res = await wasmModule.update_user({ input: updatedUser });
+
+        console.log("✅ View deleted successfully:", res);
+
+        useCacheInvalidationStore.getState().addStaleId(user.id);
+        useCacheInvalidationStore.getState().triggerUpdate("user");
+
+        return { success: true, message: "Saved view successfully deleted." };
+    } catch (error) {
+        console.error("❌ Error deleting saved view:", error);
+        return { success: false, message: `Error: ${error instanceof Error ? error.message : String(error)}` };
+    }
+}
+
+
 
 export async function updateUserTourPreference(
     wasmModule: typeof WasmModule | null,

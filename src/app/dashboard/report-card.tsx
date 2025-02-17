@@ -6,32 +6,33 @@ import type { Report } from "@wasm";
 import { Skeleton } from "antd";
 import { TaskWithReportId } from "@/hooks/tasks-hooks";
 import { LinkOutlined } from "@ant-design/icons";
+import { useTasksContext } from "@/contexts/tasks-context";
 
 interface ReportCardProps {
     report: Report | undefined
-    tasks: TaskWithReportId[] | null,
     isLoading: boolean,
 }
 
 const ReportCard: React.FC<ReportCardProps> = ({
     report,
     isLoading,
-    tasks
 }) => {
     const router = useRouter()
-    const [unresolvedTasks, setUnresolvedTasks] = useState<TaskWithReportId[] | null>(null)
 
-    useEffect(() => {
-        const unresolvedTasks = tasks?.filter((task) => task.status === "open")
-        unresolvedTasks && setUnresolvedTasks(unresolvedTasks)
-    }, [tasks])
+    const { tasks, loading: tasksLoading } = useTasksContext()
+
+    const reportTasks = tasks.filter(task => task.reportId === report?.id);
+    const unresolvedTasks = tasks.filter(task => task.status === "open").filter(task => task.reportId === report?.id);
+
+    console.log("tasksss tasks", tasks)
+
 
     const handleClickReportTitle = async () => {
         router.push(`/reports/view/overview?selectedReports=${report?.id}`)
     }
 
     const handleClickUnresolvedTasks = async () => {
-        router.push(`/tasks/view/overview?selectedReports=${report?.id}`)
+        router.push(`/reports/view/to_do?selectedReports=${report?.id}`)
     }
 
     if (isLoading) {
@@ -63,7 +64,7 @@ const ReportCard: React.FC<ReportCardProps> = ({
                 onClick={handleClickUnresolvedTasks}
                 className="mt-2 text-gray-500 hover:text-primary cursor-pointer transition-opacity duration-300 ease-in-out"
             >
-                {unresolvedTasks?.length || 0} unresolved tasks
+                {tasks?.length} suggested tasks, {unresolvedTasks?.length || 0} on todo
                 <LinkOutlined className="ml-1" />
             </div>
             <div className="mt-4">

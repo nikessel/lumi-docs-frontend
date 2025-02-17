@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
-import { Modal, Progress, Divider, Tag } from 'antd';
-import { RequirementAssessment, Requirement, RegulatoryFramework } from '@wasm';
+import React, { useState, useEffect } from 'react';
+import { Modal, Progress, Divider, Tag, Button, Spin } from 'antd';
+import { Task, Requirement, RegulatoryFramework } from '@wasm';
 import { getComplianceColorCode } from '@/utils/formating';
 import Typography from '../typography';
 import ReactMarkdown from "react-markdown";
@@ -11,11 +11,15 @@ import { useFilesContext } from '@/contexts/files-context';
 import { viewFile, fetchFileData } from "@/utils/files-utils";
 import { useWasm } from "@/components/WasmProvider";
 import NATag from '../non-applicable-tag';
-
+import { getTasksByReportAndRequirmentId } from '@/utils/tasks-utils';
+import { RequirementAssessmentWithId } from '@/app/reports/view/key_findings/page';
+import { updateTaskStatus } from '@/utils/tasks-utils';
+import { LoadingOutlined } from "@ant-design/icons";
+import TaskActions from '@/app/reports/view/to_do/task-actions';
 
 interface RequirementModalProps {
     requirement: Requirement | undefined;
-    requirementAssessment: RequirementAssessment | undefined;
+    requirementAssessment: RequirementAssessmentWithId | undefined;
     onClose: () => void;
     open: boolean;
     regulatoryFramework: RegulatoryFramework | undefined
@@ -34,7 +38,46 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
     const { wasmModule } = useWasm();
     const [blobUrls, setBlobUrls] = React.useState<{ [id: string]: string }>({});
     const [viewLoading, setViewLoading] = React.useState<{ [id: string]: boolean }>({});
+    const [tasks, setTasks] = useState<Task[] | null>([])
+    const [tasksLoading, setTasksLoading] = useState(false)
+    const [taskLoading, setTaskLoading] = useState<{ [key: string]: boolean }>({});
 
+    useEffect(() => {
+        if (requirement?.id && requirementAssessment?.reportId && wasmModule) {
+            setTasksLoading(true)
+            getTasksByReportAndRequirmentId(wasmModule, {
+                report_id: requirementAssessment.reportId,
+                requirement_id: requirement.id,
+            })
+                .then(setTasks)
+                .catch((error) => {
+                    console.error("Failed to fetch tasks:", error);
+                }).finally(() => {
+                    setTasksLoading(false)
+                });
+        }
+    }, [requirement?.id, requirementAssessment?.reportId, wasmModule]);
+
+
+    const handleAddToDo = async (task: Task) => {
+        setTaskLoading(prev => ({ ...prev, [task.id!]: true }));
+        try {
+            await updateTaskStatus(wasmModule, task, "open");
+            // Refetch tasks
+            const updatedTasks = await getTasksByReportAndRequirmentId(wasmModule, {
+                report_id: requirementAssessment!.reportId,
+                requirement_id: requirement!.id,
+            });
+            setTasks(updatedTasks);
+        } catch (error) {
+            console.error("Error adding To Do:", error);
+        } finally {
+            setTaskLoading(prev => ({ ...prev, [task.id!]: false }));
+        }
+    };
+
+
+    console.log("Asdasdasd", requirement, requirementAssessment)
     return (
         <Modal
             open={open}
@@ -107,19 +150,6 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
                     )}
                 </ul>
 
-
-                {/* <Typography className="my-4" textSize='h4'>Selected Quotes</Typography>
-
-                {requirementAssessment?.quotes && Array.isArray(requirementAssessment.quotes) && requirementAssessment.quotes.length > 0 ? (
-                    <ul>
-                        {requirementAssessment.quotes.map((quote, index) => (
-                            <ReactMarkdown key={`${quote}-${index}`}>{quote.pretty}</ReactMarkdown>
-                        ))}
-                    </ul>
-                ) : (
-                    <p>No quotes available.</p>
-                )} */}
-
                 <Typography className="my-4" textSize='h4'>Key findings</Typography>
 
                 {requirementAssessment?.negative_findings && requirementAssessment?.negative_findings?.length > 0 ? (
@@ -135,6 +165,56 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
                 <Typography className="my-4" textSize='h4'>Detailed assessment</Typography>
 
                 <ReactMarkdown>{requirementAssessment?.details || 'No detailed assessment available.'}</ReactMarkdown>
+
+                <Typography className="my-4" textSize='h4'>Suggested tasks</Typography>
+                {tasksLoading ? (
+                    <div className="flex items-center justify-center">
+                        <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
+                    </div>
+                ) : tasks && tasks.length > 0 ? (
+                    <ul className="list-disc pl-5">
+                        {tasks.map((task) => (
+                            <li key={task.id} className="my-4 flex items-center justify-between">
+                                {/* Status-based Rendering */}
+                                {task.status === "open" ? (
+                                    <div>
+                                        <strong>{task.title}</strong> -
+                                        <span className="text-gray-400 ml-1">Added To Do</span>
+                                    </div>
+                                ) : task.status === "completed" ? (
+                                    <div className="flex items-center">
+                                        <strong>{task.title}</strong>
+                                        <Tag color="green" className="ml-2">✔ Completed</Tag>
+                                    </div>
+                                ) : task.status === "ignored" ? (
+                                    <div className="line-through text-gray-400">
+                                        <strong>{task.title}</strong>
+                                    </div>
+                                ) : (
+                                    // Default: Add To Do Button
+                                    <div className="flex items-center justify-between w-full">
+                                        <div>
+                                            <strong>{task.title}</strong>
+                                            <div className="text-text_secondary">{task.description}</div>
+                                        </div>
+                                        <Button
+                                            type="primary"
+                                            size="small"
+                                            loading={taskLoading[task.id!]}
+                                            onClick={() => handleAddToDo(task)}
+                                            className="ml-4"
+                                        >
+                                            Add To Do
+                                        </Button>
+                                    </div>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+
+                ) : (
+                    <p>No suggested tasks available.</p>
+                )}
             </div>
         </Modal>
     );

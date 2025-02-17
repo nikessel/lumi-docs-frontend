@@ -13,15 +13,13 @@ import { useAllRequirementsContext } from "@/contexts/requirements-context/all-r
 
 const Page = () => {
     const router = useRouter();
-    const { loading: userLoading } = useUserContext()
+    const { loading: userLoading, user } = useUserContext()
     const { reports, loading: reportsLoading } = useReportsContext()
     const { tasks, loading: tasksLoading } = useTasksContext()
     const { loading: requirementsLoading } = useAllRequirementsContext()
+    const isLoading = tasksLoading || (reportsLoading && !reports.length) || (userLoading && !user?.first_name)
 
-    const isLoading = tasksLoading || reportsLoading || userLoading
     const [showInitialScreen, setShowInitialScreen] = useState(false)
-
-    console.log("asdasdasdasd!", tasksLoading, userLoading, reportsLoading, requirementsLoading)
 
     useEffect(() => {
         if (!tasksLoading && !userLoading && !reportsLoading && !requirementsLoading) {
@@ -41,7 +39,7 @@ const Page = () => {
     return (
         <div className="flex" style={{ height: "75vh" }}>
             <div className="w-2/3 pr-4 flex flex-col gap-6">
-                <ReportList allTasks={tasks} reports={reports} onViewAll={() => router.push("/reports")} isLoading={isLoading} />
+                <ReportList reports={reports} onViewAll={() => router.push("/reports")} isLoading={isLoading} />
                 <div style={{ height: "38vh" }}>
                     <SavedViews isLoading={isLoading} />
                 </div>
