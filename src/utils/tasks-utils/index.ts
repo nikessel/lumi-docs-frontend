@@ -1,4 +1,4 @@
-import type { Task, TaskStatus, UpdateTaskResponse, UpdateTaskInput } from "@wasm";
+import type { Task, TaskStatus, UpdateTaskResponse, UpdateTaskInput, GetTasksByReportAndRequirementInput, GetTasksByReportAndRequirementResponse } from "@wasm";
 import type * as WasmModule from "@wasm";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
 
@@ -174,6 +174,34 @@ export async function updateTask(
     } catch (error) {
         console.error(`❌ Failed to update Task ID: ${task.id}`, error);
         throw new Error("Error updating task.");
+    }
+}
+
+export async function getTasksByReportAndRequirmentId(
+    wasmModule: typeof WasmModule | null,
+    input: GetTasksByReportAndRequirementInput
+): Promise<Task[]> {
+    if (!wasmModule) {
+        console.error("❌ WASM module not loaded.");
+        throw new Error("WASM module is required to fetch tasks.");
+    }
+
+    try {
+        console.log(`📌 Fetching tasks for Report ID: ${input.report_id} and Requirement ID: ${input.requirement_id}`);
+
+        const response: GetTasksByReportAndRequirementResponse = await wasmModule.get_tasks_by_report_and_requirement({
+            report_id: input.report_id, requirement_id: input.requirement_id,
+        });
+
+        if (response.output && Array.isArray(response.output.output)) {
+            console.log(`✅ Fetched ${response.output.output.length} tasks for the provided report and requirement.`);
+            return response.output.output;
+        }
+
+        throw new Error(response.error?.message || "Failed to fetch tasks.");
+    } catch (error) {
+        console.error(`❌ Error fetching tasks for report: ${input.report_id} and requirement: ${input.requirement_id}`, error);
+        throw new Error(`Failed to fetch tasks for Report ${input.report_id} and Requirement ${input.requirement_id}`);
     }
 }
 

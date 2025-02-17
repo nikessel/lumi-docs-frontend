@@ -25,6 +25,12 @@ const SubMenu: React.FC = () => {
             description:
                 "Extracts requirements from the selected reports and highlights the assessments with the lowest compliance ratings, prioritizing areas requiring immediate attention.",
         },
+        {
+            label: "To Do",
+            link: createUrlWithParams("/reports/view/to_do", searchParams),
+            description:
+                "A list of the open tasks you have marked as 'To Do' from the requirement assessments",
+        },
     ];
 
     return <HorizontalTabMenu items={menuItems} />;
