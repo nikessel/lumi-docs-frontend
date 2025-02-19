@@ -1,15 +1,31 @@
 import { createContext, useContext, ReactNode } from "react";
-
+import {
+    useUserContext
+} from "../user-context";
 interface RequirementPriceContextType {
-    price: number | null;
+    userPrice: number;
+    defaultPrice: number;
     loading: boolean;
     error: string | null;
 }
 
 const RequirementPriceContext = createContext<RequirementPriceContextType | undefined>(undefined);
 
+const PRICE_MAP: Record<string, number> = {
+    "milsoe1992@gmail.com": 0.5,
+    "chris@medtechconsult.online": 0.5,
+    "admin@lumi-docs.com": 0.5,
+    "test@lumi-docs.com": 0.5,
+    "frederik.hjort@metiscompliance.dk": 0.5
+};
+
 export const RequirementPriceProvider = ({ children }: { children: ReactNode }) => {
-    const priceData = { price: 5, loading: false, error: null }
+    const user = useUserContext();
+    const email = user?.user?.email
+    const defaultPrice = 5;
+    const userPrice = email ? PRICE_MAP[email] : defaultPrice;
+
+    const priceData = { userPrice, defaultPrice, loading: false, error: null };
 
     return (
         <RequirementPriceContext.Provider value={priceData}>

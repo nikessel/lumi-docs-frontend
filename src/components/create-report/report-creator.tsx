@@ -54,7 +54,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
     const { requirementsByGroupId } = useRequirementsContext();
     const { files } = useFilesContext();
     const { wasmModule } = useWasm()
-    const { price } = useRequirementPriceContext()
+    const { userPrice } = useRequirementPriceContext()
     const [messageApi, contextHolder] = message.useMessage()
     const [isGeneratingReport, setIsGeneratingReport] = useState(false)
     const [validationResult, setValidationResult] = useState<ValidateReportOutputType | null>(null);
@@ -139,7 +139,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                                 section.id,
                                 requirementGroupsBySectionId,
                                 requirementsByGroupId,
-                                price ? price : 0
+                                userPrice ? userPrice : 0
                             ),
                         }))}
                     />
@@ -161,7 +161,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                             .map((group) => ({
                                 id: group.id,
                                 name: group.name || "Unknown",
-                                price_for_group: getPriceForGroup(group.id, requirementsByGroupId, price ? price : 0),
+                                price_for_group: getPriceForGroup(group.id, requirementsByGroupId, userPrice ? userPrice : 0),
                             }))
                         }
                     />
