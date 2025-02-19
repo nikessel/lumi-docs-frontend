@@ -40,5 +40,5 @@ export const formatPrice = (value: number) =>
         style: "currency",
         currency: "EUR",
         minimumFractionDigits: 0, // No decimal places
-        maximumFractionDigits: 0,
+        maximumFractionDigits: 1,
     }).format(value);

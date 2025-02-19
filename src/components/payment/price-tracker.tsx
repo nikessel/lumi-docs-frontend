@@ -8,9 +8,10 @@ import { useRequirementPriceContext } from "@/contexts/price-context/use-require
 
 const PriceTracker: React.FC = () => {
     const { selectedSections, selectedRequirementGroups, selectedRequirements } = useCreateReportStore(); // Access Zustand store
-    const { price } = useRequirementPriceContext()
+    const { userPrice, defaultPrice } = useRequirementPriceContext();
 
-    let totalPrice = calculateReportPrice(price ? price : 0);
+    let totalPrice = calculateReportPrice(userPrice ? userPrice : 0);
+    let totalPriceDefault = calculateReportPrice(defaultPrice ? defaultPrice : 0);
 
     if (selectedSections.length === 0 || selectedRequirementGroups.length === 0) {
         totalPrice = 0;
@@ -23,18 +24,23 @@ const PriceTracker: React.FC = () => {
     });
 
     const tooltipContent = `
-    Reports are priced per requirements, which are divided into sections and groups.
+    Reports are priced per requirement, which are divided into sections and groups.
     You have currently selected
     ${selectedSections.length} sections,
     ${selectedRequirementGroups.length} groups, and
-    ${selectedRequirements.length} Requirements
+    ${selectedRequirements.length} requirements.
   `;
 
     return (
         <Tooltip title={tooltipContent} placement="top">
-            <div className="px-2 py-1 rounded-md text-primary bg-bg_secondary text-center">
+            <div className="px-2 py-1 rounded-md text-primary bg-bg_secondary text-center flex items-center gap-2">
+                {defaultPrice !== userPrice && (
+                    <span className="line-through text-gray-500">
+                        {formatPrice(totalPriceDefault)}
+                    </span>
+                )}
                 <animated.span>
-                    {animatedPrice.to((value) => formatPrice(Math.round(value)))}
+                    {animatedPrice.to((value) => formatPrice(value))}
                 </animated.span>
             </div>
         </Tooltip>
