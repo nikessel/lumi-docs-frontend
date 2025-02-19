@@ -128,7 +128,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                 <div>
                     <Typography textSize="h6" className="mb-4">Select Sections</Typography>
                     <Typography className="my-4 leading-6" color="secondary">
-                        LumiDocs divides the analysis into sections for {formatRegulatoryFramework(selectedFramework)}.
+                        LumiDocs divides the analysis into {sectionsForRegulatoryFramework[selectedFramework].length} sections for {formatRegulatoryFramework(selectedFramework)}.
                         You can select a subset of these sections below.
                     </Typography>
                     <SelectSections
@@ -152,7 +152,8 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                 <div>
                     <Typography textSize="h6" className="mb-4">Select Requirement Groups</Typography>
                     <Typography className="my-4 leading-6" color="secondary">
-                        Based on your selected sections, LumiDocs has identified requirement groups.
+                        Based on your selected sections, LumiDocs has identified {selectedSections
+                            .flatMap((sectionId) => requirementGroupsBySectionId[sectionId] || []).length} requirement groups.
                         You can select a subset of these groups to include in the report.
                     </Typography>
                     <SelectRequirementGroups
