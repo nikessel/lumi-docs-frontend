@@ -2,8 +2,6 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  console.log('Middleware API_URL:', process.env.API_URL)
-  
   // Check if the request is for the API
   if (request.nextUrl.pathname.startsWith('/api/')) {
     const apiUrl = process.env.API_URL
