@@ -23,6 +23,7 @@ export function ReportList() {
   const [error, setError] = useState("");
 
   const fetchReports = useCallback(async () => {
+    console.log("!!!123123123", wasmModule)
     if (!wasmModule) {
       setError("WASM module not loaded");
       return;
@@ -34,7 +35,7 @@ export function ReportList() {
       if (response.output) {
         const reportsData = response.output.output;
         setReports(reportsData);
-
+        setError("");
         // Create Blob URLs for each report
         const newBlobUrls: { [id: string]: string } = {};
         reportsData.forEach((report) => {
@@ -58,27 +59,27 @@ export function ReportList() {
     }
   }, [wasmModule]);
 
-useEffect(() => {
-  fetchReports();
-  const handleCreatedEvent = (event: WrappedEvent) => {
-    if (event.type === "Created" && "Report" in event.payload) {
-      fetchReports();
-    }
-  };
-  eventBus.subscribe("Created", handleCreatedEvent);
+  useEffect(() => {
+    fetchReports();
+    const handleCreatedEvent = (event: WrappedEvent) => {
+      if (event.type === "Created" && "Report" in event.payload) {
+        fetchReports();
+      }
+    };
+    eventBus.subscribe("Created", handleCreatedEvent);
 
-  return () => {
-    eventBus.unsubscribe("Created", handleCreatedEvent);
-    // Don't clean up blobUrls here
-  };
-}, [fetchReports]);
+    return () => {
+      eventBus.unsubscribe("Created", handleCreatedEvent);
+      // Don't clean up blobUrls here
+    };
+  }, [fetchReports]);
 
-// Separate effect for cleaning up old blob URLs when they change
-useEffect(() => {
-  return () => {
-    Object.values(blobUrls).forEach(url => URL.revokeObjectURL(url));
-  };
-}, [blobUrls]);
+  // Separate effect for cleaning up old blob URLs when they change
+  useEffect(() => {
+    return () => {
+      Object.values(blobUrls).forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [blobUrls]);
 
   if (error) {
     return (

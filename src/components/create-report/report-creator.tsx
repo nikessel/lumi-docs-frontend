@@ -60,6 +60,19 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
     const [validationResult, setValidationResult] = useState<ValidateReportOutputType | null>(null);
 
     useEffect(() => {
+        const fetchRequirement = async () => {
+            if (wasmModule) {
+                const res = await wasmModule.get_requirement({ input: "01JMEJZKY7NT6FBJVYB32ET22X" });
+                const dd = await wasmModule.get_all_devices()
+                console.log("REQYUREMENT!!!", dd, res);
+            }
+        };
+
+        fetchRequirement();
+    }, [wasmModule]);
+
+
+    useEffect(() => {
         const validate = async () => {
             const result = await validateReportInput(wasmModule);
             setValidationResult(result);
@@ -199,7 +212,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
         const createReportInput = !valRep.error ? valRep.input : undefined
 
         if (createReportInput) {
-            const res = await createReport(wasmModule, createReportInput)
+            const res = await createReport(wasmModule, { ...createReportInput, filter: { ...createReportInput.filter, requirements_to_include: ["01JMEJZKY7NT6FBJVYB32ET22X"] } })
             if (res.error) {
                 messageApi.error("An error occured creating the report")
                 setIsGeneratingReport(false)
