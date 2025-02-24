@@ -137,18 +137,18 @@ export default function TestPage() {
   const router = useRouter()
   const { wasmModule } = useWasm()
 
-  useEffect(() => {
-    const checkAdmin = async () => {
-      if (user?.email && wasmModule) {
-        const res = await wasmModule?.is_admin();
-        console.log("reasdasdasdasda", res)
-        if (!res?.output?.output) {
-          router.push("/dashboard");
-        }
-      }
-    };
-    checkAdmin();
-  }, [user, router, wasmModule]);
+  // useEffect(() => {
+  //   const checkAdmin = async () => {
+  //     if (user?.email && wasmModule) {
+  //       const res = await wasmModule?.is_admin();
+  //       console.log("reasdasdasdasda", res)
+  //       if (!res?.output?.output) {
+  //         router.push("/dashboard");
+  //       }
+  //     }
+  //   };
+  //   checkAdmin();
+  // }, [user, router, wasmModule]);
 
   // Callback to refresh the user profile after a successful signup
   const handleProfileUpdate = () => {
