@@ -39,6 +39,7 @@ export const useFiles = (): UseFiles => {
 
             const timeout = setTimeout(() => {
                 triggerUpdate("files");
+                triggerUpdate("documents");
             }, 2 * 1000);
 
             return () => clearTimeout(timeout);

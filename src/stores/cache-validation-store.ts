@@ -6,6 +6,7 @@ interface CacheInvalidationState {
     staleReportIds: string[];
     staleFileIds: string[];
     staleTaskIds: string[];
+    staleDocumentIds: string[];
 
     addStaleId: (id: string) => void;
     removeStaleIds: (ids: string[]) => void;
@@ -16,6 +17,10 @@ interface CacheInvalidationState {
     addStaleFileId: (id: string) => void;
     removeStaleFileIds: (ids: string[]) => void;
     clearStaleFileIds: () => void;
+
+    addStaleDocumentId: (id: string) => void;
+    removeStaleDocumentIds: (ids: string[]) => void;
+    clearStaleDocumentIds: () => void;
 
     addStaleTaskId: (id: string) => void;
     removeStaleTaskIds: (ids: string[]) => void;
@@ -36,6 +41,7 @@ const useCacheInvalidationStore = create<CacheInvalidationState>()(
             staleReportIds: [],
             staleFileIds: [],
             staleTaskIds: [],
+            staleDocumentIds: [],
 
             // ✅ Add Stale IDs
             addStaleId: (id: string) =>
@@ -58,6 +64,12 @@ const useCacheInvalidationStore = create<CacheInvalidationState>()(
                     staleFileIds: state.staleFileIds.includes(id) ? state.staleFileIds : [...state.staleFileIds, id],
                 })),
 
+            addStaleDocumentId: (id: string) =>
+                set((state) => ({
+                    staleDocumentIds: state.staleDocumentIds.includes(id) ? state.staleDocumentIds : [...state.staleDocumentIds, id],
+                })),
+
+
             // ✅ Remove Stale IDs
             removeStaleIds: (ids: string[]) =>
                 set((state) => ({
@@ -79,9 +91,15 @@ const useCacheInvalidationStore = create<CacheInvalidationState>()(
                     staleFileIds: state.staleFileIds.filter((staleId) => !ids.includes(staleId)),
                 })),
 
+            removeStaleDocumentIds: (ids: string[]) =>
+                set((state) => ({
+                    staleDocumentIds: state.staleDocumentIds.filter((staleId) => !ids.includes(staleId)),
+                })),
+
             // ✅ Clear Stale IDs
             clearStaleFileIds: () => set(() => ({ staleFileIds: [] })),
             clearStaleTaskIds: () => set(() => ({ staleTaskIds: [] })),
+            clearStaleDocumentIds: () => set(() => ({ staleDocumentIds: [] })),
 
             // ✅ Cache update triggers
             lastUpdated: {}, // Tracks the last update timestamp for each store

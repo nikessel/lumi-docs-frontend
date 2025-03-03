@@ -21,6 +21,7 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
     const [selectedFiles, setSelectedFiles] = useState<UploadFile[]>([]);
     const uploadManager = useUploadManager();
     const addStaleFileId = useCacheInvalidationStore((state) => state.addStaleFileId);
+    const addStaleDocumentId = useCacheInvalidationStore((state) => state.addStaleDocumentId);
     const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate);
     const [form] = Form.useForm(); // Create form instance
 
@@ -90,6 +91,7 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
 
         try {
             const nativeFiles = selectedFiles.map((file) => new File([file.originFileObj as Blob], file.name, { type: file.type }));
+            console.log("asd123asd123:", nativeFiles);
             uploadManager.uploadFiles(nativeFiles, handleResetSelectedFiles, handleRefetchFiles);
             handleResetSelectedFiles()
             onClose()
