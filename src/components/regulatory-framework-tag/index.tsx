@@ -5,9 +5,10 @@ import { Tag } from 'antd';
 
 interface StandardTagProps {
     standard: string | undefined;
+    additionalReference?: string;
 }
 
-const RegulatoryFrameworkTag: React.FC<StandardTagProps> = ({ standard }) => {
+const RegulatoryFrameworkTag: React.FC<StandardTagProps> = ({ standard, additionalReference }) => {
     if (!standard) {
         return null;
     }
@@ -24,7 +25,7 @@ const RegulatoryFrameworkTag: React.FC<StandardTagProps> = ({ standard }) => {
 
     const standardEntry = standardMap[standard] || { label: standard, color: 'default' };
 
-    return <Tag color={standardEntry.color}>{standardEntry.label}</Tag>;
+    return <div><Tag color={standardEntry.color}>{standardEntry.label} {additionalReference ? `- ${additionalReference}` : ""} </Tag></div>;
 };
 
 export default RegulatoryFrameworkTag;

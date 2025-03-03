@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Modal, Progress, Divider, Tag, Button, Spin } from 'antd';
+import { Modal, Progress, Divider, Tag, Button, Collapse, Spin } from 'antd';
 import { Task, Requirement, RegulatoryFramework } from '@wasm';
 import { getComplianceColorCode } from '@/utils/formating';
 import Typography from '../typography';
@@ -14,8 +14,10 @@ import NATag from '../non-applicable-tag';
 import { getTasksByReportAndRequirmentId } from '@/utils/tasks-utils';
 import { RequirementAssessmentWithId } from '@/app/reports/view/key_findings/page';
 import { updateTaskStatus } from '@/utils/tasks-utils';
+import { useDocumentsContext } from '@/contexts/documents-context';
 import { LoadingOutlined } from "@ant-design/icons";
-import TaskActions from '@/app/reports/view/to_do/task-actions';
+
+const { Panel } = Collapse;
 
 interface RequirementModalProps {
     requirement: Requirement | undefined;
@@ -35,6 +37,7 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
 
     const complianceRating = requirementAssessment?.compliance_rating || 0;
     const { files } = useFilesContext()
+    const { documents, filesByDocumentId } = useDocumentsContext()
     const { wasmModule } = useWasm();
     const [blobUrls, setBlobUrls] = React.useState<{ [id: string]: string }>({});
     const [viewLoading, setViewLoading] = React.useState<{ [id: string]: boolean }>({});
@@ -76,11 +79,122 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
         }
     };
 
+    // Renders the sources accordion using Tailwind for styling.
+    const renderSourcesAccordion = () => (
+        <div className="mt-2 inline-block bg-blue-50 text-blue-600 rounded-lg border border-blue-300 w-full">
+            <Collapse ghost size="small">
+                <Panel key="1" header={`${requirementAssessment?.sources?.length} Sources and Research Summary`}>
+                    <div className="mb-2">
+                        <p>
+                            {requirementAssessment?.objective_research_summary || 'No summary available.'}
+                        </p>
+                    </div>
+                    <ul className="list-disc pl-5">
+                        {requirementAssessment?.sources && requirementAssessment?.sources.length > 0 ? (
 
-    console.log("Asdasdasd", requirement, requirementAssessment)
+                            requirementAssessment.sources.map((source, index) => {
+
+                                const document = documents.find((document) => document.number === source);
+                                const file = document && filesByDocumentId[document.id]
+
+                                return (
+                                    <li key={`source-${index}`}>
+                                        {document ? (
+                                            <button
+                                                className="text-blue-600 underline"
+                                                onClick={() => file && viewFile(file.id, async (id) => fetchFileData(id, wasmModule, {}, () => { }), blobUrls, setBlobUrls, setViewLoading)}
+                                            >
+                                                {document.meta.title}
+                                            </button>
+                                        ) : (
+                                            'Unknown Source'
+                                        )}
+                                    </li>
+                                );
+                            })
+                        ) : (
+                            <li>No sources available.</li>
+                        )}
+                    </ul>
+
+                </Panel>
+            </Collapse>
+        </div>
+    );
+
+    // Renders the detailed assessment accordion.
+    const renderDetailsAccordion = () => (
+        <div className="mt-2 inline-block bg-blue-50 text-blue-600 rounded-lg border border-blue-300 w-full">
+            <Collapse ghost size="small">
+                <Panel key="1" header="Detailed Assessment">
+                    <ReactMarkdown>
+                        {requirementAssessment?.details || 'No detailed assessment available.'}
+                    </ReactMarkdown>
+                </Panel>
+            </Collapse>
+        </div>
+    );
+
+    // Renders the task list.
+    const renderTaskList = () => (
+        <>
+            {tasksLoading ? (
+                <div className="flex items-center justify-center">
+                    <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
+                </div>
+            ) : tasks && tasks.length > 0 ? (
+                <ul className="list-disc pl-5">
+                    {tasks.map((task) => (
+                        <li key={task.id} className="my-4 flex items-center justify-between">
+                            {/* Status-based Rendering */}
+                            {task.status === "open" ? (
+                                <div>
+                                    <strong>{task.title}</strong> -
+                                    <span className="text-gray-400 ml-1">Added To Do</span>
+                                </div>
+                            ) : task.status === "completed" ? (
+                                <div className="flex items-center">
+                                    <strong>{task.title}</strong>
+                                    <Tag color="green" className="ml-2">✔ Completed</Tag>
+                                </div>
+                            ) : task.status === "ignored" ? (
+                                <div className="line-through text-gray-400">
+                                    <strong>{task.title}</strong>
+                                </div>
+                            ) : (
+                                // Default: Add To Do Button
+                                <div className="flex items-center justify-between w-full">
+                                    <div>
+                                        <strong>{task.title}</strong>
+                                        <div className="text-text_secondary">{task.description}</div>
+                                    </div>
+                                    <Button
+                                        type="primary"
+                                        size="small"
+                                        loading={taskLoading[task.id!]}
+                                        onClick={() => handleAddToDo(task)}
+                                        className="ml-4"
+                                    >
+                                        Add To Do
+                                    </Button>
+                                </div>
+                            )}
+                        </li>
+                    ))}
+                </ul>
+
+            ) : (
+                <p>No suggested tasks available.</p>
+            )}
+        </>
+    );
+
     return (
         <Modal
             open={open}
+            onCancel={onClose}
+            footer={null}
+            width="50%"
             title={
                 <div className="pr-6" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span>{requirement?.name || 'Requirement Details'}</span>
@@ -94,65 +208,30 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
                     }
                 </div>
             }
-            onCancel={onClose}
-            footer={null}
-            width="80%"
         >
-            <Divider className="border-thin mt-2 mb-2" />
+            <Divider className="my-2" />
 
-            <div className="mt-4">
-                <Typography className="my-4" textSize='h4'>Description of Requirement</Typography>
-                <p>{requirement?.description || 'No description available.'}</p>
-
-                <div className="flex gap-x-2 items-center mt-2">
-                    <RegulatoryFrameworkTag standard={regulatoryFramework} />
-                    {requirement?.reference && regulatoryFramework && (
-                        <Tag color="geekblue">
-                            {(() => {
-                                const refNormalized = requirement.reference.toLowerCase().replace(/\s+/g, "");
-                                const frameworkNormalized = regulatoryFramework.toLowerCase().replace(/\s+/g, "");
-
-                                return refNormalized.includes(frameworkNormalized)
-                                    ? requirement.reference.replace(new RegExp(regulatoryFramework, "gi"), "").trim()
-                                    : requirement.reference;
-                            })()}
-                        </Tag>
-                    )}
+            {/* Header Section */}
+            <div className="my-4">
+                <div className=" flex justify-between">
+                    <Typography textSize="h4">Requirement</Typography>
+                    <RegulatoryFrameworkTag
+                        standard={regulatoryFramework}
+                        additionalReference={requirement?.reference}
+                    />
                 </div>
+                <p>{requirement?.description || 'No description available.'}</p>
+            </div>
 
-                <Typography className="my-4" textSize='h4'>Summary of research</Typography>
 
-                <p>{requirementAssessment?.objective_research_summary || 'No summary available.'}</p>
 
-                <Typography className="my-4" textSize='h4'>Selected Documents</Typography>
+            <div className="my-4 bg-white rounded-lg">
+                {/* Assessment Section */}
+                <Typography className="pt-2" textSize="h4">Assessment</Typography>
 
-                <ul className="list-disc pl-5">
-                    {requirementAssessment?.sources && requirementAssessment?.sources.length > 0 ? (
-                        requirementAssessment.sources.map((source, index) => {
-                            const file = files.find((file) => file.number === source);
-                            return (
-                                <li key={`source-${index}`}>
-                                    {file ? (
-                                        <button
-                                            className="text-blue-600 underline"
-                                            onClick={() => viewFile(file.id, async (id) => fetchFileData(id, wasmModule, {}, () => { }), blobUrls, setBlobUrls, setViewLoading)}
-                                        >
-                                            {file.title}
-                                        </button>
-                                    ) : (
-                                        "Unknown Source"
-                                    )}
-                                </li>
-                            );
-                        })
-                    ) : (
-                        <li>No sources available.</li>
-                    )}
-                </ul>
-
-                <Typography className="my-4" textSize='h4'>Key findings</Typography>
-
-                {requirementAssessment?.negative_findings && requirementAssessment?.negative_findings?.length > 0 ? (
+                {/* Negative Findings */}
+                {requirementAssessment?.negative_findings &&
+                    requirementAssessment.negative_findings.length > 0 ? (
                     <ul className="list-disc pl-5">
                         {requirementAssessment.negative_findings.map((finding, index) => (
                             <li key={index}>{finding}</li>
@@ -162,59 +241,17 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
                     <p>No key findings available.</p>
                 )}
 
-                <Typography className="my-4" textSize='h4'>Detailed assessment</Typography>
+                {/* Details Accordion */}
+                {renderDetailsAccordion()}
+                {renderSourcesAccordion()}
+            </div>
 
-                <ReactMarkdown>{requirementAssessment?.details || 'No detailed assessment available.'}</ReactMarkdown>
-
-                <Typography className="my-4" textSize='h4'>Suggested tasks</Typography>
-                {tasksLoading ? (
-                    <div className="flex items-center justify-center">
-                        <Spin indicator={<LoadingOutlined style={{ fontSize: 24 }} spin />} />
-                    </div>
-                ) : tasks && tasks.length > 0 ? (
-                    <ul className="list-disc pl-5">
-                        {tasks.map((task) => (
-                            <li key={task.id} className="my-4 flex items-center justify-between">
-                                {/* Status-based Rendering */}
-                                {task.status === "open" ? (
-                                    <div>
-                                        <strong>{task.title}</strong> -
-                                        <span className="text-gray-400 ml-1">Added To Do</span>
-                                    </div>
-                                ) : task.status === "completed" ? (
-                                    <div className="flex items-center">
-                                        <strong>{task.title}</strong>
-                                        <Tag color="green" className="ml-2">✔ Completed</Tag>
-                                    </div>
-                                ) : task.status === "ignored" ? (
-                                    <div className="line-through text-gray-400">
-                                        <strong>{task.title}</strong>
-                                    </div>
-                                ) : (
-                                    // Default: Add To Do Button
-                                    <div className="flex items-center justify-between w-full">
-                                        <div>
-                                            <strong>{task.title}</strong>
-                                            <div className="text-text_secondary">{task.description}</div>
-                                        </div>
-                                        <Button
-                                            type="primary"
-                                            size="small"
-                                            loading={taskLoading[task.id!]}
-                                            onClick={() => handleAddToDo(task)}
-                                            className="ml-4"
-                                        >
-                                            Add To Do
-                                        </Button>
-                                    </div>
-                                )}
-                            </li>
-                        ))}
-                    </ul>
-
-                ) : (
-                    <p>No suggested tasks available.</p>
-                )}
+            {/* To Do Tasks */}
+            <div className="my-4">
+                <Typography textSize="h4">
+                    To Do
+                </Typography>
+                {renderTaskList()}
             </div>
         </Modal>
     );

@@ -32,7 +32,8 @@ import { usePathname } from "next/navigation"
 import { RequirementPriceProvider } from "@/contexts/price-context/use-requirement-price-context";
 import LoginPrompt from "@/components/login-prompt";
 import { useAllRequirementsContext } from "@/contexts/requirements-context/all-requirements-context";
-
+import { DocumentsProvider } from "@/contexts/documents-context";
+import SampleDetailedAssessmentModal from "@/components/detailed-assessment-modal/new";
 
 const { Content } = Layout;
 
@@ -134,9 +135,11 @@ export default function RootLayout({
                           <RequirementsProvider>
                             <RequirementPriceProvider>
                               <FilesProvider>
-                                <TasksProvider>
-                                  <LayoutWithWasm>{children}</LayoutWithWasm>
-                                </TasksProvider>
+                                <DocumentsProvider>
+                                  <TasksProvider>
+                                    <LayoutWithWasm>{children}</LayoutWithWasm>
+                                  </TasksProvider>
+                                </DocumentsProvider>
                               </FilesProvider>
                             </RequirementPriceProvider>
                           </RequirementsProvider>

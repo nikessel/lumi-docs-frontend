@@ -17,6 +17,7 @@ import { useRequirementPriceContext } from "@/contexts/price-context/use-require
 import { createReport } from "@/utils/report-utils/create-report-utils";
 import { useWasm } from "../WasmProvider";
 import { ValidateReportOutput as ValidateReportOutputType } from "@/utils/report-utils/create-report-utils";
+import { useDocumentsContext } from "@/contexts/documents-context";
 
 const { Step } = Steps;
 
@@ -53,24 +54,12 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
     const { requirementGroupsBySectionId } = useRequirementGroupsContext();
     const { requirementsByGroupId } = useRequirementsContext();
     const { files } = useFilesContext();
+    const { documents } = useDocumentsContext()
     const { wasmModule } = useWasm()
     const { userPrice } = useRequirementPriceContext()
     const [messageApi, contextHolder] = message.useMessage()
     const [isGeneratingReport, setIsGeneratingReport] = useState(false)
     const [validationResult, setValidationResult] = useState<ValidateReportOutputType | null>(null);
-
-    useEffect(() => {
-        const fetchRequirement = async () => {
-            if (wasmModule) {
-                const res = await wasmModule.get_requirement({ input: "01JMEJZKY7NT6FBJVYB32ET22X" });
-                const dd = await wasmModule.get_all_devices()
-                console.log("REQYUREMENT!!!", dd, res);
-            }
-        };
-
-        fetchRequirement();
-    }, [wasmModule]);
-
 
     useEffect(() => {
         const validate = async () => {
@@ -104,10 +93,10 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
     }, [requirementsByGroupId, requirementsSetForGroups, selectedRequirementGroups, setRequirementsSetForGroups, setSelectedRequirements]);
 
     useEffect(() => {
-        if (files.length > 0) {
-            setSelectedDocumentNumbers(files.map(file => file.number));
+        if (documents.length > 0) {
+            setSelectedDocumentNumbers(documents.map(document => document.number));
         }
-    }, [files, setSelectedDocumentNumbers]);
+    }, [documents, setSelectedDocumentNumbers]);
 
     const steps = [
         {
@@ -192,11 +181,6 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                         However, if you have conflicting versions, you can select specific documents below.
                     </Typography>
                     <SelectDocuments
-                        documents={files.map(file => ({
-                            id: file.id,
-                            name: file.title,
-                            number: file.number,
-                        }))}
                     />
                 </div>
             ),
@@ -205,14 +189,16 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
 
     const handleCreateReport = async () => {
         if (!wasmModule) return
+
         setIsGeneratingReport(true)
 
         const valRep = await validateReportInput(wasmModule)
 
+
         const createReportInput = !valRep.error ? valRep.input : undefined
 
         if (createReportInput) {
-            const res = await createReport(wasmModule, { ...createReportInput, filter: { ...createReportInput.filter, requirements_to_include: ["01JMEJZKY7NT6FBJVYB32ET22X"] } })
+            const res = await createReport(wasmModule, createReportInput)
             if (res.error) {
                 messageApi.error("An error occured creating the report")
                 setIsGeneratingReport(false)

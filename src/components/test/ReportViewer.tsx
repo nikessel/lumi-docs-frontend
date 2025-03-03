@@ -68,7 +68,7 @@ const FileSourceList: React.FC<FileSourceListProps> = ({ sourceNumbers }) => {
       }
 
       try {
-        const response = await wasmModule.get_files_by_numbers({ input: sourceNumbers });
+        const response = await wasmModule.get_all_files();
         if (response.output) {
           setFiles(response.output.output);
         } else if (response.error) {
@@ -107,7 +107,7 @@ const FileSourceList: React.FC<FileSourceListProps> = ({ sourceNumbers }) => {
     <ul className="list-disc pl-4">
       {files.map((file, index) => (
         <li key={`${file.id}-${index}`} className="text-sm text-gray-700">
-          {file.title}
+          {file.path}
         </li>
       ))}
     </ul>

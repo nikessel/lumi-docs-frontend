@@ -1,18 +1,12 @@
 import React, { useState } from "react";
 import { List, Checkbox, Button } from "antd";
 import { useCreateReportStore } from "@/stores/create-report-store";
+import { useDocumentsContext } from "@/contexts/documents-context";
 
-interface Document {
-    id: string;
-    name: string;
-    number: number;
-}
+const SelectDocuments: React.FC = () => {
 
-interface SelectDocumentsProps {
-    documents: Document[];
-}
+    const { documents, filesByDocumentId } = useDocumentsContext(); // Access documents from context
 
-const SelectDocuments: React.FC<SelectDocumentsProps> = ({ documents }) => {
     const {
         selectedDocumentNumbers,
         setSelectedDocumentNumbers,
@@ -21,7 +15,7 @@ const SelectDocuments: React.FC<SelectDocumentsProps> = ({ documents }) => {
     const [allDocumentsSelected, setAllDocumentsSelected] = useState(
         selectedDocumentNumbers.length === documents.length
     );
-    
+
     const [showDocuments, setShowDocuments] = useState(false);
 
     const handleAllDocumentsToggle = (checked: boolean) => {
@@ -35,12 +29,10 @@ const SelectDocuments: React.FC<SelectDocumentsProps> = ({ documents }) => {
 
     const handleDocumentSelect = (documentNumber: number) => {
         if (selectedDocumentNumbers.includes(documentNumber)) {
-            // Remove document from selection
             setSelectedDocumentNumbers(
                 selectedDocumentNumbers.filter((number) => number !== documentNumber)
             );
         } else {
-            // Add document to selection
             setSelectedDocumentNumbers([...selectedDocumentNumbers, documentNumber]);
         }
     };
@@ -78,7 +70,7 @@ const SelectDocuments: React.FC<SelectDocumentsProps> = ({ documents }) => {
                                     checked={selectedDocumentNumbers.includes(document.number)}
                                     onChange={() => handleDocumentSelect(document.number)}
                                 >
-                                    {document.name}
+                                    {document.meta.title}
                                 </Checkbox>
                                 <div className="px-2 py-1 rounded-md text-green-500 bg-green-100 text-center text-xs">FREE</div>
                             </div>

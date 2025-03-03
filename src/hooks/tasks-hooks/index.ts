@@ -10,6 +10,7 @@ import { filterReports } from "@/utils/report-utils";
 import { useRequirementsContext } from "@/contexts/requirements-context";
 import { useAuth } from "../auth-hook/Auth0Provider";
 import { logLumiDocsContext } from "@/utils/logging-utils";
+import { useDocumentsContext } from "@/contexts/documents-context";
 
 export interface TaskWithReportId extends Task {
     reportId: string;
@@ -40,6 +41,7 @@ export const useTasks = (): UseTasks => {
     const { selectedReports, selectedTaskDocuments, searchQuery, compliance } = useSearchParamsState();
     const { requirements } = useRequirementsContext();
     const { files } = useFilesContext();
+    const { documents } = useDocumentsContext();
 
     const [hasFetchedOnce, setHasFetchedOnce] = useState(false);
 
@@ -127,7 +129,7 @@ export const useTasks = (): UseTasks => {
 
         if (selectedTaskDocuments.length > 0) {
             filteredTasks = filteredTasks.filter((task) => {
-                const associatedDocId = files?.find((file) => file.title === task.associated_document)?.id;
+                const associatedDocId = documents?.find((document) => document.meta.title === task.associated_document)?.id;
                 return associatedDocId && selectedTaskDocuments.includes(associatedDocId);
             });
         }

@@ -5,14 +5,16 @@ import { Button, Divider, Space, Skeleton, Tooltip } from 'antd';
 import { UploadOutlined } from "@ant-design/icons";
 import Typography from '@/components/typography';
 import { useWasm } from "@/components/WasmProvider";
-import FileManager from './file-manager';
+import DocumentManager from './document-manager';
 import FileUploadModal from '@/components/upload-files/file-upload-modal';
 import { useFilesContext } from '@/contexts/files-context';
 import { viewFile, downloadFile, fetchFileData } from '@/utils/files-utils';
 import { useUploadManager } from '@/components/upload-files/upload-manager';
+import { useDocumentsContext } from '@/contexts/documents-context';
 
 const Page = () => {
     const { files, isLoading, error } = useFilesContext();
+    const { documents, isLoading: documentsLoading, error: documentsError } = useDocumentsContext();
 
     const { wasmModule, isLoading: wasmLoading } = useWasm();
 
@@ -74,8 +76,7 @@ const Page = () => {
             {error ? (
                 <Typography color="secondary">{error}</Typography>
             ) : (
-                <FileManager
-                    files={files}
+                <DocumentManager
                     viewLoading={viewLoading}
                     downloadLoading={downloadLoading}
                     viewFile={(fileId) =>
