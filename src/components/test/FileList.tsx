@@ -164,7 +164,7 @@ export function FileList() {
             {files.map((file) => (
               <li key={file.id} className="flex items-center gap-2 mb-2">
                 <span className="flex-1">
-                  {file.title || file.path || file.id}
+                  {file.path || file.id}
                 </span>
                 {file.uploaded && (
                   <div className="flex gap-2">
@@ -181,7 +181,6 @@ export function FileList() {
                       onClick={() =>
                         downloadFile(
                           file.id,
-                          file.title ||
                           file.path ||
                           `${file.id}.${file.extension}`,
                           file.extension === "pdf"

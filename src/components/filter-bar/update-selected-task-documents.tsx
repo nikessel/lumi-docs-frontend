@@ -5,19 +5,22 @@ import { Select, Spin } from "antd";
 import { useFiles } from "@/hooks/files-hooks";
 import { useSearchParamsState } from "@/contexts/search-params-context";
 import Typography from "../typography";
+import { useDocumentsContext } from "@/contexts/documents-context";
 
 const { Option } = Select;
 
 const SelectTaskDocuments: React.FC = () => {
     const { files, isLoading } = useFiles(); // Fetch available files
     const { selectedTaskDocuments, toggleSelectedTaskDocuments } = useSearchParamsState(); // Get state management functions
+    const { documents } = useDocumentsContext();
 
-    const fileOptions = useMemo(() => {
-        return files.map((file) => ({
-            label: file.title || file.path || file.id,
-            value: file.id,
+    const documentOptions = useMemo(() => {
+
+        return documents.map((document) => ({
+            label: document.meta.title,
+            value: document.id,
         }));
-    }, [files]);
+    }, [documents]);
 
     const handleChange = (selectedIds: string[]) => {
         selectedIds.forEach((fileId) => {
@@ -48,7 +51,7 @@ const SelectTaskDocuments: React.FC = () => {
                 optionFilterProp="label"
                 notFoundContent={isLoading ? <Spin size="small" /> : "No documents found"}
             >
-                {fileOptions.map(({ label, value }) => (
+                {documentOptions.map(({ label, value }) => (
                     <Option key={value} value={value}>
                         {label}
                     </Option>

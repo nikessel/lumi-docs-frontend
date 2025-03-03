@@ -6,6 +6,7 @@ import { Task } from "@wasm";
 import { getDocumentIconLetters } from "@/utils/files-utils";
 import { useFilesContext } from "@/contexts/files-context";
 import { useReportsContext } from "@/contexts/reports-context";
+import { useDocumentsContext } from "@/contexts/documents-context";
 
 interface TaskListProps {
     tasks: Task[];
@@ -20,6 +21,8 @@ const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
         taskCount: number;
         document_id: string | null;
     }[]>([]);
+
+    const { documents, filesByDocumentId } = useDocumentsContext()
 
     const { reports } = useReportsContext()
 
@@ -46,7 +49,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
                 document,
                 tasks,
                 taskCount: tasks.length,
-                document_id: files.find((file) => file.title === document)?.id || null
+                document_id: document
             }))
             .sort((a, b) => b.taskCount - a.taskCount);
 
