@@ -13,7 +13,6 @@ const DocumentRow: React.FC<{ document: Document; isSelected: boolean; onClick: 
             style={{ cursor: 'pointer' }}
         >
             <span>{document.meta.title}</span>
-            <span>{document.meta.document_type}</span>
             <span>{document.meta.version}</span>
         </div>
     );
