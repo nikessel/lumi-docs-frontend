@@ -37,7 +37,6 @@ interface SelectionSummary {
 }
 
 const FRAMEWORKS: { value: RegulatoryFramework; label: string }[] = [
-  { value: "mdr", label: "Medical Device Regulation (MDR)" },
   { value: "iso13485", label: "ISO 13485" },
   { value: "iso14155", label: "ISO 14155" },
   { value: "iso14971", label: "ISO 14971" }
