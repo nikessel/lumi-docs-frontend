@@ -5,16 +5,21 @@ import { calculateReportPrice } from "@/utils/report-utils/create-report-utils";
 import { useSpring, animated } from "@react-spring/web";
 import { formatPrice } from "@/utils/payment";
 import { useRequirementPriceContext } from "@/contexts/price-context/use-requirement-price-context";
+import { useUserContext } from "@/contexts/user-context";
 
 const PriceTracker: React.FC = () => {
-    const { selectedSections, selectedRequirementGroups, selectedRequirements } = useCreateReportStore(); // Access Zustand store
+    const { selectedSections, selectedRequirementGroups, selectedRequirements } = useCreateReportStore();
     const { userPrice, defaultPrice } = useRequirementPriceContext();
+    const { user } = useUserContext();
+    console.log("userPrice", userPrice, user);
 
-    let totalPrice = calculateReportPrice(userPrice ? userPrice : 0);
+    const priceToUse = userPrice || defaultPrice;
+    let totalPrice = calculateReportPrice(priceToUse ? priceToUse : 0);
     let totalPriceDefault = calculateReportPrice(defaultPrice ? defaultPrice : 0);
 
     if (selectedSections.length === 0 || selectedRequirementGroups.length === 0) {
         totalPrice = 0;
+        totalPriceDefault = 0;
     }
 
     const { animatedPrice } = useSpring({
@@ -34,7 +39,7 @@ const PriceTracker: React.FC = () => {
     return (
         <Tooltip title={tooltipContent} placement="top">
             <div className="px-2 py-1 rounded-md text-primary bg-bg_secondary text-center flex items-center gap-2">
-                {defaultPrice !== userPrice && (
+                {userPrice && defaultPrice && (
                     <span className="line-through text-gray-500">
                         {formatPrice(totalPriceDefault)}
                     </span>

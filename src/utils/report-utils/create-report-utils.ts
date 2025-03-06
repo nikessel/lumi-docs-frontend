@@ -9,12 +9,12 @@ export const calculateReportPrice = (pricePerReq: number): number => {
     return selectedRequirements.length * pricePerReq;
 };
 
-export type ValidateReportOutput = 
-    | { error: true; messages: string[] } 
+export type ValidateReportOutput =
+    | { error: true; messages: string[] }
     | { error: false; input: CreateReportInput };
 
 export const validateReportInput = async (wasmModule: typeof WasmModule | null): Promise<ValidateReportOutput> => {
-  const {
+    const {
         selectedFramework,
         selectedSections,
         selectedDocumentNumbers,
@@ -34,6 +34,10 @@ export const validateReportInput = async (wasmModule: typeof WasmModule | null):
 
     if (selectedDocumentNumbers.length === 0) {
         errorMessages.push("Please select at least 1 document.");
+    }
+
+    if (selectedRequirements.length === 0) {
+        errorMessages.push("Please select at least 1 requirement.");
     }
 
     if (errorMessages.length > 0) {

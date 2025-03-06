@@ -19,10 +19,10 @@ export const useFiles = (): UseFiles => {
     const [error, setError] = useState<string | null>(null);
     const { isAuthenticated, isLoading: authLoading } = useAuth()
 
-
     const addStaleFileId = useCacheInvalidationStore((state) => state.addStaleFileId);
     const removeStaleFileIds = useCacheInvalidationStore((state) => state.removeStaleFileIds);
     const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate);
+    const addFileIdNeedingDocuments = useCacheInvalidationStore((state) => state.addFileIdNeedingDocuments);
     const lastUpdated = useCacheInvalidationStore((state) => state.lastUpdated["files"]);
 
     const [hasFetchedOnce, setHasFetchedOnce] = useState(false);
@@ -30,21 +30,26 @@ export const useFiles = (): UseFiles => {
     useEffect(() => {
         if (!files.length) return;
 
-        const staleFileIds: string[] = files
-            .filter((file) => file.status === "processing" || file.status === "uploading")
-            .map((file) => file.id);
+        const processingFiles = files.filter((file) => file.status === "processing" || file.status === "uploading");
+        const staleFileIds = processingFiles.map((file) => file.id);
 
         if (staleFileIds.length > 0) {
             staleFileIds.forEach((id) => addStaleFileId(id));
 
             const timeout = setTimeout(() => {
                 triggerUpdate("files");
-                triggerUpdate("documents");
             }, 2 * 1000);
 
             return () => clearTimeout(timeout);
+        } else if (hasFetchedOnce) {
+            // When files are done processing, add them to fileIdsNeedingDocuments
+            const readyFileIds = files
+                .filter(file => file.status !== "processing" && file.status !== "uploading")
+                .map(file => file.id);
+            readyFileIds.forEach(id => addFileIdNeedingDocuments(id));
+            triggerUpdate("documents");
         }
-    }, [files, addStaleFileId, triggerUpdate]);
+    }, [files, addStaleFileId, triggerUpdate, hasFetchedOnce, addFileIdNeedingDocuments]);
 
     useEffect(() => {
         const loadFiles = async () => {

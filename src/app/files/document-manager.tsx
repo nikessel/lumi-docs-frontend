@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Input, Breadcrumb, Tag, Layout } from 'antd';
+import { Input, Breadcrumb, Tag, Layout, Tooltip } from 'antd';
 import { SearchOutlined, LoadingOutlined } from '@ant-design/icons';
 import { Document } from "@wasm";
 import { useWasm } from '@/components/WasmProvider';
@@ -66,7 +66,9 @@ const FileManager: React.FC<{
         setSelectedPath(path);
     };
 
-    console.log("filesByDocumentId", filesByDocumentId)
+    const handleFolderClick = (path: string) => {
+        setSelectedPath(path);
+    };
 
     return (
         <Layout style={{ height: '100%' }}>
@@ -81,16 +83,24 @@ const FileManager: React.FC<{
                 <div className="flex flex-col gap-4">
                     <div className="flex justify-between items-center">
                         <Breadcrumb style={{ fontSize: '14px' }}>
-                            <Breadcrumb.Item>Documents</Breadcrumb.Item>
-                            {selectedPath && (
-                                <Breadcrumb.Item>{selectedPath}</Breadcrumb.Item>
-                            )}
+                            <Breadcrumb.Item onClick={() => setSelectedPath(null)} className="cursor-pointer">Documents</Breadcrumb.Item>
+                            {selectedPath && selectedPath.split('/').map((part, index, array) => (
+                                <Breadcrumb.Item
+                                    key={index}
+                                    onClick={() => setSelectedPath(array.slice(0, index + 1).join('/'))}
+                                    className="cursor-pointer"
+                                >
+                                    {part}
+                                </Breadcrumb.Item>
+                            ))}
                         </Breadcrumb>
                         <div>
                             {processingFiles ? (
-                                <Tag color="geekblue" style={{ padding: '4px 8px' }}>
-                                    Processing {`${processingFiles} `}files <LoadingOutlined style={{ marginLeft: 5 }} />
-                                </Tag>
+                                <Tooltip title="Files will appear in the table once they are processed">
+                                    <Tag color="geekblue" style={{ padding: '4px 8px' }}>
+                                        Processing {processingFiles} files <LoadingOutlined style={{ marginLeft: 5 }} />
+                                    </Tag>
+                                </Tooltip>
                             ) : null}
                         </div>
                     </div>
@@ -110,6 +120,8 @@ const FileManager: React.FC<{
                             downloadFile={downloadFile}
                             viewLoading={viewLoading}
                             downloadLoading={downloadLoading}
+                            onFolderClick={handleFolderClick}
+                            currentPath={selectedPath}
                         />
                     </div>
                 </div>

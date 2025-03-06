@@ -109,20 +109,33 @@ const DirectoryTree: React.FC<DirectoryTreeProps> = ({ documents, filesByDocumen
                     const children = Object.values(node.children).map(convertToArray);
                     result.children = children;
 
-                    // Count files in this folder and its subfolders
+                    // Count files that belong to this folder's path
                     const countFiles = (nodes: TreeNodeArray[]): number => {
-                        return nodes.reduce((count, child) => {
-                            if (child.children) {
-                                return count + countFiles(child.children);
+                        let count = 0;
+                        // Count files in this folder's path
+                        documents.forEach(doc => {
+                            const file = filesByDocumentId[doc.id];
+                            if (file?.path) {
+                                const filePath = file.path;
+                                const folderPath = node.path;
+                                if (folderPath && filePath.startsWith(folderPath + '/')) {
+                                    count++;
+                                }
                             }
-                            return count + 1;
-                        }, 0);
+                        });
+
+                        // Add counts from subfolders
+                        nodes.forEach(child => {
+                            if (child.children) {
+                                count += countFiles(child.children);
+                            }
+                        });
+
+                        return count;
                     };
 
                     const fileCount = countFiles(children);
-                    if (fileCount > 0) {
-                        result.title = `${node.title} (${fileCount} files)`;
-                    }
+                    result.title = `${node.title} (${fileCount} files)`;
                 }
 
                 return result;
