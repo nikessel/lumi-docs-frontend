@@ -10,6 +10,7 @@ import { RegulatoryFramework } from '@wasm';
 import NATag from '@/components/non-applicable-tag';
 import { useReportsContext } from '@/contexts/reports-context';
 import { useRequirementsContext } from '@/contexts/requirements-context';
+import RegulatoryFrameworkTag from '@/components/regulatory-framework-tag';
 
 export type RequirementAssessmentWithId = RequirementAssessment & { id: string, reportId: string, regulatoryFramework: RegulatoryFramework };
 
@@ -54,7 +55,22 @@ const Page = () => {
             title: 'Requirement Name',
             dataIndex: 'id',
             key: 'name',
-            render: (id: string) => filteredSelectedRequirements.find((req) => req.id === id)?.name || 'Unknown Requirement',
+            render: (id: string, record: RequirementAssessmentWithId) => {
+                const requirement = filteredSelectedRequirements.find((req) => req.id === id);
+                return (
+                    <div className="">
+                        <div className="mb-2">{requirement?.name || 'Unknown Requirement'}</div>
+                        {requirement && (
+                            <div className="mb-1">
+                                <RegulatoryFrameworkTag
+                                    standard={record.regulatoryFramework}
+                                    additionalReference={requirement.reference}
+                                />
+                            </div>
+                        )}
+                    </div>
+                );
+            },
         },
         {
             title: 'Compliance Rating',

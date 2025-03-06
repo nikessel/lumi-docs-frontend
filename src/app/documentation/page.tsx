@@ -22,7 +22,28 @@ const generateAnchorItems = () => {
             href: "#chapter-getting-started",
             title: "Getting Started",
             children: [
-                { key: "chapter-getting-started-account-setup", href: "#chapter-getting-started-account-setup", title: "Setting Up Your Account" }
+                { key: "chapter-getting-started-account-setup", href: "#chapter-getting-started-account-setup", title: "Setting Up Your Account" },
+                { key: "chapter-getting-started-first-steps", href: "#chapter-getting-started-first-steps", title: "First Steps" }
+            ]
+        },
+        {
+            key: "chapter-features",
+            href: "#chapter-features",
+            title: "Features",
+            children: [
+                { key: "chapter-features-dashboard", href: "#chapter-features-dashboard", title: "Dashboard" },
+                { key: "chapter-features-reports", href: "#chapter-features-reports", title: "Reports" },
+                { key: "chapter-features-files", href: "#chapter-features-files", title: "File Management" },
+                { key: "chapter-features-tasks", href: "#chapter-features-tasks", title: "Task Management" }
+            ]
+        },
+        {
+            key: "chapter-settings",
+            href: "#chapter-settings",
+            title: "Settings & Configuration",
+            children: [
+                { key: "chapter-settings-preferences", href: "#chapter-settings-preferences", title: "User Preferences" },
+                { key: "chapter-settings-notifications", href: "#chapter-settings-notifications", title: "Notifications" }
             ]
         }
     ];
@@ -111,6 +132,132 @@ const DocumentationPage: React.FC = () => {
                             </a>
                         </Typography>
                     </div>
+
+                    {/* First Steps */}
+                    <div id="chapter-getting-started-first-steps" className="mt-6">
+                        <Typography textSize="h5">First Steps</Typography>
+                        <ol className="list-decimal pl-6">
+                            <li>Upload your documentation files in PDF format</li>
+                            <li>Navigate to the Reports section to create your first report</li>
+                            <li>Select your regulatory framework and documents for analysis</li>
+                            <li>Review the generated compliance report and implement suggested improvements</li>
+                        </ol>
+                        <div className="my-4 bg-red-100 p-4 rounded">
+                            <Typography textSize="default">[Placeholder for first steps illustration]</Typography>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Chapter: Features */}
+                <div id="chapter-features" className="mb-10">
+                    <Typography textSize="h3">Features</Typography>
+
+                    {/* Dashboard */}
+                    <div id="chapter-features-dashboard" className="mt-4">
+                        <Typography textSize="h5">Dashboard</Typography>
+                        <Typography color="primary" textSize="default" className="leading-5">
+                            The dashboard provides a comprehensive overview of your compliance status, including:
+                        </Typography>
+                        <ul className="list-disc pl-6 mt-2">
+                            <li>Recent reports and their status</li>
+                            <li>Pending tasks and deadlines</li>
+                            <li>Compliance metrics and trends</li>
+                            <li>Quick access to key features</li>
+                        </ul>
+                        <div className="my-4 bg-red-100 p-4 rounded">
+                            <Typography textSize="default">[Placeholder for dashboard screenshot]</Typography>
+                        </div>
+                    </div>
+
+                    {/* Reports */}
+                    <div id="chapter-features-reports" className="mt-6">
+                        <Typography textSize="h5">Reports</Typography>
+                        <Typography color="primary" textSize="default" className="leading-5">
+                            Create and manage compliance reports with ease:
+                        </Typography>
+                        <ul className="list-disc pl-6 mt-2">
+                            <li>Generate detailed compliance assessments</li>
+                            <li>Track progress over time</li>
+                            <li>Export reports in various formats</li>
+                            <li>Collaborate with team members</li>
+                        </ul>
+                        <div className="my-4 bg-red-100 p-4 rounded">
+                            <Typography textSize="default">[Placeholder for reports interface screenshot]</Typography>
+                        </div>
+                    </div>
+
+                    {/* File Management */}
+                    <div id="chapter-features-files" className="mt-6">
+                        <Typography textSize="h5">File Management</Typography>
+                        <Typography color="primary" textSize="default" className="leading-5">
+                            Efficiently manage your documentation:
+                        </Typography>
+                        <ul className="list-disc pl-6 mt-2">
+                            <li>Upload and organize PDF documents</li>
+                            <li>Search through document content</li>
+                            <li>Version control and history</li>
+                            <li>Secure storage and access control</li>
+                        </ul>
+                        <div className="my-4 bg-red-100 p-4 rounded">
+                            <Typography textSize="default">[Placeholder for file management interface screenshot]</Typography>
+                        </div>
+                    </div>
+
+                    {/* Task Management */}
+                    <div id="chapter-features-tasks" className="mt-6">
+                        <Typography textSize="h5">Task Management</Typography>
+                        <Typography color="primary" textSize="default" className="leading-5">
+                            Streamline your compliance workflow:
+                        </Typography>
+                        <ul className="list-disc pl-6 mt-2">
+                            <li>Automatically generated tasks from reports</li>
+                            <li>Task assignment and tracking</li>
+                            <li>Priority management</li>
+                            <li>Progress monitoring</li>
+                        </ul>
+                        <div className="my-4 bg-red-100 p-4 rounded">
+                            <Typography textSize="default">[Placeholder for task management interface screenshot]</Typography>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Chapter: Settings & Configuration */}
+                <div id="chapter-settings" className="mb-10">
+                    <Typography textSize="h3">Settings & Configuration</Typography>
+
+                    {/* User Preferences */}
+                    <div id="chapter-settings-preferences" className="mt-4">
+                        <Typography textSize="h5">User Preferences</Typography>
+                        <Typography color="primary" textSize="default" className="leading-5">
+                            Customize your LumiDocs experience:
+                        </Typography>
+                        <ul className="list-disc pl-6 mt-2">
+                            <li>Theme selection (Light/Dark mode)</li>
+                            <li>Acceptance criteria thresholds</li>
+                            <li>Custom view settings</li>
+                            <li>Language preferences</li>
+                        </ul>
+                        <div className="my-4 bg-red-100 p-4 rounded">
+                            <Typography textSize="default">[Placeholder for settings interface screenshot]</Typography>
+                        </div>
+                    </div>
+
+                    {/* Notifications */}
+                    <div id="chapter-settings-notifications" className="mt-6">
+                        <Typography textSize="h5">Notifications</Typography>
+                        <Typography color="primary" textSize="default" className="leading-5">
+                            Stay informed about important updates:
+                        </Typography>
+                        <ul className="list-disc pl-6 mt-2">
+                            <li>Email notifications for task assignments</li>
+                            <li>Report completion alerts</li>
+                            <li>Deadline reminders</li>
+                            <li>System updates and announcements</li>
+                        </ul>
+                        <div className="my-4 bg-red-100 p-4 rounded">
+                            <Typography textSize="default">[Placeholder for notifications settings screenshot]</Typography>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -118,119 +265,3 @@ const DocumentationPage: React.FC = () => {
 };
 
 export default DocumentationPage;
-
-
-// 'use client'
-// import React, { ReactElement } from "react";
-// import { Layout, Anchor, Table, Alert, Affix } from "antd";
-// import type { DocumentationData, ContentItem, Chapter } from "./documentation-types";
-// import documentationData from "./documentation.json";
-// import Typography from "@/components/typography";
-// import Image from "next/image";
-// import Dashboard from "@/assets/dashboard.png"
-
-
-// const { Content, Sider } = Layout;
-
-// const RenderChapter: React.FC<{ chapter: Chapter }> = ({ chapter }) => {
-//     return (
-//         <div
-//             key={`${chapter.id}`}
-//             id={`${chapter.id}`}
-//             className="w-full"
-//         >
-//             <Typography textSize="h3">{chapter.title}</Typography>
-//             {chapter.content
-//                 .map((item, index) => (
-//                     <div
-//                         key={`${chapter.id}-sub-${index}`}
-//                         id={`${chapter.id}-sub-${index}`}
-//                         className="w-full my-4 "
-//                     >
-//                         {item.type === "SubHeader" && <Typography textSize="h5" >{item.text}</Typography>}
-//                         {item.type === "SubSubHeader" && <Typography textSize="h6" >{item.text}</Typography>}
-//                         {item.type === "Text" && <Typography color={item.color} textSize={item.size} className="leading-5">{item.text}</Typography>}
-//                         {item.type === "Callout" && (
-//                             <div
-//                                 className={`${item.url ? "cursor-pointer" : ""}`}
-//                                 onClick={() => {
-//                                     if (item.url) {
-//                                         window.open(item.url, "_blank", "noopener,noreferrer");
-//                                     }
-//                                 }}>
-//                                 <Alert
-//                                     message={item.text}
-//                                     type={item.calloutType || "info"}
-//                                     showIcon
-//                                     className="w-full"
-
-//                                 />
-//                             </div>
-//                         )}
-//                         {item.type === "List" && (
-//                             <ul className="list-disc pl-6">
-//                                 {item.listItems?.map((listItem, i) => (
-//                                     <li key={`${chapter.id}-list-${index}-${i}`} className="mb-2">
-//                                         {listItem}
-//                                     </li>
-//                                 ))}
-//                             </ul>
-//                         )}
-//                         {item.type === "Image" && item.src && (
-//                             <div className="my-4">
-//                                 <Image
-//                                     src={item.src}
-//                                     alt={item.alt || "Image"}
-//                                     width={800}
-//                                     height={400}
-//                                     className=""
-//                                 />
-//                             </div>
-//                         )}
-//                     </div>
-//                 ))}
-//         </div>
-//     );
-// };
-
-// const Page: React.FC = () => {
-//     const { title, chapters } = documentationData as DocumentationData;
-
-//     const generateAnchorItems = (chapters: Chapter[]) => {
-//         return chapters.map((chapter) => {
-//             const children = chapter.content
-//                 .filter((item) => item.type === "SubHeader" || item.type === "SubSubHeader")
-//                 .map((subItem, index) => ({
-//                     key: `${chapter.id}-sub-${index}`,
-//                     href: `#${chapter.id}-sub-${index}`,
-//                     title: subItem.text,
-//                 }));
-
-//             return {
-//                 key: chapter.id,
-//                 href: `#${chapter.id}`,
-//                 title: chapter.title,
-//                 children: children.length > 0 ? children : undefined,
-//             };
-//         });
-//     };
-
-//     return (
-//         <div className="flex gap-6">
-//             <Affix offsetTop={70}>
-//                 <div className="bg-gray-50 rounded-lg p-4 h-80">
-//                     <Anchor items={generateAnchorItems(chapters)} />
-//                 </div>
-//             </Affix>
-//             <div className="w-full">
-//                 {chapters.map((chapter) => (
-//                     <div key={chapter.id} id={chapter.id} style={{ marginBottom: "24px" }}>
-//                         <RenderChapter chapter={chapter} />
-//                     </div>
-//                 ))}
-//             </div>
-//         </div>
-//     );
-// };
-
-// export default Page;

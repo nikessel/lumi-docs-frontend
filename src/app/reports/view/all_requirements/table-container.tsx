@@ -129,16 +129,27 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
                     requirement_groups.find((group) => group.id === record.id)?.name ||
                     record.id;
 
-                const regulatoryFramework = sections.find((section) => section.id === record.id)?.regulatory_framework;
+                // Get the current section from breadcrumb if we're in a section view
+                const currentSection = breadcrumb.length > 1 ? sections.find(section => section.id === breadcrumb[1].title) : undefined;
+
+                // Get the reference from the current record
+                const reference = requirements.find((req) => req.id === record.id)?.reference ||
+                    requirement_groups.find((group) => group.id === record.id)?.reference;
+
+                // Use the current section's framework if we're in a section view, otherwise use the record's own framework
+                const regulatoryFramework = currentSection?.regulatory_framework ||
+                    sections.find((section) => section.id === record.id)?.regulatory_framework ||
+                    sections.find((section) => section.id === ('section_id' in record ? record.section_id : undefined))?.regulatory_framework;
 
                 return (
-                    <div>
+                    <div className="">
+                        <div className="mb-2">{name}</div>
                         {regulatoryFramework && (
                             <div className="mb-1">
-                                <RegulatoryFrameworkTag standard={regulatoryFramework} />
+                                <RegulatoryFrameworkTag standard={regulatoryFramework} additionalReference={reference} />
                             </div>
                         )}
-                        <div>{name}</div>
+
                     </div>
                 );
             },
@@ -203,10 +214,13 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
                         displayTitle = "Sections";
                     } else {
                         const section = sections.find((section) => section.id === crumb.title);
+                        const group = requirement_groups.find((group) => group.id === crumb.title);
                         if (section) {
                             displayTitle = `${section.regulatory_framework} / ${section.name}`;
+                        } else if (group) {
+                            displayTitle = group.name;
                         } else {
-                            displayTitle = crumb.title; // Fallback if no section matches
+                            displayTitle = crumb.title; // Fallback if no section or group matches
                         }
                     }
 
@@ -222,6 +236,10 @@ const TableContainer: React.FC<TableContainerProps> = ({ reports, sections, requ
                 rowKey={(record) => `${record.id}-${Math.random()}`} // Add a unique suffix to prevent duplicates
                 columns={columns}
                 pagination={false}
+                onRow={(record) => ({
+                    onClick: () => handleRowClick(record),
+                    style: { cursor: 'pointer' }
+                })}
             />
             <DetailedAssessmentModal
                 requirement={selectedRequirement.requirement}
