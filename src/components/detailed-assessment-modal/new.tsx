@@ -188,7 +188,6 @@ const SampleDetailedAssessmentModal: React.FC<RequirementModalProps> = ({ onClos
                     />
                 </div>
                 <p>{sampleRequirement.description || 'No description available.'}</p>
-
             </div>
 
 

@@ -24,8 +24,6 @@ const ReportCard: React.FC<ReportCardProps> = ({
     const reportTasks = tasks.filter(task => task.reportId === report?.id);
     const unresolvedTasks = tasks.filter(task => task.status === "open").filter(task => task.reportId === report?.id);
 
-    console.log("tasksss tasks", tasks)
-
 
     const handleClickReportTitle = async () => {
         router.push(`/reports/view/overview?selectedReports=${report?.id}`)

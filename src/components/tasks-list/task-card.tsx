@@ -1,38 +1,39 @@
 import React from "react";
-import { Button, Skeleton } from "antd";
+import { Skeleton } from "antd";
 import Typography from "@/components/typography";
-import { genColor } from "@/utils/styling-utils";
 import { createUrlWithParams } from "@/utils/url-utils";
 import { useRouter, useSearchParams } from "next/navigation";
+import DocumentIcon from "@/components/document-icon";
+import RegulatoryFrameworkTag from "@/components/regulatory-framework-tag";
+import { Task } from "@wasm";
+import { useReportsContext } from "@/contexts/reports-context";
+import { TaskWithReportId } from "@/hooks/tasks-hooks";
 
-interface DocumentTaskCardProps {
-    document_title: string;
-    document_id: string | null,
-    number_of_associated_tasks: number;
-    document_icon_letters: string;
+interface TaskCardProps {
+    task: TaskWithReportId;
     isLoading: boolean;
     allReportIds: string[]
 }
 
-const DocumentTaskCard: React.FC<DocumentTaskCardProps> = ({
-    document_title,
-    number_of_associated_tasks,
-    document_icon_letters,
+const TaskCard: React.FC<TaskCardProps> = ({
+    task,
     isLoading,
     allReportIds,
-    document_id,
 }) => {
     const searchParams = useSearchParams()
     const router = useRouter()
+    const { reports } = useReportsContext();
 
-    const handleOnClickDocumentCard = async () => {
-        if (!document_id) return;
+    const handleOnClickTaskCard = async () => {
         const updatedSearchParams = new URLSearchParams(searchParams.toString());
         updatedSearchParams.set("selectedReports", allReportIds.join(","));
-        updatedSearchParams.set("selectedTaskDocuments", document_id);
-        const newUrl = createUrlWithParams("/tasks/view/kanban", updatedSearchParams);
+        const newUrl = createUrlWithParams("/reports/view/to_do", updatedSearchParams);
         router.push(newUrl);
     };
+
+    // Find the report associated with this task
+    const associatedReport = reports.find(report => report.id === task.reportId);
+    const regulatoryFramework = associatedReport?.regulatory_framework;
 
     if (isLoading) {
         return (
@@ -44,40 +45,49 @@ const DocumentTaskCard: React.FC<DocumentTaskCardProps> = ({
                         <Skeleton active title={false} paragraph={{ rows: 1, width: "100px" }} />
                     </div>
                 </div>
-                <Skeleton.Button active size="small" />
             </div>
         );
     }
 
-    if (document_id) {
-        return (
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-2" >
-                <div className="flex items-center">
-                    <div
-                        className="flex items-center justify-center w-10 h-10 rounded-full mr-4 text-xs"
-                        style={{
-                            color: genColor(document_title).color,
-                            backgroundColor: genColor(document_title).backgroundColor
-                        }}
-
-                    >
-                        {document_icon_letters}
-                    </div>
-                    <div>
-                        <Typography textSize="h6" className="font-bold">
-                            {document_title}
-                        </Typography>
-                        <Typography textSize="small" color="secondary" className="mt-1">
-                            {number_of_associated_tasks} implementation tasks
-                        </Typography>
-                    </div>
+    return (
+        <div
+            onClick={handleOnClickTaskCard}
+            className="flex items-center p-3 bg-gray-50 rounded-lg mb-2 hover:bg-gray-100 transition-colors cursor-pointer"
+        >
+            <div className="flex items-center">
+                <div className="mr-4">
+                    {task.associated_document ? (
+                        <DocumentIcon
+                            documentTitle={task.associated_document}
+                            letters={task.associated_document.substring(0, 2).toUpperCase()}
+                            size="medium"
+                        />
+                    ) : (
+                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-500 text-xs font-medium">
+                            NEW
+                        </div>
+                    )}
                 </div>
-                <Button type="link" onClick={handleOnClickDocumentCard} className="p-0 text-blue-500">
-                    View
-                </Button>
-            </div >
-        );
-    }
+                <div>
+                    <Typography textSize="h6" className="font-bold">
+                        {task.title}
+                    </Typography>
+                    <Typography
+                        textSize="small"
+                        color="secondary"
+                        className="mt-1 line-clamp-2"
+                    >
+                        {task.description}
+                    </Typography>
+                    {regulatoryFramework && (
+                        <div className="mt-2">
+                            <RegulatoryFrameworkTag standard={regulatoryFramework} />
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
 };
 
-export default DocumentTaskCard;
+export default TaskCard;
