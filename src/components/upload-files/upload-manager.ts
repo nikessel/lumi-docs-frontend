@@ -56,12 +56,12 @@ async function processAndUploadFile(
 ): Promise<void> {
     try {
         console.debug(`Processing file ${file.name}`);
-        const fileName = file.name;
+        const filePath = file.name; // This now contains the full path from webkitRelativePath
         const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
         // Use `new_file` to create the file synchronously and retrieve the response
         const newFileResponse = new_file({
-            path: fileName,
+            path: filePath,
             size: file.size,
         });
 

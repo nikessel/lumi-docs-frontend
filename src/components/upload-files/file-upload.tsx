@@ -90,8 +90,10 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
         }
 
         try {
-            const nativeFiles = selectedFiles.map((file) => new File([file.originFileObj as Blob], file.name, { type: file.type }));
-            console.log("asd123asd123:", nativeFiles);
+            const nativeFiles = selectedFiles.map((file) => {
+                const path = file.originFileObj?.webkitRelativePath || file.name;
+                return new File([file.originFileObj as Blob], path, { type: file.type });
+            });
             uploadManager.uploadFiles(nativeFiles, handleResetSelectedFiles, handleRefetchFiles);
             handleResetSelectedFiles()
             onClose()

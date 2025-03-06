@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Button, Steps, Select, message } from "antd";
 import SelectSections from "./section-selector";
 import SelectDocuments from "./document-selector";
+import SelectRequirementGroups from "./requirement-group-selector";
+import SelectRequirements from "./requirement-selector";
 import Typography from "../typography";
 import { getSupportedFrameworks } from "@/utils/regulatory-frameworks-utils";
 import { formatRegulatoryFramework } from "@/utils/helpers";
@@ -9,10 +11,9 @@ import { useSectionsContext } from "@/contexts/sections-context";
 import { useFilesContext } from "@/contexts/files-context";
 import { useRequirementGroupsContext } from "@/contexts/requirement-group-context";
 import { useRequirementsContext } from "@/contexts/requirements-context";
-import SelectRequirementGroups from "./requirement-group-selector";
 import { useCreateReportStore } from "@/stores/create-report-store";
 import { validateReportInput } from "@/utils/report-utils/create-report-utils";
-import { getPriceForSection, getPriceForGroup } from "@/utils/payment";
+import { getPriceForSection, getPriceForGroup, getPriceForRequirement } from "@/utils/payment";
 import { useRequirementPriceContext } from "@/contexts/price-context/use-requirement-price-context";
 import { createReport } from "@/utils/report-utils/create-report-utils";
 import { useWasm } from "../WasmProvider";
@@ -165,6 +166,29 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                                 id: group.id,
                                 name: group.name || "Unknown",
                                 price_for_group: getPriceForGroup(group.id, requirementsByGroupId, userPrice ? userPrice : 0),
+                            }))
+                        }
+                    />
+                </div>
+            ),
+        },
+        {
+            title: "Requirements",
+            content: (
+                <div>
+                    <Typography textSize="h6" className="mb-4">Select Requirements</Typography>
+                    <Typography className="my-4 leading-6" color="secondary">
+                        Based on your selected requirement groups, LumiDocs has identified {selectedRequirementGroups
+                            .flatMap((groupId) => requirementsByGroupId[groupId] || []).length} requirements.
+                        You can select a subset of these requirements to include in the report.
+                    </Typography>
+                    <SelectRequirements
+                        requirements={selectedRequirementGroups
+                            .flatMap((groupId) => requirementsByGroupId[groupId] || [])
+                            .map((req) => ({
+                                id: req.id,
+                                name: req.name || "Unknown",
+                                price_for_requirement: getPriceForRequirement(req.id, userPrice ? userPrice : 0),
                             }))
                         }
                     />

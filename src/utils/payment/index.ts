@@ -33,6 +33,10 @@ export const getPriceForFramework = (
     }, 0);
 };
 
+export const getPriceForRequirement = (requirementId: string, userPrice: number): number => {
+    return userPrice;
+};
+
 
 // ✅ Format the price for EU locale
 export const formatPrice = (value: number) =>
