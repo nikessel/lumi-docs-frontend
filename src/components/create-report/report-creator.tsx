@@ -36,6 +36,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
         selectedSections,
         selectedRequirementGroups,
         selectedRequirements,
+        selectedDocumentNumbers,
         sectionsSetForFramework,
         setSectionsSetForFramework,
         groupsSetForSections,
@@ -57,7 +58,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
     const { files } = useFilesContext();
     const { documents } = useDocumentsContext()
     const { wasmModule } = useWasm()
-    const { userPrice } = useRequirementPriceContext()
+    const { userPrice, defaultPrice } = useRequirementPriceContext()
     const [messageApi, contextHolder] = message.useMessage()
     const [isGeneratingReport, setIsGeneratingReport] = useState(false)
     const [validationResult, setValidationResult] = useState<ValidateReportOutputType | null>(null);
@@ -68,7 +69,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
             setValidationResult(result);
         };
         validate();
-    }, [selectedSections, selectedRequirementGroups, selectedRequirements, files, wasmModule]);
+    }, [selectedSections, selectedRequirementGroups, selectedRequirements, files, wasmModule, selectedDocumentNumbers]);
 
     useEffect(() => {
         if (sectionsForRegulatoryFramework[selectedFramework] && sectionsSetForFramework !== selectedFramework) {
@@ -142,7 +143,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                                 section.id,
                                 requirementGroupsBySectionId,
                                 requirementsByGroupId,
-                                userPrice ? userPrice : 0
+                                userPrice ? userPrice : defaultPrice
                             ),
                         }))}
                     />
@@ -165,7 +166,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                             .map((group) => ({
                                 id: group.id,
                                 name: group.name || "Unknown",
-                                price_for_group: getPriceForGroup(group.id, requirementsByGroupId, userPrice ? userPrice : 0),
+                                price_for_group: getPriceForGroup(group.id, requirementsByGroupId, userPrice ? userPrice : defaultPrice),
                             }))
                         }
                     />
@@ -188,7 +189,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                             .map((req) => ({
                                 id: req.id,
                                 name: req.name || "Unknown",
-                                price_for_requirement: getPriceForRequirement(req.id, userPrice ? userPrice : 0),
+                                price_for_requirement: getPriceForRequirement(req.id, userPrice ? userPrice : defaultPrice),
                             }))
                         }
                     />

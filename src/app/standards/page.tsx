@@ -20,7 +20,7 @@ const RegulatoryFrameworksTable: React.FC = () => {
 
     const { requirementsByGroupId, loading: requirementsLoading } = useRequirementsContext();
 
-    const { userPrice } = useRequirementPriceContext()
+    const { userPrice, defaultPrice } = useRequirementPriceContext()
     const [isLoading, setIsLoading] = useState(true);
     const [breadcrumb, setBreadcrumb] = useState<{ name: string; id: string | null }[]>([{ name: 'Frameworks', id: null }]);
     const [view, setView] = useState<'frameworks' | 'sections' | 'groups' | 'requirements'>('frameworks');
@@ -173,7 +173,7 @@ const RegulatoryFrameworksTable: React.FC = () => {
                 name: f.id,
                 description: f.description || 'No description available',
                 sectionCount: sectionsForRegulatoryFramework[f.id]?.length || 0,
-                price: formatPrice(getPriceForFramework(f.id, sectionsForRegulatoryFramework, requirementGroupsBySectionId, requirementsByGroupId, userPrice ? userPrice : 0)),
+                price: formatPrice(getPriceForFramework(f.id, sectionsForRegulatoryFramework, requirementGroupsBySectionId, requirementsByGroupId, userPrice ? userPrice : defaultPrice)),
                 documents: 1000,
             }));
         } else if (view === 'sections') {
@@ -182,7 +182,7 @@ const RegulatoryFrameworksTable: React.FC = () => {
                 name: section.name,
                 description: section.description || 'No description available',
                 groupCount: requirementGroupsBySectionId[section.id]?.length || 0,
-                price: formatPrice(getPriceForSection(section.id, requirementGroupsBySectionId, requirementsByGroupId, userPrice ? userPrice : 0))
+                price: formatPrice(getPriceForSection(section.id, requirementGroupsBySectionId, requirementsByGroupId, userPrice ? userPrice : defaultPrice))
             })) || [];
         } else if (view === 'groups') {
             return requirementGroupsBySectionId[selectedId || ""]?.map(group => ({
@@ -190,17 +190,17 @@ const RegulatoryFrameworksTable: React.FC = () => {
                 name: group.name,
                 description: group.description || 'No description available',
                 requirementCount: requirementsByGroupId[group.id]?.length || 0,
-                price: formatPrice(getPriceForGroup(group.id, requirementsByGroupId, userPrice ? userPrice : 0))
+                price: formatPrice(getPriceForGroup(group.id, requirementsByGroupId, userPrice ? userPrice : defaultPrice))
             })) || [];
         } else {
             return requirementsByGroupId[selectedId || ""]?.map(req => ({
                 key: req.id,
                 name: req.name,
                 description: req.description || 'No description available',
-                price: formatPrice(userPrice ? userPrice : 0)
+                price: formatPrice(userPrice ? userPrice : defaultPrice)
             })) || [];
         }
-    }, [isLoading, view, frameworks, sectionsForRegulatoryFramework, requirementGroupsBySectionId, requirementsByGroupId, selectedId, userPrice]);
+    }, [isLoading, view, frameworks, sectionsForRegulatoryFramework, requirementGroupsBySectionId, requirementsByGroupId, selectedId, userPrice, defaultPrice]);
 
 
     return (

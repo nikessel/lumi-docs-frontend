@@ -75,6 +75,7 @@ export const useCreateReportStore = create<ReportState>()(
                     selectedFramework: "mdr",
                     selectedSections: [],
                     selectedRequirementGroups: [],
+                    selectedRequirements: [],
                 })),
         }),
         {

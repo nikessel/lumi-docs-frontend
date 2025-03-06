@@ -7,6 +7,7 @@ interface CacheInvalidationState {
     staleFileIds: string[];
     staleTaskIds: string[];
     staleDocumentIds: string[];
+    fileIdsNeedingDocuments: string[];
 
     addStaleId: (id: string) => void;
     removeStaleIds: (ids: string[]) => void;
@@ -26,6 +27,10 @@ interface CacheInvalidationState {
     removeStaleTaskIds: (ids: string[]) => void;
     clearStaleTaskIds: () => void;
 
+    addFileIdNeedingDocuments: (id: string) => void;
+    removeFileIdsNeedingDocuments: (ids: string[]) => void;
+    clearFileIdsNeedingDocuments: () => void;
+
     lastUpdated: Record<string, number | null>;
     triggerUpdate: (storeName: string, updateComplete?: boolean) => void;
 
@@ -42,6 +47,7 @@ const useCacheInvalidationStore = create<CacheInvalidationState>()(
             staleFileIds: [],
             staleTaskIds: [],
             staleDocumentIds: [],
+            fileIdsNeedingDocuments: [],
 
             // ✅ Add Stale IDs
             addStaleId: (id: string) =>
@@ -69,6 +75,12 @@ const useCacheInvalidationStore = create<CacheInvalidationState>()(
                     staleDocumentIds: state.staleDocumentIds.includes(id) ? state.staleDocumentIds : [...state.staleDocumentIds, id],
                 })),
 
+            addFileIdNeedingDocuments: (id: string) =>
+                set((state) => ({
+                    fileIdsNeedingDocuments: state.fileIdsNeedingDocuments.includes(id)
+                        ? state.fileIdsNeedingDocuments
+                        : [...state.fileIdsNeedingDocuments, id],
+                })),
 
             // ✅ Remove Stale IDs
             removeStaleIds: (ids: string[]) =>
@@ -96,10 +108,19 @@ const useCacheInvalidationStore = create<CacheInvalidationState>()(
                     staleDocumentIds: state.staleDocumentIds.filter((staleId) => !ids.includes(staleId)),
                 })),
 
+            removeFileIdsNeedingDocuments: (ids: string[]) =>
+                set((state) => ({
+                    fileIdsNeedingDocuments: state.fileIdsNeedingDocuments.filter(
+                        (fileId) => !ids.includes(fileId)
+                    ),
+                })),
+
             // ✅ Clear Stale IDs
             clearStaleFileIds: () => set(() => ({ staleFileIds: [] })),
             clearStaleTaskIds: () => set(() => ({ staleTaskIds: [] })),
             clearStaleDocumentIds: () => set(() => ({ staleDocumentIds: [] })),
+            clearFileIdsNeedingDocuments: () =>
+                set(() => ({ fileIdsNeedingDocuments: [] })),
 
             // ✅ Cache update triggers
             lastUpdated: {}, // Tracks the last update timestamp for each store
@@ -132,6 +153,7 @@ const useCacheInvalidationStore = create<CacheInvalidationState>()(
                     staleTaskIds: [],
                     lastUpdated: {},
                     beingRefetched: {},
+                    fileIdsNeedingDocuments: [],
                 })),
         }),
         {

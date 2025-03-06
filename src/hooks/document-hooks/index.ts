@@ -17,7 +17,7 @@ interface UseDocuments {
 
 export const useDocuments = (): UseDocuments => {
     const { wasmModule } = useWasm();
-    const { files } = useFilesContext(); // Assumed hook that returns { files: File[] }
+    const { files } = useFilesContext();
     const [documents, setDocuments] = useState<Document[]>([]);
     const [filesByDocumentId, setFilesByDocumentId] = useState<Record<string, File>>({});
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -27,6 +27,8 @@ export const useDocuments = (): UseDocuments => {
     const removeStaleDocumentIds = useCacheInvalidationStore((state) => state.removeStaleDocumentIds);
     const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate);
     const lastUpdated = useCacheInvalidationStore((state) => state.lastUpdated["documents"]);
+    const fileIdsNeedingDocuments = useCacheInvalidationStore((state) => state.fileIdsNeedingDocuments);
+    const removeFileIdsNeedingDocuments = useCacheInvalidationStore((state) => state.removeFileIdsNeedingDocuments);
 
     const [hasFetchedOnce, setHasFetchedOnce] = useState(false);
 
@@ -37,59 +39,65 @@ export const useDocuments = (): UseDocuments => {
 
             try {
                 setIsLoading(true);
-                const { documents: fetchedDocuments, error } = await fetchDocuments(wasmModule);
+                let fetchedDocuments: Document[] = [];
 
-                if (error) {
-                    logLumiDocsContext(`Failed to fetch documents: ${error}`, "error");
-                    setError(error);
+                if (fileIdsNeedingDocuments.length > 0) {
+                    // Fetch documents for specific file IDs
+                    const docsByFileId = await fetchDocumentsByFileIds(wasmModule, fileIdsNeedingDocuments);
+
+                    // Convert the fileId -> document mapping to a flat array of documents
+                    fetchedDocuments = Object.values(docsByFileId).filter((doc): doc is Document => doc !== null);
+
+                    // Remove the file IDs from the list since we've fetched their documents
+                    removeFileIdsNeedingDocuments(fileIdsNeedingDocuments);
+
+                    // Update the filesByDocumentId mapping
+                    const newFilesByDocumentId: Record<string, File> = {};
+                    for (const fileId of fileIdsNeedingDocuments) {
+                        const doc = docsByFileId[fileId];
+                        const file = files.find(f => f.id === fileId);
+                        if (doc && file) {
+                            newFilesByDocumentId[doc.id] = file;
+                        }
+                    }
+                    setFilesByDocumentId(prev => ({ ...prev, ...newFilesByDocumentId }));
                 } else {
-                    setDocuments(fetchedDocuments);
-                    setError(null);
-                    logLumiDocsContext(`Documents updated: ${fetchedDocuments.length}`, "success");
-                    const fetchedDocumentIds = fetchedDocuments.map((document) => document.id);
-                    removeStaleDocumentIds(fetchedDocumentIds);
+                    // If no specific file IDs need documents, fetch all documents
+                    const { documents: allDocuments, error } = await fetchDocuments(wasmModule);
+
+                    if (error) {
+                        logLumiDocsContext(`Failed to fetch documents: ${error}`, "error");
+                        setError(error);
+                    } else {
+                        fetchedDocuments = allDocuments;
+                        setError(null);
+                        logLumiDocsContext(`Documents updated: ${fetchedDocuments.length}`, "success");
+                        const fetchedDocumentIds = fetchedDocuments.map((document) => document.id);
+                        removeStaleDocumentIds(fetchedDocumentIds);
+                    }
                 }
+
+                // Update the documents state with the new documents
+                setDocuments(prev => {
+                    const existingIds = new Set(prev.map(d => d.id));
+                    const newDocuments = fetchedDocuments.filter(d => !existingIds.has(d.id));
+                    return [...prev, ...newDocuments];
+                });
+
             } catch (err) {
                 logLumiDocsContext(`Error loading documents: ${err}`, "error");
                 setError("Failed to load documents");
             } finally {
-                triggerUpdate("documents", true); // Reset lastUpdated
+                triggerUpdate("documents", true);
                 setIsLoading(false);
                 setHasFetchedOnce(true);
             }
         };
 
-        if (!hasFetchedOnce || lastUpdated) {
+        if (!hasFetchedOnce || lastUpdated || fileIdsNeedingDocuments.length > 0) {
             loadDocuments();
         }
-    }, [wasmModule, isAuthenticated, authLoading, lastUpdated, hasFetchedOnce, removeStaleDocumentIds, triggerUpdate]);
-
-    // New effect: When files change, fetch documents by file IDs and flip the mapping
-    useEffect(() => {
-        const updateFilesByDocumentId = async () => {
-            if (!wasmModule || !files || files.length === 0) return;
-
-            try {
-                // Fetch documents for each fileId using the new utility
-                const docsByFileId = await fetchDocumentsByFileIds(wasmModule, files.map((file) => file.id));
-
-                // Flip the mapping: key becomes document.id, value is the corresponding file
-                const newFilesByDocumentId: Record<string, File> = {};
-                for (const file of files) {
-                    const doc = docsByFileId[file.id];
-                    if (doc) {
-                        newFilesByDocumentId[doc.id] = file;
-                    }
-                }
-                logLumiDocsContext(`Documents by file ID updated: ${newFilesByDocumentId.length}`, "success");
-                setFilesByDocumentId(newFilesByDocumentId);
-            } catch (err) {
-                logLumiDocsContext(`Error loading documents by fileID: ${err}`, "error");
-            }
-        };
-
-        updateFilesByDocumentId();
-    }, [files, wasmModule]);
+    }, [wasmModule, isAuthenticated, authLoading, lastUpdated, hasFetchedOnce, removeStaleDocumentIds, triggerUpdate, fileIdsNeedingDocuments, removeFileIdsNeedingDocuments, files]);
 
     return { documents, filesByDocumentId, isLoading, error };
 };
