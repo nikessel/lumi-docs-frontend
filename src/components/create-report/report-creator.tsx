@@ -132,7 +132,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                 <div>
                     <Typography textSize="h6" className="mb-4">Select Sections</Typography>
                     <Typography className="my-4 leading-6" color="secondary">
-                        LumiDocs divides the analysis into {sectionsForRegulatoryFramework[selectedFramework].length} sections for {formatRegulatoryFramework(selectedFramework)}.
+                        LumiDocs divides the analysis into {sectionsForRegulatoryFramework[selectedFramework]?.length} sections for {formatRegulatoryFramework(selectedFramework)}.
                         You can select a subset of these sections below.
                     </Typography>
                     <SelectSections
@@ -157,7 +157,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                     <Typography textSize="h6" className="mb-4">Select Requirement Groups</Typography>
                     <Typography className="my-4 leading-6" color="secondary">
                         Based on your selected sections, LumiDocs has identified {selectedSections
-                            .flatMap((sectionId) => requirementGroupsBySectionId[sectionId] || []).length} requirement groups.
+                            .flatMap((sectionId) => requirementGroupsBySectionId[sectionId] || [])?.length} requirement groups.
                         You can select a subset of these groups to include in the report.
                     </Typography>
                     <SelectRequirementGroups
@@ -180,7 +180,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                     <Typography textSize="h6" className="mb-4">Select Requirements</Typography>
                     <Typography className="my-4 leading-6" color="secondary">
                         Based on your selected requirement groups, LumiDocs has identified {selectedRequirementGroups
-                            .flatMap((groupId) => requirementsByGroupId[groupId] || []).length} requirements.
+                            .flatMap((groupId) => requirementsByGroupId[groupId] || [])?.length} requirements.
                         You can select a subset of these requirements to include in the report.
                     </Typography>
                     <SelectRequirements
@@ -257,7 +257,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
 
             <div className="flex justify-between">
                 <Button disabled={currentStep === 0} onClick={prev}>Back</Button>
-                {currentStep === steps.length - 1 && validationResult?.error && (
+                {currentStep === steps?.length - 1 && validationResult?.error && (
                     <div className="bg-red-50 text-red-500 p-2 rounded-md mb-2">
                         <ul className="list-disc pl-4">
                             {validationResult?.messages.map((err: string, index: number) => (
@@ -267,7 +267,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                     </div>
                 )}
 
-                {currentStep === steps.length - 1 ? (
+                {currentStep === steps?.length - 1 ? (
                     <Button loading={isGeneratingReport} type="primary" disabled={validationResult?.error} onClick={handleCreateReport}>
                         Create Report
                     </Button>
