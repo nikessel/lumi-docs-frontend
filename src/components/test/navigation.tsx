@@ -66,7 +66,7 @@ const Navigation: React.FC<NavigationProps> = ({ selectedSections, onSectionSele
                                                     onChange={() => toggleSection(sectionId)}
                                                 />
                                                 <div className="flex-1 min-w-0">
-                                                    <Text className="text-xs truncate block">{section.name}</Text>
+                                                    <Text className="text-xs truncate block">{section.name} </Text>
                                                 </div>
                                             </div>
                                             <div className="ml-6 flex items-center gap-2 min-w-0">

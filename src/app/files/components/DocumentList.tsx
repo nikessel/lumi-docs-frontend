@@ -183,7 +183,6 @@ const DocumentList: React.FC<DocumentListProps> = ({
                                 </div>
                             );
                         }
-
                     }
                 })}
             </div>

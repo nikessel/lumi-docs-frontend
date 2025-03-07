@@ -18,7 +18,6 @@ const RegulatoryFrameworkTag: React.FC<StandardTagProps> = ({ standard, addition
         iso13485: { label: 'ISO 13485', color: 'blue' },
         iso14155: { label: 'ISO 14155', color: 'green' },
         iso14971: { label: 'ISO 14971', color: 'cyan' },
-        mdr: { label: 'MDR', color: 'orange' },
         iec62304: { label: 'IEC 62304', color: 'purple' },
         iec62366: { label: 'IEC 62366', color: 'magenta' },
         iso10993_10: { label: 'ISO 10993-10', color: 'gold' },
