@@ -6,19 +6,18 @@ import { PlusOutlined } from "@ant-design/icons";
 import "@/styles/globals.css";
 import ReportMetaView from "@/components/report-meta-view";
 import { useRouter } from "next/navigation";
-import { useUrlSelectedReports } from '@/hooks/url-hooks';
 import CreateReportModal from "@/components/create-report/create-report-modal";
 import { useWasm } from '@/components/WasmProvider';
 import { isArchived } from "@/utils/report-utils";
 import { useReportsContext } from "@/contexts/reports-context";
-
+import { useUrlParams } from "@/hooks/url-hooks";
 const Page = () => {
     const { reports, loading } = useReportsContext();
-    const { selectedReports, selectedCount } = useUrlSelectedReports();
+    const { selectedReports } = useUrlParams().params;
     const { wasmModule, isLoading } = useWasm();
     const [searchQuery, setSearchQuery] = useState("");
     const router = useRouter();
-
+    const selectedCount = selectedReports.length;
     const [showArchived, setShowArchived] = useState(false);
 
     const archivedReports = reports.filter((report) => isArchived(report.status));
@@ -112,7 +111,7 @@ const Page = () => {
                         type="primary"
                         disabled={selectedCount === 0}
                         onClick={(e) => {
-                            e.stopPropagation(); 
+                            e.stopPropagation();
                             if (selectedReports.length > 0) {
                                 router.push(`/reports/view/overview?selectedReports=${encodeURIComponent(selectedReports.join(','))}`);
                             }

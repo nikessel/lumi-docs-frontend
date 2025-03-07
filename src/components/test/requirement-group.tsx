@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Typography, Collapse, Tooltip, Progress } from 'antd';
 import { RightOutlined, CheckCircleFilled, WarningFilled, CloseCircleFilled } from '@ant-design/icons';
-import { RequirementGroup, Requirement } from '@wasm';
+import { RequirementGroup, Requirement, RequirementAssessment } from '@wasm';
 import { getComplianceColorCode } from '@/utils/formating';
 import RegulatoryFrameworkTag from '@/components/regulatory-framework-tag';
 import { useReportsContext } from '@/contexts/reports-context';
@@ -103,13 +103,19 @@ const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, req
     };
 
     const renderFindings = (assessment: RequirementAssessmentWithId | undefined) => {
+        if (!assessment?.negative_findings || assessment.negative_findings.length === 0) {
+            return null;
+        }
         return (
-            <div className=" text-xs flex items-center gap-1">
-                <span className="text-gray-500">finding 1</span>
-                <span className="">•</span>
-                <span className="text-gray-500">This is the second</span>
-                <span className="">•</span>
-                <span className="text-gray-500">and third finding</span>
+            <div className="text-xs flex items-center gap-1 truncate">
+                {assessment.negative_findings.map((finding: string, index: number) => (
+                    <React.Fragment key={index}>
+                        <span className="text-gray-500 truncate">{finding}</span>
+                        {index < assessment.negative_findings.length - 1 && (
+                            <span className="">•</span>
+                        )}
+                    </React.Fragment>
+                ))}
             </div>
         );
     };
@@ -172,9 +178,11 @@ const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, req
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <Text className="text-xs truncate block">{requirement.name}</Text>
+                                    <div className="flex items-center gap-2">
+                                        <Text className="text-xs font-semibold truncate block flex-shrink-0">{requirement.name}</Text>
+                                        {renderFindings(assessment)}
+                                    </div>
                                 </div>
-                                {renderFindings(assessment)}
                             </div>
                         );
                     })}
@@ -195,9 +203,11 @@ const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, req
                                     )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <Text className="text-xs truncate block">{requirement.name}</Text>
+                                    <div className="flex items-center gap-2">
+                                        <Text className="text-xs font-semibold truncate block flex-shrink-0">{requirement.name}</Text>
+                                        {renderFindings(assessment)}
+                                    </div>
                                 </div>
-                                {renderFindings(assessment)}
                             </div>
                         );
                     })}

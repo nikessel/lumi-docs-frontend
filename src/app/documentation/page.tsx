@@ -94,7 +94,7 @@ const DocumentationPage: React.FC = () => {
                         <div id="chapter-introduction-regulatory-frameworks" className="mt-4">
                             <Typography textSize="h6">Regulatory Frameworks</Typography>
                             <ul className="list-disc pl-6">
-                                <li>A Regulatory Framework (e.g., ISO 13485) is a structured collection of requirements manufacturers must or choose to comply with.</li>
+                                <li>A Regulatory Framework (e.g., ISO 14155 or ISO 13485) is a structured collection of requirements manufacturers must or choose to comply with.</li>
                                 <li>Frameworks are divided into sections, groups, and requirements, providing a clear overview of compliance.</li>
                                 <li>Sign in and navigate to Regulatory Frameworks to see the latest supported standards.</li>
                             </ul>
@@ -106,7 +106,7 @@ const DocumentationPage: React.FC = () => {
                             <Typography textSize="h5">How LumiDocs Works</Typography>
                             <ul className="list-disc pl-6">
                                 <li>Upload your documentation as searchable PDFs.</li>
-                                <li>Select your regulatory framework, such as ISO 13485 or IEC 62304.</li>
+                                <li>Select your regulatory framework, such as ISO 13485 or 14155.</li>
                                 <li>Review a detailed compliance report and implement suggested improvements.</li>
                             </ul>
                             <Alert message="Need help getting started? Visit our setup guide for detailed instructions." type="info" showIcon />

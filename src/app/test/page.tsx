@@ -9,6 +9,7 @@ import { useRequirementsContext } from '@/contexts/requirements-context';
 import { useRequirementGroupsContext } from '@/contexts/requirement-group-context';
 import Navigation from '@/components/test/navigation';
 import MainContent from '@/components/test/main-content';
+import ToolBar from '@/components/test/tool-bar';
 
 const { Content } = Layout;
 
@@ -24,9 +25,8 @@ const Page = () => {
     return (
         <div className="h-full">
             {/* Top Toolbar - Spans full width */}
-            <div className="h-16 bg-white border-b px-4 flex items-center">
-                {/* Toolbar component will go here */}
-                <div className="text-gray-500">Toolbar Component</div>
+            <div className="h-16 bg-white border-b px-4 flex items-center justify-between w-full">
+                <ToolBar />
             </div>
 
             {/* Resizable Panels */}

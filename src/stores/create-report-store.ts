@@ -34,7 +34,7 @@ export const useCreateReportStore = create<ReportState>()(
     persist(
         (set) => ({
             currentStep: 0,
-            selectedFramework: "ISO 13485",
+            selectedFramework: "iso13485",
             selectedSections: [],
             selectedDocumentNumbers: [],
             selectedRequirementGroups: [],
@@ -72,7 +72,7 @@ export const useCreateReportStore = create<ReportState>()(
             resetState: () =>
                 set(() => ({
                     currentStep: 0,
-                    selectedFramework: "ISO 13485",
+                    selectedFramework: "iso13485",
                     selectedSections: [],
                     selectedRequirementGroups: [],
                     selectedRequirements: [],
