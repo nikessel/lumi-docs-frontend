@@ -1,28 +1,41 @@
-import React, { useState } from 'react';
-import { Typography, Collapse, Tooltip, Progress } from 'antd';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Typography, Collapse, Tooltip, Progress, Tag } from 'antd';
 import { RightOutlined, CheckCircleFilled, WarningFilled, CloseCircleFilled } from '@ant-design/icons';
-import { RequirementGroup, Requirement, RequirementAssessment } from '@wasm';
+import { RequirementGroup, Requirement, RequirementAssessment, Document, RegulatoryFramework } from '@wasm';
 import { getComplianceColorCode } from '@/utils/formating';
 import RegulatoryFrameworkTag from '@/components/regulatory-framework-tag';
 import { useReportsContext } from '@/contexts/reports-context';
 import { useSectionsContext } from '@/contexts/sections-context';
+import { useDocumentsContext } from '@/contexts/documents-context';
+import { useStyle, getTextSizeClass, getPaddingClass, getIndentClass } from '@/contexts/style-context';
 import { RequirementGroupWithSectionId } from '@/hooks/requirement-group-hooks';
 import DetailedAssessmentModal from '@/components/detailed-assessment-modal';
 import { RequirementAssessmentWithId } from '@/app/reports/view/key_findings/page';
 import { extractAllRequirementAssessments } from '@/utils/report-utils';
+import { RequirementWithGroupId } from '@/hooks/requirement-hooks';
 
 const { Text } = Typography;
 
 interface RequirementGroupProps {
     group: RequirementGroupWithSectionId;
-    requirements: Requirement[];
+    requirements: RequirementWithGroupId[];
+    defaultExpanded?: boolean;
 }
 
-const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, requirements }) => {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [showHighCompliance, setShowHighCompliance] = useState(false);
+const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, requirements, defaultExpanded = false }) => {
+    const { fontSize } = useStyle();
+    const [isExpanded, setIsExpanded] = useState(defaultExpanded);
     const { filteredSelectedReports } = useReportsContext();
     const { sections } = useSectionsContext();
+    const { documents } = useDocumentsContext();
+
+    console.log("asdasdasdasdasd", group.id)
+
+    useEffect(() => {
+        setIsExpanded(prev => (prev !== defaultExpanded ? defaultExpanded : prev));
+    }, [defaultExpanded]);
+
+
     const [selectedRequirement, setSelectedRequirement] = useState<{
         requirement: Requirement | undefined;
         requirementAssessment: RequirementAssessmentWithId | undefined;
@@ -31,69 +44,95 @@ const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, req
         requirementAssessment: undefined,
     });
     const [openModal, setOpenModal] = useState<boolean>(false);
+    const [expandedRequirements, setExpandedRequirements] = useState<Set<string>>(new Set());
 
-    const toggleExpand = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setIsExpanded(!isExpanded);
-    };
+    // Memoize all assessments
+    const allAssessments = useMemo(() => {
+        return extractAllRequirementAssessments(filteredSelectedReports);
+    }, [filteredSelectedReports]);
 
-    // Get the compliance rating from the report's assessments
-    const getGroupComplianceRating = () => {
-        for (const report of filteredSelectedReports) {
-            for (const section of report.section_assessments.values()) {
+    // Memoize the regulatory framework
+    const regulatoryFramework = useMemo(() => {
+        const section = sections.find(s => s.id === group.section_id);
+        return section?.regulatory_framework;
+    }, [sections, group.section_id]);
+
+    // Memoize the compliance rating
+    const complianceRating = useMemo(() => {
+        let rating: number | undefined = undefined;
+        filteredSelectedReports.forEach(report => {
+            report.section_assessments.forEach(section => {
                 if (section.sub_assessments) {
                     const assessment = section.sub_assessments.get(group.id);
                     if (assessment && 'requirement_group_assessment' in assessment) {
-                        return assessment.requirement_group_assessment.compliance_rating;
+                        rating = assessment.requirement_group_assessment.compliance_rating;
                     }
                 }
-            }
-        }
-        return undefined;
-    };
+            });
+        });
+        return rating;
+    }, [filteredSelectedReports, group.id]);
 
-    // Get the regulatory framework from the section
-    const getRegulatoryFramework = () => {
-        const section = sections.find(s => s.id === group.section_id);
-        return section?.regulatory_framework;
-    };
+    const progressComponent = useMemo(() => {
+        if (complianceRating === undefined) return null;
 
-    // Get all requirement assessments
-    const allAssessments = extractAllRequirementAssessments(filteredSelectedReports);
+        return (
+            <Progress
+                percent={complianceRating}
+                size="small"
+                showInfo={true}
+                className="w-20"
+                strokeColor={getComplianceColorCode(complianceRating)}
+            />
+        );
+    }, [complianceRating]);
 
-    // Get requirement assessment
-    const getRequirementAssessment = (requirementId: string): RequirementAssessmentWithId | undefined => {
+
+    // Memoize the filtered and sorted requirements
+    const filteredAndSortedRequirements = useMemo(() => {
+        // Get requirements that belong to this group and have assessments
+        const groupRequirements = requirements.filter(req =>
+            req.group_id === group.id &&
+            allAssessments.some(assessment => assessment.id === req.id)
+        );
+
+        // Sort by compliance rating
+        return [...groupRequirements].sort((a, b) => {
+            const assessmentA = allAssessments.find(assessment => assessment.id === a.id);
+            const assessmentB = allAssessments.find(assessment => assessment.id === b.id);
+            const ratingA = assessmentA?.compliance_rating ?? 0;
+            const ratingB = assessmentB?.compliance_rating ?? 0;
+            return ratingA - ratingB;
+        });
+    }, [requirements, group.id, allAssessments]);
+
+    const toggleExpand = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        setIsExpanded(prev => !prev);
+    }, []);
+
+    const getRequirementAssessment = useCallback((requirementId: string): RequirementAssessmentWithId | undefined => {
         return allAssessments.find(assessment => assessment.id === requirementId);
-    };
+    }, [allAssessments]);
 
-    const complianceRating = getGroupComplianceRating();
-    const regulatoryFramework = getRegulatoryFramework();
-
-    // Sort requirements by compliance rating
-    const sortedRequirements = [...requirements].sort((a, b) => {
-        const assessmentA = getRequirementAssessment(a.id);
-        const assessmentB = getRequirementAssessment(b.id);
-        const ratingA = assessmentA?.compliance_rating ?? 0;
-        const ratingB = assessmentB?.compliance_rating ?? 0;
-        return ratingA - ratingB;
-    });
-
-    // Group requirements by compliance rating
-    const highComplianceRequirements = sortedRequirements.filter(req => {
-        const assessment = getRequirementAssessment(req.id);
-        return assessment?.compliance_rating && assessment.compliance_rating > 80;
-    });
-
-    const lowComplianceRequirements = sortedRequirements.filter(req => {
-        const assessment = getRequirementAssessment(req.id);
-        return !assessment?.compliance_rating || assessment.compliance_rating <= 80;
-    });
-
-    const handleRequirementClick = (requirement: Requirement) => {
+    const handleRequirementClick = useCallback((requirement: Requirement) => {
         const assessment = getRequirementAssessment(requirement.id);
         setSelectedRequirement({ requirement, requirementAssessment: assessment });
         setOpenModal(true);
-    };
+    }, [getRequirementAssessment]);
+
+    const toggleRequirementExpand = useCallback((requirementId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        setExpandedRequirements(prev => {
+            const newExpanded = new Set(prev);
+            if (newExpanded.has(requirementId)) {
+                newExpanded.delete(requirementId);
+            } else {
+                newExpanded.add(requirementId);
+            }
+            return newExpanded;
+        });
+    }, []);
 
     const getComplianceIcon = (rating: number | undefined) => {
         if (rating === undefined) return null;
@@ -102,115 +141,130 @@ const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, req
         return <CloseCircleFilled className="text-red-500" />;
     };
 
-    const renderFindings = (assessment: RequirementAssessmentWithId | undefined) => {
-        if (!assessment?.negative_findings || assessment.negative_findings.length === 0) {
+    const renderFindings = (assessment: RequirementAssessmentWithId | undefined, isExpanded: boolean) => {
+        if (!assessment?.negative_findings || assessment.negative_findings.length === 0 || isExpanded) {
             return null;
         }
+
         return (
-            <div className="text-xs flex items-center gap-1 truncate">
-                {assessment.negative_findings.map((finding: string, index: number) => (
-                    <React.Fragment key={index}>
-                        <span className="text-gray-500 truncate">{finding}</span>
-                        {index < assessment.negative_findings.length - 1 && (
-                            <span className="">•</span>
-                        )}
-                    </React.Fragment>
-                ))}
+            <div className="flex-1 min-w-0 ml-2">
+                <div className="text-xs text-gray-500 truncate">
+                    {assessment.negative_findings.reduce((acc, finding, index) => {
+                        if (index === 0) return finding;
+                        return `${acc} • ${finding}`;
+                    }, "")}
+                </div>
             </div>
         );
     };
 
+    const renderExpandedRequirementDetails = (requirement: RequirementWithGroupId, assessment: RequirementAssessmentWithId | undefined) => {
+        if (!assessment) return null;
+        const textSizeClass = getTextSizeClass(fontSize);
+        const indentClass = getIndentClass(fontSize);
+
+        return (
+            <div className={`${indentClass} mt-1 space-y-1 select-none`}>
+                {/* Negative Findings */}
+                {assessment.negative_findings && assessment.negative_findings.length > 0 && (
+                    <div>
+                        <div className="flex flex-wrap gap-1">
+                            {assessment.negative_findings.map((finding, index) => (
+                                <div key={index} className={`${textSizeClass} text-gray-600 flex items-center`}>
+                                    <span className="mr-1">•</span>
+                                    {finding}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Documents */}
+                {assessment.sources && assessment.sources.length > 0 && (
+                    <div>
+                        <div className="flex flex-wrap gap-1">
+                            {assessment.sources.map((sourceId, index) => {
+                                const document = documents.find(doc => doc.number === sourceId);
+                                return (
+                                    <Tag key={index} color="geekblue" className={`${textSizeClass} whitespace-nowrap`}>
+                                        {document?.meta.title || sourceId}
+                                    </Tag>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
+    const renderRequirement = (requirement: RequirementWithGroupId, isHighCompliance: boolean) => {
+        const assessment = getRequirementAssessment(requirement.id);
+        const isExpanded = expandedRequirements.has(requirement.id);
+        const textSizeClass = getTextSizeClass(fontSize);
+        const paddingClass = getPaddingClass(fontSize);
+
+        return (
+            <div key={requirement.id} className="cursor-pointer select-none">
+                <div
+                    className={`flex items-center gap-2 hover:bg-blue-50 ${paddingClass}`}
+                    onClick={(e) => toggleRequirementExpand(requirement.id, e)}
+                >
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        {getComplianceIcon(assessment?.compliance_rating)}
+                        {assessment?.compliance_rating !== undefined && (
+                            <Text className={textSizeClass + " whitespace-nowrap"}>
+                                {Math.round(assessment.compliance_rating)}%
+                            </Text>
+                        )}
+                    </div>
+                    <Text className={textSizeClass + " whitespace-nowrap flex-shrink-0"}>{requirement.name}</Text>
+                    <div className="flex items-center gap-2 ml-auto">
+                        <button
+                            className="hover:bg-blue-100 rounded"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleRequirementClick(requirement);
+                            }}
+                        >
+                            <Text className={textSizeClass}>Details</Text>
+                        </button>
+                        <RightOutlined
+                            className={`${textSizeClass} transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                        />
+                    </div>
+                </div>
+                {isExpanded && renderExpandedRequirementDetails(requirement, assessment)}
+            </div>
+        );
+    };
+
+
     return (
-        <div className="border-b last:border-b-0">
+        <div className="border-b last:border-b-0 select-none  ">
             <div
-                className="px-3 py-1.5 hover:bg-gray-50 cursor-pointer flex items-center gap-2"
+                className={`${getPaddingClass(fontSize)} cursor-pointer flex items-center gap-2 my-2`}
                 onClick={toggleExpand}
             >
                 <RightOutlined
-                    className={`text-xs transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                    className={`${getTextSizeClass(fontSize)} transition-transform ${isExpanded ? 'rotate-90' : ''}`}
                 />
-                <div className="flex-1 min-w-0 flex items-center gap-8">
-                    <Text className="text-xs truncate block">{group.name}</Text>
-                    {complianceRating !== undefined && (
-                        <Progress
-                            percent={complianceRating}
-                            strokeColor={getComplianceColorCode(complianceRating)}
-                            size="small"
-                            showInfo={true}
-                            className="w-20"
-                        />
-                    )}
-                    {regulatoryFramework && (
+                {progressComponent}
+                <Text className={`${getTextSizeClass(fontSize)} truncate font-bold`}>{group.name}</Text>
+                <div className="flex-grow" />
+                {regulatoryFramework && (
+                    <div className="pr-3">
                         <RegulatoryFrameworkTag
                             standard={regulatoryFramework}
                             type="compact"
                             additionalReference={group.reference}
                         />
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
             {isExpanded && (
-                <div className="pl-8 pr-3">
-                    {highComplianceRequirements.length > 0 && (
-                        <div
-                            className="py-1.5 cursor-pointer hover:text-blue-600"
-                            onClick={() => setShowHighCompliance(!showHighCompliance)}
-                        >
-                            <Text className="text-xs">
-                                {showHighCompliance ? 'Hide' : 'Show'} {highComplianceRequirements.length} Requirements {'>'} 0.8
-                            </Text>
-                        </div>
-                    )}
-                    {showHighCompliance && highComplianceRequirements.map(requirement => {
-                        const assessment = getRequirementAssessment(requirement.id);
-                        return (
-                            <div
-                                key={requirement.id}
-                                className="py-1.5 flex items-center gap-2 cursor-pointer hover:bg-gray-50"
-                                onClick={() => handleRequirementClick(requirement)}
-                            >
-                                <div className="flex items-center gap-2">
-                                    {getComplianceIcon(assessment?.compliance_rating)}
-                                    {assessment?.compliance_rating !== undefined && (
-                                        <Text className="text-xs">
-                                            {Math.round(assessment.compliance_rating)}%
-                                        </Text>
-                                    )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <Text className="text-xs font-semibold truncate block flex-shrink-0">{requirement.name}</Text>
-                                        {renderFindings(assessment)}
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                    {lowComplianceRequirements.map(requirement => {
-                        const assessment = getRequirementAssessment(requirement.id);
-                        return (
-                            <div
-                                key={requirement.id}
-                                className="py-1.5 flex items-center gap-2 cursor-pointer hover:bg-gray-50"
-                                onClick={() => handleRequirementClick(requirement)}
-                            >
-                                <div className="flex items-center gap-2">
-                                    {getComplianceIcon(assessment?.compliance_rating)}
-                                    {assessment?.compliance_rating !== undefined && (
-                                        <Text className="text-xs">
-                                            {Math.round(assessment.compliance_rating)}%
-                                        </Text>
-                                    )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <Text className="text-xs font-semibold truncate block flex-shrink-0">{requirement.name}</Text>
-                                        {renderFindings(assessment)}
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
+                <div className={`${getIndentClass(fontSize)} pr-3 select-none`}>
+                    {filteredAndSortedRequirements.map(requirement => renderRequirement(requirement, false))}
                 </div>
             )}
             <DetailedAssessmentModal

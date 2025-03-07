@@ -34,6 +34,7 @@ import LoginPrompt from "@/components/login-prompt";
 import { useAllRequirementsContext } from "@/contexts/requirements-context/all-requirements-context";
 import { DocumentsProvider } from "@/contexts/documents-context";
 import SampleDetailedAssessmentModal from "@/components/detailed-assessment-modal/new";
+import { StyleProvider } from "@/contexts/style-context";
 
 const { Content } = Layout;
 
@@ -123,7 +124,6 @@ export default function RootLayout({
     <html lang="en" className="h-full">
       <body className="h-full">
         <WasmProviderComponent>
-          {/* <OldAuthProvider> */}
           <AuthProvider>
             <UserProvider>
               <AllRequirementsProvider>
@@ -137,7 +137,9 @@ export default function RootLayout({
                               <FilesProvider>
                                 <DocumentsProvider>
                                   <TasksProvider>
-                                    <LayoutWithWasm>{children}</LayoutWithWasm>
+                                    <StyleProvider>
+                                      <LayoutWithWasm>{children}</LayoutWithWasm>
+                                    </StyleProvider>
                                   </TasksProvider>
                                 </DocumentsProvider>
                               </FilesProvider>
@@ -151,7 +153,6 @@ export default function RootLayout({
               </AllRequirementsProvider>
             </UserProvider>
           </AuthProvider>
-          {/* </OldAuthProvider> */}
         </WasmProviderComponent>
       </body>
     </html>

@@ -8,6 +8,8 @@ import { useRequirementsContext } from '@/contexts/requirements-context';
 import { Report } from '@wasm';
 import { RequirementWithGroupId } from '@/hooks/requirement-hooks';
 import { RequirementGroupWithSectionId } from '@/hooks/requirement-group-hooks';
+import { useStyle } from '@/contexts/style-context';
+import FontSizeSelector from '@/components/test/font-size-selector';
 
 const { Search } = Input;
 const { Text } = Typography;
@@ -39,6 +41,15 @@ const ToolBar: React.FC = () => {
                         onChange={(e) => setParams({ searchQuery: e.target.value })}
                         className="w-full"
                     />
+                </div>
+            )
+        },
+        {
+            key: 'fontSize',
+            component: (
+                <div className="w-28">
+                    <Text className="text-xs mb-0 block">Text Size</Text>
+                    <FontSizeSelector />
                 </div>
             )
         },
@@ -145,24 +156,40 @@ const ToolBar: React.FC = () => {
         const overflow: string[] = [];
 
         // Reserve space for the overflow button
-        const overflowButtonWidth = 40; // Approximate width for the overflow button
+        const overflowButtonWidth = 40;
         const availableWidth = toolbarWidth - overflowButtonWidth;
 
-        toolbarItems.forEach(item => {
-            // Approximate widths for different types of items
+        // Always show search and font size first
+        const priorityItems = ['search', 'fontSize'];
+        const remainingItems = toolbarItems.filter(item => !priorityItems.includes(item.key));
+
+        // Add priority items first
+        toolbarItems
+            .filter(item => priorityItems.includes(item.key))
+            .forEach(item => {
+                let itemWidth = item.key === 'search' ? 200 : 112; // Font size selector width
+                if (currentWidth + itemWidth < availableWidth) {
+                    visible.push(item.key);
+                    currentWidth += itemWidth;
+                } else {
+                    overflow.push(item.key);
+                }
+            });
+
+        // Then add remaining items
+        remainingItems.forEach(item => {
             let itemWidth = 0;
             switch (item.key) {
-                case 'search':
-                    itemWidth = 200; // Search input
-                    break;
                 case 'reports':
                 case 'sections':
                 case 'groups':
-                    itemWidth = 160; // Select components
+                    itemWidth = 160;
                     break;
                 case 'sorting':
-                    itemWidth = 180; // Sorting controls
+                    itemWidth = 180;
                     break;
+                default:
+                    itemWidth = 160;
             }
 
             if (currentWidth + itemWidth < availableWidth) {
