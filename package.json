@@ -34,6 +34,7 @@
     "@radix-ui/react-select": "^2.1.4",
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-tooltip": "^1.1.4",
+    "@react-pdf/renderer": "^4.3.0",
     "@react-spring/web": "^9.7.5",
     "@stripe/react-stripe-js": "^3.1.1",
     "@stripe/stripe-js": "^5.6.0",
@@ -50,6 +51,7 @@
     "jszip": "^3.10.1",
     "lucide-react": "^0.454.0",
     "next": "15.0.2",
+    "pdf-lib": "^1.17.1",
     "react": "^18",
     "react-bar-loader": "^1.0.0",
     "react-dom": "^18.2.0",
@@ -63,6 +65,7 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.0.5",
+    "xlsx": "^0.18.5",
     "zustand": "^5.0.1"
   },
   "devDependencies": {

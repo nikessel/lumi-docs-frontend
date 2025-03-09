@@ -19,9 +19,9 @@ const MainContent: React.FC<MainContentProps> = ({ selectedSections, selectedGro
     const { filteredSelectedRequirementGroups } = useRequirementGroupsContext();
     const { filteredSelectedRequirements } = useRequirementsContext();
     const { filteredSelectedReports } = useReportsContext();
-    const [isAllExpanded, setIsAllExpanded] = useState(false);
+    const [isAllExpanded, setIsAllExpanded] = useState(true);
     const [complianceSortDirection, setComplianceSortDirection] = useState<'asc' | 'desc' | null>(null);
-    const [referenceSortActive, setReferenceSortActive] = useState(false);
+    const [referenceSortActive, setReferenceSortActive] = useState(true);
 
     const handleToggleAll = useCallback(() => {
         setIsAllExpanded(prev => !prev);
@@ -157,6 +157,8 @@ const MainContent: React.FC<MainContentProps> = ({ selectedSections, selectedGro
                                     group={group}
                                     requirements={(filteredSelectedRequirements as RequirementWithGroupId[]).filter(req => req.group_id === group.id)}
                                     defaultExpanded={isAllExpanded}
+                                    complianceSortDirection={complianceSortDirection}
+                                    referenceSortActive={referenceSortActive}
                                 />
                             ))}
                         </div>
@@ -171,6 +173,8 @@ const MainContent: React.FC<MainContentProps> = ({ selectedSections, selectedGro
                             group={group}
                             requirements={(filteredSelectedRequirements as RequirementWithGroupId[]).filter(req => req.group_id === group.id)}
                             defaultExpanded={isAllExpanded}
+                            complianceSortDirection={complianceSortDirection}
+                            referenceSortActive={referenceSortActive}
                         />
                     ))}
                 </div>

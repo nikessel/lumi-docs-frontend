@@ -18,7 +18,7 @@ const FontSizeSelector: React.FC = () => {
                 { value: 'large', label: 'Large' },
             ]}
             prefix={<FontSizeOutlined />}
-            className="[&_.ant-select-selector]:!h-8"
+            className="[&_.ant-select-selector]:!h-6 text-xs"
         />
     );
 };

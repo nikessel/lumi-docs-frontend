@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Typography, Tooltip } from 'antd';
 import { RightOutlined } from '@ant-design/icons';
 import { useReportsContext } from '@/contexts/reports-context';
 import { useSectionsContext } from '@/contexts/sections-context';
 import { useRequirementGroupsContext } from '@/contexts/requirement-group-context';
 import RegulatoryFrameworkTag from '@/components/regulatory-framework-tag';
-import { getComplianceColorCode } from '@/utils/formating';
+import { getSimplefiedComplianceColorCode } from '@/utils/formating';
 import { formatRegulatoryFramework } from '@/utils/helpers';
 import { Report } from '@wasm';
 import { useStyle, getTextSizeClass, getPaddingClass, getIndentClass } from '@/contexts/style-context';
@@ -26,6 +26,20 @@ const Navigation: React.FC<NavigationProps> = ({ selectedSections, onSectionSele
     const [selectedGroupId, setSelectedGroupId] = useState<string | undefined>();
     const [lastSelectedSection, setLastSelectedSection] = useState<string | undefined>();
     const [lastSelectedReport, setLastSelectedReport] = useState<string | undefined>();
+
+    // Select first report by default
+    useEffect(() => {
+        if (filteredSelectedReports.length > 0 && selectedSections.size === 0) {
+            const firstReport = filteredSelectedReports[0];
+            const reportSectionIds = Array.from(firstReport.section_assessments.keys())
+                .filter(sectionId => {
+                    const groups = requirementGroupsBySectionId[sectionId] || [];
+                    return groups.some(group => reportGroupIds.has(group.id));
+                });
+            setLastSelectedReport(firstReport.id);
+            onSectionSelect(new Set(reportSectionIds));
+        }
+    }, [filteredSelectedReports]);
 
     // Get all group IDs that are actually included in the report's assessments
     const reportGroupIds = new Set(
@@ -170,10 +184,10 @@ const Navigation: React.FC<NavigationProps> = ({ selectedSections, onSectionSele
                             reportSectionIds.every(id => selectedSections.has(id));
 
                         return (
-                            <div key={report.id} className="mb-2">
+                            <div key={report.id} className="mb-2 ">
                                 {/* Report Header */}
                                 <div
-                                    className={`${getPaddingClass(fontSize)} flex items-center gap-1 cursor-pointer hover:bg-blue-50 ${isReportSelected ? 'bg-blue-50' : ''}`}
+                                    className={`border-b last:border-b-0 py-2 ${getPaddingClass(fontSize)} flex items-center gap-1 cursor-pointer hover:bg-blue-50 ${isReportSelected ? 'bg-blue-50' : ''}`}
                                     onClick={(e) => handleReportClick(report, e)}
                                 >
                                     <Text strong className={`${getTextSizeClass(fontSize)} truncate flex-1 ${isReportSelected ? 'text-blue-500' : ''}`}>
@@ -189,13 +203,21 @@ const Navigation: React.FC<NavigationProps> = ({ selectedSections, onSectionSele
                                             const groups = requirementGroupsBySectionId[sectionId] || [];
                                             return groups.some(group => reportGroupIds.has(group.id));
                                         })
+                                        .sort((a, b) => {
+                                            const groupsA = requirementGroupsBySectionId[a] || [];
+                                            const groupsB = requirementGroupsBySectionId[b] || [];
+                                            const refA = parseInt(groupsA[0]?.reference?.split('.')[0] || '0');
+                                            const refB = parseInt(groupsB[0]?.reference?.split('.')[0] || '0');
+                                            return refA - refB;
+                                        })
                                         .map(sectionId => {
                                             const section = filteredSelectedReportsSections.find(s => s.id === sectionId);
                                             if (!section) return null;
 
                                             const groups = (requirementGroupsBySectionId[sectionId] || [])
                                                 .filter(group => reportGroupIds.has(group.id));
-                                            const reference = groups[0]?.reference;
+                                            const fullReference = groups[0]?.reference;
+                                            const reference = fullReference?.split('.')?.[0];
                                             const sectionAssessment = report.section_assessments.get(sectionId);
                                             const complianceRating = sectionAssessment?.compliance_rating;
                                             const isExpanded = expandedSections.has(sectionId);
@@ -204,7 +226,7 @@ const Navigation: React.FC<NavigationProps> = ({ selectedSections, onSectionSele
                                             return (
                                                 <div key={sectionId}>
                                                     <div
-                                                        className={`${getPaddingClass(fontSize)} hover:bg-blue-50 cursor-pointer ${isSelected ? 'bg-blue-50' : ''}`}
+                                                        className={`py-1 ${getPaddingClass(fontSize)} hover:bg-blue-50 cursor-pointer ${isSelected ? 'bg-blue-50' : ''}`}
                                                         onClick={(e) => handleSectionClick(sectionId, e)}
                                                     >
                                                         <div className="flex items-center gap-1">
@@ -223,7 +245,7 @@ const Navigation: React.FC<NavigationProps> = ({ selectedSections, onSectionSele
                                                                 <Tooltip title={`Compliance Rating: ${complianceRating}%`}>
                                                                     <Text
                                                                         className={`${getTextSizeClass(fontSize)} whitespace-nowrap`}
-                                                                        style={{ color: getComplianceColorCode(complianceRating) }}
+                                                                        style={{ color: getSimplefiedComplianceColorCode(complianceRating) }}
                                                                     >
                                                                         {Math.round(complianceRating)}%
                                                                     </Text>
@@ -249,7 +271,7 @@ const Navigation: React.FC<NavigationProps> = ({ selectedSections, onSectionSele
                                                                 return (
                                                                     <div
                                                                         key={group.id}
-                                                                        className={`${getPaddingClass(fontSize)} hover:bg-blue-50 cursor-pointer ${isGroupSelected ? 'bg-blue-50' : ''}`}
+                                                                        className={`py-1 ${getPaddingClass(fontSize)} hover:bg-blue-50 cursor-pointer ${isGroupSelected ? 'bg-blue-50' : ''}`}
                                                                         onClick={(e) => handleGroupClick(sectionId, group.id, e)}
                                                                     >
                                                                         <Text className={`${getTextSizeClass(fontSize)} truncate block ${isGroupSelected ? 'text-blue-500 font-medium' : 'text-gray-600'}`}>

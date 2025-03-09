@@ -9,12 +9,19 @@ import { Report } from '@wasm';
 import { RequirementWithGroupId } from '@/hooks/requirement-hooks';
 import { RequirementGroupWithSectionId } from '@/hooks/requirement-group-hooks';
 import { useStyle } from '@/contexts/style-context';
-import FontSizeSelector from '@/components/test/font-size-selector';
+import FontSizeSelector from '@/components/report-view/font-size-selector';
+import DownloadPDFButton from './download-pdf-button';
+import DownloadExcelButton from '@/components/report-view/download-excel-button';
 
 const { Search } = Input;
 const { Text } = Typography;
 
-const ToolBar: React.FC = () => {
+interface ToolBarProps {
+    selectedSections: Set<string>;
+    selectedGroupId?: string;
+}
+
+const ToolBar: React.FC<ToolBarProps> = ({ selectedSections, selectedGroupId }) => {
     const { params, setParams } = useUrlParams();
     const { reports } = useReportsContext();
     const { requirementGroups } = useRequirementGroupsContext();
@@ -37,9 +44,15 @@ const ToolBar: React.FC = () => {
                     <Search
                         size="small"
                         placeholder="Search..."
-                        value={params.searchQuery}
-                        onChange={(e) => setParams({ searchQuery: e.target.value })}
+                        defaultValue={params.searchQuery}
+                        onChange={(e) => {
+                            if (e.target.value === '') {
+                                setParams({ searchQuery: '' });
+                            }
+                        }}
+                        onSearch={(value) => setParams({ searchQuery: value })}
                         className="w-full"
+                        allowClear
                     />
                 </div>
             )
@@ -48,102 +61,25 @@ const ToolBar: React.FC = () => {
             key: 'fontSize',
             component: (
                 <div className="w-28">
-                    <Text className="text-xs mb-0 block">Text Size</Text>
                     <FontSizeSelector />
                 </div>
             )
         },
         {
-            key: 'reports',
+            key: 'downloadPDF',
             component: (
-                <div className="w-40">
-                    <Select
-                        size="small"
-                        mode="multiple"
-                        placeholder="Reports"
-                        value={params.selectedReports}
-                        onChange={(value) => setParams({ selectedReports: value })}
-                        options={reports.map(report => ({
-                            label: report.id,
-                            value: report.id
-                        }))}
-                        className="w-full [&_.ant-select-selector]:!h-8 [&_.ant-select-multiple]:!h-8 [&_.ant-select-selection-item]:!h-5 [&_.ant-select-selection-item-content]:!h-5 [&_.ant-select-selection-item-remove]:!h-5 [&_.ant-select-selection-item-remove]:!w-5"
-                        maxTagCount={0}
-                        maxTagPlaceholder={(omittedValues) => `+${omittedValues.length}`}
-                    />
-                </div>
+                <DownloadPDFButton
+                    selectedSections={selectedSections}
+                    selectedGroupId={selectedGroupId}
+                />
             )
         },
         {
-            key: 'sections',
+            key: 'downloadExcel',
             component: (
-                <div className="w-40">
-                    <Select
-                        size="small"
-                        mode="multiple"
-                        placeholder="Sections"
-                        value={params.selectedSections}
-                        onChange={(value) => setParams({ selectedSections: value })}
-                        options={sections.map(section => ({
-                            label: section,
-                            value: section
-                        }))}
-                        className="w-full [&_.ant-select-selector]:!h-8 [&_.ant-select-multiple]:!h-8 [&_.ant-select-selection-item]:!h-5 [&_.ant-select-selection-item-content]:!h-5 [&_.ant-select-selection-item-remove]:!h-5 [&_.ant-select-selection-item-remove]:!w-5"
-                        maxTagCount={0}
-                        maxTagPlaceholder={(omittedValues) => `+${omittedValues.length}`}
-                    />
-                </div>
+                <DownloadExcelButton />
             )
         },
-        {
-            key: 'groups',
-            component: (
-                <div className="w-40">
-                    <Select
-                        size="small"
-                        mode="multiple"
-                        placeholder="Groups"
-                        value={params.selectedGroups}
-                        onChange={(value) => setParams({ selectedGroups: value })}
-                        options={groups.map(group => ({
-                            label: group,
-                            value: group
-                        }))}
-                        className="w-full [&_.ant-select-selector]:!h-8 [&_.ant-select-multiple]:!h-8 [&_.ant-select-selection-item]:!h-5 [&_.ant-select-selection-item-content]:!h-5 [&_.ant-select-selection-item-remove]:!h-5 [&_.ant-select-selection-item-remove]:!w-5"
-                        maxTagCount={1}
-                        maxTagPlaceholder={(omittedValues) => `+${omittedValues.length}`}
-                    />
-                </div>
-            )
-        },
-        {
-            key: 'sorting',
-            component: (
-                <div className="flex items-center gap-2">
-                    <Select
-                        size="small"
-                        placeholder="Sort"
-                        value={params.sorting}
-                        onChange={(value) => setParams({ sorting: value })}
-                        options={[
-                            { label: 'Ascending', value: 'asc' },
-                            { label: 'Descending', value: 'desc' }
-                        ]}
-                        className="w-24"
-                    />
-                    <Switch
-                        size="small"
-                        checked={params.sortByGroup}
-                        onChange={(checked) => setParams({ sortByGroup: checked })}
-                    />
-                    <Switch
-                        size="small"
-                        checked={params.sortBySection}
-                        onChange={(checked) => setParams({ sortBySection: checked })}
-                    />
-                </div>
-            )
-        }
     ];
 
     // Function to check which items can fit in the toolbar
