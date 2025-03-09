@@ -1,6 +1,6 @@
 'use client';
 import { Card, Statistic, Skeleton } from 'antd';
-import { getComplianceColorCode } from "@/utils/formating";
+import { getSimplefiedComplianceColorCode } from "@/utils/formating";
 import WaffleChart from "./waffle-canvas-view";
 import ComplianceBarChart from "./horizontal-bars";
 import { analyzeReports } from "@/utils/advanced-charts-utils";
@@ -72,7 +72,7 @@ const Page = () => {
                             title="Average Compliance"
                             value={averageCompliance}
                             precision={0}
-                            valueStyle={{ color: getComplianceColorCode(averageCompliance) }}
+                            valueStyle={{ color: getSimplefiedComplianceColorCode(averageCompliance) }}
                             suffix="%"
                         />
                     </Card>
