@@ -12,18 +12,19 @@ import { TaskWithReportId } from "@/hooks/tasks-hooks";
 interface TaskCardProps {
     task: TaskWithReportId;
     isLoading: boolean;
-    allReportIds: string[]
+    allReportIds: string[];
+    documentTitle: string
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({
     task,
     isLoading,
     allReportIds,
+    documentTitle
 }) => {
     const searchParams = useSearchParams()
     const router = useRouter()
     const { reports } = useReportsContext();
-
     const handleOnClickTaskCard = async () => {
         const updatedSearchParams = new URLSearchParams(searchParams.toString());
         updatedSearchParams.set("selectedReports", allReportIds.join(","));
@@ -58,8 +59,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 <div className="mr-4">
                     {task.associated_document ? (
                         <DocumentIcon
-                            documentTitle={task.associated_document}
-                            letters={task.associated_document.substring(0, 2).toUpperCase()}
+                            documentTitle={documentTitle}
+                            letters={documentTitle.substring(0, 2).toUpperCase()}
                             size="medium"
                         />
                     ) : (
@@ -72,13 +73,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
                     <Typography textSize="h6" className="font-bold">
                         {task.title}
                     </Typography>
-                    <Typography
+                    {/* <Typography
                         textSize="small"
                         color="secondary"
                         className="mt-1 line-clamp-2"
                     >
                         {task.description}
-                    </Typography>
+                    </Typography> */}
                     {regulatoryFramework && (
                         <div className="mt-2">
                             <RegulatoryFrameworkTag standard={regulatoryFramework} />

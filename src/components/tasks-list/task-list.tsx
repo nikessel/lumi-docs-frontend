@@ -6,6 +6,7 @@ import { Task } from "@wasm";
 import { useFilesContext } from "@/contexts/files-context";
 import { useReportsContext } from "@/contexts/reports-context";
 import { TaskWithReportId } from "@/hooks/tasks-hooks";
+import { useDocumentsContext } from "@/contexts/documents-context";
 
 interface TaskListProps {
     tasks: TaskWithReportId[];
@@ -17,7 +18,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
     const { reports } = useReportsContext();
     const [allReportIds, setAllReportIds] = useState<string[]>([]);
     const [filteredTasks, setFilteredTasks] = useState<TaskWithReportId[]>([]);
-
+    const { documents } = useDocumentsContext();
     useEffect(() => {
         const reportIds = reports.map(report => report.id);
         setAllReportIds(reportIds);
@@ -33,8 +34,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
         const filtered = searchTerm
             ? todoTasks.filter(task =>
                 task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (task.associated_document?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
+                task.description.toLowerCase().includes(searchTerm.toLowerCase())
             )
             : todoTasks;
 
@@ -59,6 +59,7 @@ const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
                         task={task}
                         isLoading={false}
                         allReportIds={allReportIds}
+                        documentTitle={documents?.find((document) => document.number === task.associated_document)?.meta.title || ""}
                     />
                 ))}
             </div>
