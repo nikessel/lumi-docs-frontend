@@ -279,4 +279,35 @@ export const isArchived = (status: ReportStatus | undefined): boolean => {
     return typeof status === "object" && "archived" in status;
 };
 
+export async function renameReport(
+    wasmModule: typeof WasmModule | null,
+    reportId: string,
+    newTitle: string
+): Promise<string> {
+    if (!wasmModule) {
+        console.error("❌ WASM module not loaded.");
+        throw new Error("WASM module not loaded");
+    }
+
+    try {
+        const response = await wasmModule.rename_report({
+            input: reportId,
+            title: newTitle
+        });
+
+        if (response.output) {
+            return `Report with ID ${reportId} renamed successfully.`;
+        } else if (response.error) {
+            console.error(`❌ Error renaming report ${reportId}: ${response.error.message}`);
+            throw new Error(response.error.message);
+        }
+
+        console.warn("⚠️ Unexpected response from rename_report.");
+        throw new Error("Unexpected response from rename_report.");
+    } catch (err) {
+        console.error(`❌ Failed to rename report ${reportId}:`, err);
+        throw new Error(`Failed to rename report with ID ${reportId}`);
+    }
+}
+
 
