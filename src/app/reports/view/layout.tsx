@@ -28,23 +28,22 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     return (
         <div>
             <div className="flex justify-between items-center">
-                <div>
-                    <div className="space-y-4">
+                <div className="flex items-center gap-4">
+                    {/* <div className="space-y-4">
                         <ReportsHeader reports={filteredSelectedReports} />
-                    </div>
+                    </div> */}
+                    <SubMenu />
                 </div>
                 <div className="flex items-center space-x-2">
                     <SaveViewButton />
+                    <ReportCreatedOn reports={filteredSelectedReports} />
+
                 </div>
             </div>
             <Divider className="border-thin mt-2 mb-2" />
 
             <div className="flex justify-between items-center">
-                <SubMenu />
-                <div className="flex items-center gap-4">
-                    <ReportCreatedOn reports={filteredSelectedReports} />
-                    <FilterBar />
-                </div>
+
             </div>
 
             <div className="mt-2">

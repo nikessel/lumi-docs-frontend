@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Modal, Progress, Divider, Tag, Button, Collapse, Spin } from 'antd';
+import { Modal, Progress, Divider, Tag, Button, Spin } from 'antd';
 import { Task, Requirement, RegulatoryFramework } from '@wasm';
 import { getComplianceColorCode } from '@/utils/formating';
 import Typography from '../typography';
@@ -12,12 +12,11 @@ import { viewFile, fetchFileData } from "@/utils/files-utils";
 import { useWasm } from "@/components/WasmProvider";
 import NATag from '../non-applicable-tag';
 import { getTasksByReportAndRequirmentId } from '@/utils/tasks-utils';
-import { RequirementAssessmentWithId } from '@/app/reports/view/key_findings/page';
 import { updateTaskStatus } from '@/utils/tasks-utils';
 import { useDocumentsContext } from '@/contexts/documents-context';
 import { LoadingOutlined } from "@ant-design/icons";
+import { RequirementAssessmentWithId } from '@/hooks/report-hooks';
 
-const { Panel } = Collapse;
 
 interface RequirementModalProps {
     requirement: Requirement | undefined;
@@ -34,7 +33,6 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
     open,
     regulatoryFramework
 }) => {
-
     const complianceRating = requirementAssessment?.compliance_rating || 0;
     const { files } = useFilesContext()
     const { documents, filesByDocumentId } = useDocumentsContext()
@@ -61,7 +59,6 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
         }
     }, [requirement?.id, requirementAssessment?.reportId, wasmModule]);
 
-
     const handleAddToDo = async (task: Task) => {
         setTaskLoading(prev => ({ ...prev, [task.id!]: true }));
         try {
@@ -79,63 +76,59 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
         }
     };
 
-    // Renders the sources accordion using Tailwind for styling.
-    const renderSourcesAccordion = () => (
-        <div className="mt-2 inline-block bg-blue-50 text-blue-600 rounded-lg border border-blue-300 w-full">
-            <Collapse ghost size="small">
-                <Panel key="1" header={`${requirementAssessment?.sources?.length} Sources and Research Summary`}>
-                    <div className="mb-2">
-                        <p>
-                            {requirementAssessment?.objective_research_summary || 'No summary available.'}
-                        </p>
-                    </div>
-                    <ul className="list-disc pl-5">
-                        {requirementAssessment?.sources && requirementAssessment?.sources.length > 0 ? (
+    // Renders the sources section
+    const renderSources = () => (
+        <div className="my-4">
+            <Typography textSize="h4">Sources and Research Summary</Typography>
+            <div className="mt-2 p-4">
+                <div className="mb-4">
+                    <p>
+                        {requirementAssessment?.objective_research_summary || 'No summary available.'}
+                    </p>
+                </div>
+                <Typography textSize="h5" className="mb-2">Sources</Typography>
+                <ul className="list-disc pl-5">
+                    {requirementAssessment?.sources && requirementAssessment.sources.length > 0 ? (
+                        requirementAssessment.sources.map((source, index) => {
+                            const document = documents.find((document) => document.number.toString() === String(source));
+                            const file = document && filesByDocumentId[document.id]
 
-                            requirementAssessment.sources.map((source, index) => {
-
-                                const document = documents.find((document) => document.number === source);
-                                const file = document && filesByDocumentId[document.id]
-
-                                return (
-                                    <li key={`source-${index}`}>
-                                        {document ? (
-                                            <button
-                                                className="text-blue-600 underline"
-                                                onClick={() => file && viewFile(file.id, async (id) => fetchFileData(id, wasmModule, {}, () => { }), blobUrls, setBlobUrls, setViewLoading)}
-                                            >
-                                                {document.meta.title}
-                                            </button>
-                                        ) : (
-                                            'Unknown Source'
-                                        )}
-                                    </li>
-                                );
-                            })
-                        ) : (
-                            <li>No sources available.</li>
-                        )}
-                    </ul>
-
-                </Panel>
-            </Collapse>
+                            return (
+                                <li key={`source-${index}`}>
+                                    {document ? (
+                                        <button
+                                            className="text-blue-600 underline"
+                                            onClick={() => file && viewFile(file.id, async (id) => fetchFileData(id, wasmModule, {}, () => { }), blobUrls, setBlobUrls, setViewLoading)}
+                                        >
+                                            {document.meta.title}
+                                        </button>
+                                    ) : (
+                                        'Unknown Source'
+                                    )}
+                                </li>
+                            );
+                        })
+                    ) : (
+                        <li>No sources available.</li>
+                    )}
+                </ul>
+            </div>
         </div>
     );
 
-    // Renders the detailed assessment accordion.
-    const renderDetailsAccordion = () => (
-        <div className="mt-2 inline-block bg-blue-50 text-blue-600 rounded-lg border border-blue-300 w-full">
-            <Collapse ghost size="small">
-                <Panel key="1" header="Detailed Assessment">
-                    <ReactMarkdown>
-                        {requirementAssessment?.details || 'No detailed assessment available.'}
-                    </ReactMarkdown>
-                </Panel>
-            </Collapse>
+    // Renders the detailed assessment section
+    const renderDetails = () => (
+        <div className="my-4">
+            <Typography textSize="h4">Detailed Assessment</Typography>
+            <div className="mt-2 p-4">
+                <ReactMarkdown>
+                    {requirementAssessment?.details || 'No detailed assessment available.'}
+                </ReactMarkdown>
+            </div>
         </div>
     );
 
-    // Renders the task list.
+    // Renders the task list
     const renderTaskList = () => (
         <>
             {tasksLoading ? (
@@ -146,7 +139,6 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
                 <ul className="list-disc pl-5">
                     {tasks.map((task) => (
                         <li key={task.id} className="my-4 flex items-center justify-between">
-                            {/* Status-based Rendering */}
                             {task.status === "open" ? (
                                 <div>
                                     <strong>{task.title}</strong> -
@@ -162,7 +154,6 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
                                     <strong>{task.title}</strong>
                                 </div>
                             ) : (
-                                // Default: Add To Do Button
                                 <div className="flex items-center justify-between w-full">
                                     <div>
                                         <strong>{task.title}</strong>
@@ -182,7 +173,6 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
                         </li>
                     ))}
                 </ul>
-
             ) : (
                 <p>No suggested tasks available.</p>
             )}
@@ -194,7 +184,7 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
             open={open}
             onCancel={onClose}
             footer={null}
-            width="50%"
+            width="80%"
             title={
                 <div className="pr-6" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span>{requirement?.name || 'Requirement Details'}</span>
@@ -213,7 +203,7 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
 
             {/* Header Section */}
             <div className="my-4">
-                <div className=" flex justify-between">
+                <div className="flex justify-between">
                     <Typography textSize="h4">Requirement</Typography>
                     <RegulatoryFrameworkTag
                         standard={regulatoryFramework}
@@ -223,13 +213,9 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
                 <p>{requirement?.description || 'No description available.'}</p>
             </div>
 
-
-
-            <div className="my-4 bg-white rounded-lg">
-                {/* Assessment Section */}
-                <Typography className="pt-2" textSize="h4">Assessment</Typography>
-
-                {/* Negative Findings */}
+            {/* Assessment Section */}
+            <div className="my-4">
+                <Typography textSize="h4">Assessment</Typography>
                 {requirementAssessment?.negative_findings &&
                     requirementAssessment.negative_findings.length > 0 ? (
                     <ul className="list-disc pl-5">
@@ -240,11 +226,11 @@ const DetailedAssessmentModal: React.FC<RequirementModalProps> = ({
                 ) : (
                     <p>No key findings available.</p>
                 )}
-
-                {/* Details Accordion */}
-                {renderDetailsAccordion()}
-                {renderSourcesAccordion()}
             </div>
+
+            {/* Details and Sources */}
+            {renderDetails()}
+            {renderSources()}
 
             {/* To Do Tasks */}
             <div className="my-4">

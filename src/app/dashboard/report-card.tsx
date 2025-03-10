@@ -19,11 +19,10 @@ const ReportCard: React.FC<ReportCardProps> = ({
 }) => {
     const router = useRouter()
 
-    const { tasks, loading: tasksLoading } = useTasksContext()
+    const { getTasksByReportId, loading: tasksLoading } = useTasksContext()
 
-    const reportTasks = tasks.filter(task => task.reportId === report?.id);
-    const unresolvedTasks = tasks.filter(task => task.status === "open").filter(task => task.reportId === report?.id);
-
+    const reportTasks = report ? getTasksByReportId(report.id) : [];
+    const unresolvedTasks = reportTasks.filter(task => task.status === "open");
 
     const handleClickReportTitle = async () => {
         router.push(`/reports/view/overview?selectedReports=${report?.id}`)
@@ -62,7 +61,7 @@ const ReportCard: React.FC<ReportCardProps> = ({
                 onClick={handleClickUnresolvedTasks}
                 className="mt-2 text-gray-500 hover:text-primary cursor-pointer transition-opacity duration-300 ease-in-out"
             >
-                {tasks?.length} suggested tasks, {unresolvedTasks?.length || 0} on todo
+                {reportTasks.length} suggested tasks, {unresolvedTasks.length || 0} on todo
                 <LinkOutlined className="ml-1" />
             </div>
             <div className="mt-4">

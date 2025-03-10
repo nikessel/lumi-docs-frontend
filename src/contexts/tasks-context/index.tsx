@@ -5,9 +5,10 @@ import { TaskWithReportId } from '@/hooks/tasks-hooks';
 
 interface TasksContextType {
     tasks: TaskWithReportId[];
-    selectedFilteredReportsTasks: Task[],
+    selectedFilteredReportsTasks: Task[];
     loading: boolean;
     error: string | null;
+    getTasksByReportId: (reportId: string) => TaskWithReportId[];
 }
 
 const TasksContext = createContext<TasksContextType | undefined>(undefined);
@@ -15,8 +16,12 @@ const TasksContext = createContext<TasksContextType | undefined>(undefined);
 export const TasksProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { tasks, selectedFilteredReportsTasks, loading, error } = useTasks();
 
+    const getTasksByReportId = (reportId: string) => {
+        return tasks.filter(task => task.reportId === reportId);
+    };
+
     return (
-        <TasksContext.Provider value={{ tasks, selectedFilteredReportsTasks, loading, error }}>
+        <TasksContext.Provider value={{ tasks, selectedFilteredReportsTasks, loading, error, getTasksByReportId }}>
             {children}
         </TasksContext.Provider>
     );
