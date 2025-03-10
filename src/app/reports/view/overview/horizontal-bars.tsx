@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Progress, Tooltip, Modal, Button } from 'antd';
+import { Progress, Tooltip } from 'antd';
 import { useReportsContext } from '@/contexts/reports-context';
 import { useSectionsContext } from '@/contexts/sections-context';
 
@@ -13,23 +13,9 @@ type DisplayDataItem = {
 
 const ComplianceBarChart: React.FC = () => {
     const { filteredSelectedReports, loading } = useReportsContext();
-
     const { filteredSelectedReportsSections, loading: sectionsLoading } = useSectionsContext();
-
     const [hoveredSection, setHoveredSection] = useState<{ sectionId: string; reportId: string } | null>(null);
     const [sortedDisplay, setSortedDisplay] = useState<DisplayDataItem[]>([]);
-    const [selectedSection, setSelectedSection] = useState<DisplayDataItem | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-
-    const [queuedSection, setQueuedSection] = useState<DisplayDataItem | null>(null);
-
-    useEffect(() => {
-        if (queuedSection) {
-            setSelectedSection(queuedSection);
-            setIsModalOpen(true);
-            setQueuedSection(null);
-        }
-    }, [queuedSection]);
 
     useEffect(() => {
         if (!filteredSelectedReportsSections || sectionsLoading) return;
@@ -50,22 +36,13 @@ const ComplianceBarChart: React.FC = () => {
 
         setSortedDisplay(
             displayData.sort((a, b) => {
-                if (a.rating === undefined) return 1; // Move undefined to the bottom
-                if (b.rating === undefined) return -1; // Move undefined to the bottom
-                return a.rating - b.rating; // Normal numeric sorting
+                if (a.rating === undefined) return 1;
+                if (b.rating === undefined) return -1;
+                return a.rating - b.rating;
             })
         );
 
     }, [filteredSelectedReports, filteredSelectedReportsSections, sectionsLoading]);
-
-    const handleColumnClick = (section: DisplayDataItem) => {
-        setQueuedSection(section);
-    };
-
-    const handleModalClose = () => {
-        setIsModalOpen(false);
-        setSelectedSection(null);
-    };
 
     if (loading) {
         return <div>Loading...</div>;
@@ -78,55 +55,24 @@ const ComplianceBarChart: React.FC = () => {
                     key={`${section.id.reportId}-${section.id.sectionId}`}
                     onMouseEnter={() => setHoveredSection(section.id)}
                     onMouseLeave={() => setHoveredSection(null)}
-                    onClick={() => handleColumnClick(section)}
+                    className="mb-1"
                 >
-                    <Tooltip
-                        title={
-                            hoveredSection &&
-                                hoveredSection.sectionId === section.id.sectionId &&
-                                hoveredSection.reportId === section.id.reportId
-                                ? section.label
-                                : undefined
-                        }
-                    >
+                    <div className="text-xs text-gray-600">
+                        {section.label}
+                    </div>
+                    <div>
+
                         <Progress
                             percent={section.rating}
                             showInfo
-                            className={`cursor-pointer transition duration-500 ease-out ${hoveredSection
+                            className={`transition duration-500 ease-out ${hoveredSection
                                 && hoveredSection.sectionId
                                 && (hoveredSection.sectionId !== section.id.sectionId
                                     || hoveredSection.reportId !== section.id.reportId) ? 'opacity-30' : ''}`}
                         />
-                    </Tooltip>
+                    </div>
                 </div>
             ))}
-
-            <Modal
-                title="Section Actions"
-                visible={isModalOpen}
-                onCancel={handleModalClose}
-                footer={[
-                    <Button key="filter" onClick={() => console.log(`Add to filters: ${selectedSection?.id.sectionId}`)}>
-                        Add to Filters
-                    </Button>,
-                    <Button
-                        key="view"
-                        type="primary"
-                        onClick={() => console.log(`View assessment for: ${selectedSection?.id.sectionId}`)}
-                    >
-                        View Assessment
-                    </Button>,
-                ]}
-            >
-                <p className="mt-4">
-                    <strong>{selectedSection?.label}</strong> ({filteredSelectedReports.find((report) => report.id === selectedSection?.id.reportId)?.title})
-                </p>
-                <div className="my-4">
-                    Compliance Rating
-                    <Progress percent={selectedSection?.rating} showInfo={true} />
-                </div>
-
-            </Modal>
         </div>
     );
 };

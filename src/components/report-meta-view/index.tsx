@@ -214,9 +214,6 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
                             {report?.created_date ? new Date(report?.created_date).toLocaleDateString() : ""}
                         </Typography>
                     </div>
-                    <Tooltip title={`Resolved Tasks: 50%`}>
-                        <Progress steps={5} size={8} percent={50} showInfo={false} />
-                    </Tooltip>
                     <Tooltip title={`Compliance score: ${report?.compliance_rating}%`}>
                         <Progress size={20} type="circle" percent={report?.compliance_rating} showInfo={false} />
                     </Tooltip>

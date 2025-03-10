@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { Typography, Collapse, Tooltip, Progress, Tag, Button } from 'antd';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Typography, Progress, Tag } from 'antd';
 import { RightOutlined, CheckCircleFilled, WarningFilled, CloseCircleFilled } from '@ant-design/icons';
-import { RequirementGroup, Requirement, RequirementAssessment, Document, RegulatoryFramework, Task } from '@wasm';
+import { Requirement, Task } from '@wasm';
 import { getSimplefiedComplianceColorCode } from '@/utils/formating';
 import RegulatoryFrameworkTag from '@/components/regulatory-framework-tag';
 import { useReportsContext } from '@/contexts/reports-context';
@@ -10,12 +10,11 @@ import { useDocumentsContext } from '@/contexts/documents-context';
 import { useStyle, getTextSizeClass, getPaddingClass, getIndentClass } from '@/contexts/style-context';
 import { RequirementGroupWithSectionId } from '@/hooks/requirement-group-hooks';
 import DetailedAssessmentModal from '@/components/detailed-assessment-modal';
-import { RequirementAssessmentWithId } from '@/app/reports/view/key_findings/page';
 import { extractAllRequirementAssessments } from '@/utils/report-utils';
 import { RequirementWithGroupId } from '@/hooks/requirement-hooks';
 import { useWasm } from '@/components/WasmProvider';
-import { updateTaskStatus, getTasksByReportAndRequirmentId } from '@/utils/tasks-utils';
-
+import { getTasksByReportAndRequirmentId } from '@/utils/tasks-utils';
+import { RequirementAssessmentWithId } from '@/hooks/report-hooks';
 const { Text } = Typography;
 
 interface RequirementGroupProps {
@@ -33,11 +32,8 @@ const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, req
     const { sections } = useSectionsContext();
     const { documents } = useDocumentsContext();
     const { wasmModule } = useWasm();
-    const [taskLoading, setTaskLoading] = useState<{ [key: string]: boolean }>({});
     const [requirementTasks, setRequirementTasks] = useState<{ [key: string]: Task[] }>({});
     const [tasksLoading, setTasksLoading] = useState<{ [key: string]: boolean }>({});
-
-    console.log("asdasdasdasdasd", group.id)
 
     useEffect(() => {
         setIsExpanded(prev => (prev !== defaultExpanded ? defaultExpanded : prev));
@@ -157,23 +153,6 @@ const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, req
         return <CloseCircleFilled className="text-red-500" />;
     };
 
-    const renderFindings = (assessment: RequirementAssessmentWithId | undefined, isExpanded: boolean) => {
-        if (!assessment?.negative_findings || assessment.negative_findings.length === 0 || isExpanded) {
-            return null;
-        }
-
-        return (
-            <div className="flex-1 min-w-0 ml-2">
-                <div className="text-xs text-gray-500 truncate">
-                    {assessment.negative_findings.reduce((acc, finding, index) => {
-                        if (index === 0) return finding;
-                        return `${acc} • ${finding}`;
-                    }, "")}
-                </div>
-            </div>
-        );
-    };
-
     // Load tasks when a requirement is expanded
     useEffect(() => {
         expandedRequirements.forEach(async (requirementId) => {
@@ -195,14 +174,12 @@ const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, req
                 setTasksLoading(prev => ({ ...prev, [requirementId]: false }));
             }
         });
-    }, [expandedRequirements, wasmModule]);
+    }, [expandedRequirements, getRequirementAssessment, requirementTasks, tasksLoading, wasmModule]);
 
-    const renderExpandedRequirementDetails = (requirement: RequirementWithGroupId, assessment: RequirementAssessmentWithId | undefined) => {
+    const renderExpandedRequirementDetails = (assessment: RequirementAssessmentWithId | undefined) => {
         if (!assessment) return null;
         const textSizeClass = getTextSizeClass(fontSize);
         const indentClass = getIndentClass(fontSize);
-        const tasks = requirementTasks[requirement.id];
-        const isLoadingTasks = tasksLoading[requirement.id];
 
         return (
             <div className={`${indentClass} mt-2 space-y-4 select-none pb-2`}>
@@ -251,7 +228,7 @@ const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, req
         );
     };
 
-    const renderRequirement = (requirement: RequirementWithGroupId, isHighCompliance: boolean) => {
+    const renderRequirement = (requirement: RequirementWithGroupId) => {
         const assessment = getRequirementAssessment(requirement.id);
         const isExpanded = expandedRequirements.has(requirement.id);
         const textSizeClass = getTextSizeClass(fontSize);
@@ -287,22 +264,9 @@ const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, req
                         />
                     </div>
                 </div>
-                {isExpanded && renderExpandedRequirementDetails(requirement, assessment)}
+                {isExpanded && renderExpandedRequirementDetails(assessment)}
             </div>
         );
-    };
-
-    const handleAddToDo = async (task: Task) => {
-        if (!task.id || !wasmModule) return;
-
-        setTaskLoading(prev => ({ ...prev, [task.id!]: true }));
-        try {
-            await updateTaskStatus(wasmModule, task, "open");
-        } catch (error) {
-            console.error("Error adding To Do:", error);
-        } finally {
-            setTaskLoading(prev => ({ ...prev, [task.id!]: false }));
-        }
     };
 
     return (
@@ -329,7 +293,7 @@ const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, req
             </div>
             {isExpanded && (
                 <div className={`${getIndentClass(fontSize)} pr-3 select-none`}>
-                    {filteredAndSortedRequirements.map(requirement => renderRequirement(requirement, false))}
+                    {filteredAndSortedRequirements.map(requirement => renderRequirement(requirement))}
                 </div>
             )}
             <DetailedAssessmentModal

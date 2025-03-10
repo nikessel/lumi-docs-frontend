@@ -9,6 +9,7 @@ import { useAllRequirementsContext } from '@/contexts/requirements-context/all-r
 import { useAuth } from '../auth-hook/Auth0Provider';
 import { logLumiDocsContext } from '@/utils/logging-utils';
 import { useUserContext } from '@/contexts/user-context';
+import { RequirementAssessment, RegulatoryFramework } from '@wasm';
 
 interface UseReports {
     reports: Report[];
@@ -16,6 +17,9 @@ interface UseReports {
     loading: boolean;
     error: string | null;
 }
+
+export type RequirementAssessmentWithId = RequirementAssessment & { id: string, reportId: string, regulatoryFramework: RegulatoryFramework };
+
 
 export const useReports = (): UseReports => {
     const { wasmModule } = useWasm();
