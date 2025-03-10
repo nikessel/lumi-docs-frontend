@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { List, Checkbox, Button, Tree } from "antd";
+import { List, Checkbox, Button, Tree, Input } from "antd";
 import { FolderOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { useCreateReportStore } from "@/stores/create-report-store";
 import { useDocumentsContext } from "@/contexts/documents-context";
@@ -39,8 +39,9 @@ const SelectDocuments: React.FC = () => {
         setSelectedDocumentNumbers,
     } = useCreateReportStore();
 
-    const [expandedKeys, setExpandedKeys] = useState<Key[]>(['root']);
+    const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
     const [currentPath, setCurrentPath] = useState<string | null>(null);
+    const [searchValue, setSearchValue] = useState<string>('');
 
     // Create tree structure from documents
     const treeData = useMemo(() => {
@@ -136,11 +137,32 @@ const SelectDocuments: React.FC = () => {
                 };
             };
 
-            return [convertFolderToArray(rootWrapper)];
+            let data = [convertFolderToArray(rootWrapper)];
+
+            // Filter tree data based on search value
+            if (searchValue) {
+                const filterTreeNodes = (nodes: DataNode[]): DataNode[] => {
+                    return nodes.map(node => {
+                        const matchesSearch = node.title?.toString().toLowerCase().includes(searchValue.toLowerCase()) ?? false;
+
+                        const filteredNode = { ...node };
+                        if (node.children) {
+                            filteredNode.children = filterTreeNodes(node.children);
+                            return filteredNode.children.length > 0 || matchesSearch ? filteredNode : null;
+                        }
+
+                        return matchesSearch ? filteredNode : null;
+                    }).filter((node): node is DataNode => node !== null);
+                };
+
+                data = filterTreeNodes(data);
+            }
+
+            return data;
         };
 
         return createTreeStructure();
-    }, [documents, filesByDocumentId]);
+    }, [documents, filesByDocumentId, searchValue]);
 
     const handleSelect = (selectedKeys: Key[]) => {
         console.log("selectedKeys", selectedKeys)
@@ -239,8 +261,19 @@ const SelectDocuments: React.FC = () => {
     };
 
     return (
-        <div className="space-y-4">
-
+        <div >
+            <Input.Search
+                placeholder="Search documents..."
+                onChange={(e) => {
+                    setSearchValue(e.target.value);
+                    if (e.target.value && !expandedKeys.includes('root')) {
+                        setExpandedKeys([...expandedKeys, 'root']);
+                    }
+                }}
+                style={{ marginBottom: 8, width: 200 }}
+                allowClear
+                size="small"
+            />
             <Tree
                 showIcon
                 expandedKeys={expandedKeys}
@@ -251,33 +284,22 @@ const SelectDocuments: React.FC = () => {
                 checkable
                 checkedKeys={selectedDocumentNumbers.map(num => num?.toString())}
                 onCheck={(checkedKeys) => {
-                    // The checkedKeys object has a structure like { checked: string[], halfChecked: string[] }
                     const keys = Array.isArray(checkedKeys) ? checkedKeys : checkedKeys.checked;
-                    console.log("debugging checkedKeys", checkedKeys);
-                    console.log("debugging keys", keys);
-
-                    // Get all document numbers from the checked keys
                     const checkedDocumentNumbers = keys
                         .map(key => {
-                            console.log("Looking for key:", key);
-
-                            // Find the document number directly from the documents array
                             const doc = documents.find(d => d.number.toString() === key);
                             if (doc) {
-                                console.log("Found document:", doc);
                                 return doc.number;
                             }
-
-                            console.log("No document found for key:", key);
                             return null;
                         })
                         .filter((num): num is number => num !== null);
-
-                    console.log("debugging checkedDocumentNumbers", checkedDocumentNumbers);
-
-                    // Update the selected document numbers
                     setSelectedDocumentNumbers(checkedDocumentNumbers);
                 }}
+                height={350}
+                itemHeight={28}
+                virtual
+                style={{ maxHeight: '350px', overflow: 'auto' }}
             />
         </div>
     );
