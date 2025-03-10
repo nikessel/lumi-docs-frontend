@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { Upload, Button, List, message } from "antd";
+import { Upload, Button, List, message, Tag } from "antd";
 import { DeleteOutlined, InboxOutlined, FilePdfOutlined, FolderAddOutlined, LoadingOutlined } from "@ant-design/icons";
 import { useUploadManager } from "@/components/upload-files/upload-manager";
 import { FileExtension } from "@wasm";
@@ -7,6 +7,7 @@ import { UploadFile } from "antd/es/upload/interface";
 import { formatFileSize } from "@/utils/helpers";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
 import { Form } from "antd";
+import JSZip from 'jszip';
 
 const SUPPORTED_EXTENSIONS: FileExtension[] = ["pdf", "txt", "md", "zip"];
 const IGNORED_PATHS = ["__MACOSX", ".DS_Store"];
@@ -19,6 +20,8 @@ interface FileUploadContentProps {
 
 const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
     const [selectedFiles, setSelectedFiles] = useState<UploadFile[]>([]);
+    const [estimatedTotalFiles, setEstimatedTotalFiles] = useState<number>(0);
+    const [zipFileCounts, setZipFileCounts] = useState<Record<string, number>>({});
     const uploadManager = useUploadManager();
     const addStaleFileId = useCacheInvalidationStore((state) => state.addStaleFileId);
     const addStaleDocumentId = useCacheInvalidationStore((state) => state.addStaleDocumentId);
@@ -29,14 +32,75 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
 
     const fileChangeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Function to count files in a zip
+    const countFilesInZip = async (file: File): Promise<number> => {
+        try {
+            const zip = new JSZip();
+            const contents = await zip.loadAsync(file);
+
+            let totalCount = 0;
+            const processZipContents = async (zipContents: JSZip) => {
+                for (const [path, zipEntry] of Object.entries(zipContents.files)) {
+                    // Skip directories and ignored paths
+                    if (zipEntry.dir || IGNORED_PATHS.some(ignored => path.includes(ignored))) {
+                        continue;
+                    }
+
+                    // If it's a nested ZIP file, process it recursively
+                    if (path.toLowerCase().endsWith('.zip')) {
+                        try {
+                            const nestedZipContent = await zipEntry.async('blob');
+                            const nestedZip = await JSZip.loadAsync(nestedZipContent);
+                            await processZipContents(nestedZip);
+                        } catch (error) {
+                            console.error(`Error processing nested zip in ${path}:`, error);
+                            totalCount += 1; // Count failed nested zip as a single file
+                        }
+                    } else {
+                        totalCount += 1;
+                    }
+                }
+            };
+
+            await processZipContents(contents);
+
+            setZipFileCounts(prev => ({
+                ...prev,
+                [file.name]: totalCount
+            }));
+
+            return totalCount;
+        } catch (error) {
+            console.error(`Error counting files in zip ${file.name}:`, error);
+            return 0;
+        }
+    };
+
+    // Update estimated total files whenever selected files change
+    useEffect(() => {
+        const updateEstimatedTotal = async () => {
+            let total = 0;
+            for (const file of selectedFiles) {
+                if (file.name.toLowerCase().endsWith('.zip') && file.originFileObj) {
+                    const zipFileCount = await countFilesInZip(file.originFileObj);
+                    total += zipFileCount;
+                } else {
+                    total += 1;
+                }
+            }
+            setEstimatedTotalFiles(total);
+            setIsProcessingFiles(false)
+        };
+
+        updateEstimatedTotal();
+    }, [selectedFiles]);
+
     const shouldIgnoreFile = (file: UploadFile): boolean => {
         const webkitPath = file.originFileObj?.webkitRelativePath || "";
         return IGNORED_PATHS.some((ignoredPath) => webkitPath.includes(ignoredPath) || file.name.includes(ignoredPath));
     };
 
     const processFiles = useCallback((files: UploadFile[]) => {
-        setIsProcessingFiles(true)
-
         const validFiles = files.filter((file) => {
             const ext = file.name.split(".").pop()?.toLowerCase() as FileExtension;
             return ext && SUPPORTED_EXTENSIONS.includes(ext) && !shouldIgnoreFile(file);
@@ -54,11 +118,9 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
             ...prev,
             ...Array.from(fileMap.values()).filter((newFile) => !prev.some((existingFile) => existingFile.name === newFile.name))
         ]);
-        setIsProcessingFiles(false)
     }, []);
 
     const handleFileChange = ({ fileList }: { fileList: UploadFile[] }) => {
-        setIsProcessingFiles(true)
         // Clear existing timeout to debounce
         if (fileChangeTimeout.current) {
             clearTimeout(fileChangeTimeout.current);
@@ -104,7 +166,17 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
     };
 
     const handleRemoveSelectedFile = (uid: string) => {
-        setSelectedFiles((prevFiles) => prevFiles.filter((file) => file.uid !== uid));
+        setSelectedFiles((prevFiles) => {
+            const fileToRemove = prevFiles.find(file => file.uid === uid);
+            if (fileToRemove && fileToRemove.name.toLowerCase().endsWith('.zip')) {
+                setZipFileCounts(prev => {
+                    const newCounts = { ...prev };
+                    delete newCounts[fileToRemove.name];
+                    return newCounts;
+                });
+            }
+            return prevFiles.filter((file) => file.uid !== uid);
+        });
     };
 
     return (
@@ -145,10 +217,10 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
 
             {isProcessingFiles ? <div className="mt-2 text-text_secondary"><LoadingOutlined className="mr-2" /> Preparing files</div> : ""}
 
-            {selectedFiles.length > 0 && (
-                selectedFiles.length > 50 ? (
+            {!isProcessingFiles && selectedFiles.length > 0 && (
+                !isProcessingFiles && selectedFiles.length > 50 ? (
                     <div className="mt-4 text-gray-600">
-                        {selectedFiles.length} files selected
+                        {estimatedTotalFiles} files selected
                     </div>
                 ) : (
                     <List
@@ -159,8 +231,13 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
                         dataSource={selectedFiles}
                         renderItem={(file) => (
                             <List.Item>
-                                <span>{file.name}</span>
+                                <span>
+                                    {file.name}
+                                </span>
                                 <div className="flex gap-4">
+                                    {file.name.toLowerCase().endsWith('.zip') && zipFileCounts[file.name] !== undefined &&
+                                        <Tag color="blue">{zipFileCounts[file.name]} files</Tag>
+                                    }
                                     <span>{file.size ? formatFileSize(file.size) : "-"}</span>
                                     <div
                                         className="cursor-pointer hover:opacity-60"
@@ -176,15 +253,16 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
             )}
 
 
-            <div className="w-full mt-8 flex justify-end">
+            <div className="w-full mt-8 flex justify-end items-center">
+
                 <Button
                     key="upload"
                     type="primary"
-                    disabled={!selectedFiles.length || uploadManager.isUploading}
+                    disabled={!selectedFiles.length || uploadManager.isUploading || isProcessingFiles}
                     loading={uploadManager.isUploading}
                     onClick={handleUpload}
                 >
-                    {uploadManager.isUploading ? "Uploading..." : `Upload (${selectedFiles.length})`}
+                    {uploadManager.isUploading ? "Uploading..." : `Upload (${estimatedTotalFiles})`}
                 </Button>
             </div>
         </>

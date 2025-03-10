@@ -29,23 +29,53 @@ async function extractFilesFromZip(zipFile: File): Promise<File[]> {
     const content = await zip.loadAsync(zipFile);
     const extractedFiles: File[] = [];
 
-    for (const [path, zipEntry] of Object.entries(content.files)) {
-        if (zipEntry.dir || path.toLowerCase().endsWith('.zip')) {
-            continue;
+    async function processZipEntry(entry: JSZip.JSZipObject, parentPath: string = ''): Promise<void> {
+        const fullPath = parentPath ? `${parentPath}/${entry.name}` : entry.name;
+
+        if (entry.dir) {
+            return;
         }
 
-        const extension = path.split('.').pop()?.toLowerCase();
+        // Handle nested zip files
+        if (entry.name.toLowerCase().endsWith('.zip')) {
+            try {
+                const zipContent = await entry.async('blob');
+                const nestedZip = new File([zipContent], entry.name);
+                const nestedFiles = await extractFilesFromZip(nestedZip);
+                extractedFiles.push(...nestedFiles.map(file => {
+                    // Preserve the nested path structure
+                    const nestedPath = `${parentPath}/${file.name}`.replace(/^\//, '');
+                    return new File([file], nestedPath, { type: file.type });
+                }));
+            } catch (error) {
+                console.error(`Failed to process nested zip file ${entry.name}:`, error);
+                toast.error(`Failed to process nested zip file: ${entry.name}`);
+            }
+            return;
+        }
+
+        const extension = entry.name.split('.').pop()?.toLowerCase();
         if (!['pdf', 'txt', 'md'].includes(extension || '')) {
-            continue;
+            return;
         }
 
-        const blob = await zipEntry.async('blob');
-        const file = new File([blob], path.split('/').pop() || path, {
-            type: `application/${extension}`,
-        });
-        extractedFiles.push(file);
+        try {
+            const blob = await entry.async('blob');
+            const file = new File([blob], fullPath, {
+                type: `application/${extension}`,
+            });
+            extractedFiles.push(file);
+        } catch (error) {
+            console.error(`Failed to process file ${entry.name}:`, error);
+        }
     }
 
+    // Process all files in the zip, maintaining directory structure
+    const processPromises = Object.values(content.files).map(async (entry) => {
+        await processZipEntry(entry);
+    });
+
+    await Promise.all(processPromises);
     return extractedFiles;
 }
 
@@ -55,7 +85,6 @@ async function processAndUploadFile(
     set: (fn: (state: UploadManagerState) => Partial<UploadManagerState>) => void
 ): Promise<void> {
     try {
-        console.debug(`Processing file ${file.name}`);
         const filePath = file.name; // This now contains the full path from webkitRelativePath
         const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
@@ -81,8 +110,6 @@ async function processAndUploadFile(
             }
             throw new Error(`File creation error: ${createResponse.error.kind} - ${createResponse.error.message}`);
         }
-
-        console.debug(`File successfully created on the backend:`, createResponse);
 
         // Add a small delay after file creation to ensure backend consistency
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -213,7 +240,6 @@ export const useUploadManager = create<UploadManagerState>()((set, get) => ({
                             handleRefetchFiles()
                         } catch (error) {
                             failedFiles.push(file.name);
-                            console.error(`Failed to upload ${file.name}:`, error);
                         }
                     })
                 );
@@ -223,7 +249,6 @@ export const useUploadManager = create<UploadManagerState>()((set, get) => ({
             }
 
             if (failedFiles.length > 0) {
-
                 toast.error(`Upload completed with ${failedFiles.length} failed files`);
             } else {
                 toast.success(`Successfully uploaded ${allFiles.length} files`);
@@ -246,6 +271,5 @@ export const useUploadManager = create<UploadManagerState>()((set, get) => ({
             failedFiles: [],
             filesAlreadyExisted: 0,
         });
-        console.debug("Upload session has been reset.");
     },
 }));
