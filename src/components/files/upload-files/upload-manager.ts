@@ -2,10 +2,12 @@ import { create } from "zustand";
 import { upload_file_chunk, create_file, new_file } from "@wasm";
 import { toast } from "sonner";
 import JSZip from "jszip";
+import type { FileExtension } from "@wasm";
 
 const BATCH_SIZE = 10; // Number of files to process simultaneously
 const MAX_RETRIES = 3;
 const CHUNK_SIZE = 1024 * 1024 * 5; // 5MB chunks
+const VALID_EXTENSIONS: FileExtension[] = ["pdf", "txt", "md"];
 
 interface UploadManagerState {
     isUploading: boolean;
@@ -54,8 +56,8 @@ async function extractFilesFromZip(zipFile: File): Promise<File[]> {
             return;
         }
 
-        const extension = entry.name.split('.').pop()?.toLowerCase();
-        if (!['pdf', 'txt', 'md'].includes(extension || '')) {
+        const extension = entry.name.split('.').pop()?.toLowerCase() as FileExtension;
+        if (!VALID_EXTENSIONS.includes(extension)) {
             return;
         }
 
@@ -200,21 +202,29 @@ export const useUploadManager = create<UploadManagerState>()((set, get) => ({
 
         try {
             let allFiles: File[] = [];
+            let skippedFiles: string[] = [];
 
             // Process zip files first
             for (const file of files) {
-                if (file.name.toLowerCase().endsWith('.zip')) {
+                const extension = file.name.split('.').pop()?.toLowerCase() as FileExtension;
+
+                if (extension === "zip") {
                     try {
                         const extractedFiles = await extractFilesFromZip(file);
                         console.debug(`Extracted ${extractedFiles.length} files from ${file.name}`);
                         allFiles.push(...extractedFiles);
                     } catch (error) {
                         console.error(`Failed to process zip file ${file.name}:`, error);
-                        toast.error(`Failed to process zip file: ${file.name}`);
                     }
-                } else {
+                } else if (VALID_EXTENSIONS.includes(extension)) {
                     allFiles.push(file);
+                } else {
+                    skippedFiles.push(file.name);
                 }
+            }
+
+            if (skippedFiles.length > 0) {
+                toast.warning(`Skipped ${skippedFiles.length} unsupported files: ${skippedFiles.join(', ')}`);
             }
 
             const totalSize = allFiles.reduce((sum, file) => sum + file.size, 0);

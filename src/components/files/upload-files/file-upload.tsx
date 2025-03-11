@@ -3,6 +3,7 @@ import { Upload, Button, List, message, Tag } from "antd";
 import { DeleteOutlined, InboxOutlined, FilePdfOutlined, FolderAddOutlined, LoadingOutlined } from "@ant-design/icons";
 import { useUploadManager } from "@/components/files/upload-files/upload-manager";
 import { FileExtension } from "@wasm";
+import { SupportedFileType } from "@/types/file-types";
 import { UploadFile } from "antd/es/upload/interface";
 import { formatFileSize } from "@/utils/helpers";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
@@ -46,17 +47,20 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
                         continue;
                     }
 
+                    // Get file extension
+                    const extension = path.split('.').pop()?.toLowerCase() as FileExtension;
+
                     // If it's a nested ZIP file, process it recursively
-                    if (path.toLowerCase().endsWith('.zip')) {
+                    if (extension === "zip") {
                         try {
                             const nestedZipContent = await zipEntry.async('blob');
                             const nestedZip = await JSZip.loadAsync(nestedZipContent);
                             await processZipContents(nestedZip);
                         } catch (error) {
                             console.error(`Error processing nested zip in ${path}:`, error);
-                            totalCount += 1; // Count failed nested zip as a single file
                         }
-                    } else {
+                    } else if (extension && SUPPORTED_EXTENSIONS.filter(ext => ext !== "zip").includes(extension)) {
+                        // Only count files with supported extensions (excluding zip)
                         totalCount += 1;
                     }
                 }
@@ -81,7 +85,8 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
         const updateEstimatedTotal = async () => {
             let total = 0;
             for (const file of selectedFiles) {
-                if (file.name.toLowerCase().endsWith('.zip') && file.originFileObj) {
+                const ext = file.name.split(".").pop()?.toLowerCase() as FileExtension;
+                if (ext === "zip" && file.originFileObj) {
                     const zipFileCount = await countFilesInZip(file.originFileObj);
                     total += zipFileCount;
                 } else {
@@ -168,7 +173,8 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
     const handleRemoveSelectedFile = (uid: string) => {
         setSelectedFiles((prevFiles) => {
             const fileToRemove = prevFiles.find(file => file.uid === uid);
-            if (fileToRemove && fileToRemove.name.toLowerCase().endsWith('.zip')) {
+            const ext = fileToRemove?.name.split(".").pop()?.toLowerCase() as FileExtension;
+            if (fileToRemove && ext === "zip") {
                 setZipFileCounts(prev => {
                     const newCounts = { ...prev };
                     delete newCounts[fileToRemove.name];
@@ -197,7 +203,7 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
                         </p>
                         <p className="ant-upload-text">Click or drag file to this area to upload</p>
                         <p className="ant-upload-hint">
-                            Supports single or multiple .pdf or .zip files. To upload entire directory, click button below.
+                            Supports single or multiple files ({SUPPORTED_EXTENSIONS.join(", ")}). To upload entire directory, click button below.
                         </p>
                     </Dragger>
                 </Form.Item>
@@ -235,7 +241,7 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ onClose }) => {
                                     {file.name}
                                 </span>
                                 <div className="flex gap-4">
-                                    {file.name.toLowerCase().endsWith('.zip') && zipFileCounts[file.name] !== undefined &&
+                                    {(file.name.split(".").pop()?.toLowerCase() as FileExtension) === "zip" && zipFileCounts[file.name] !== undefined &&
                                         <Tag color="blue">{zipFileCounts[file.name]} files</Tag>
                                     }
                                     <span>{file.size ? formatFileSize(file.size) : "-"}</span>
