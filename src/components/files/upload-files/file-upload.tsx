@@ -3,7 +3,6 @@ import { Upload, Button, List, message, Tag } from "antd";
 import { DeleteOutlined, InboxOutlined, FilePdfOutlined, FolderAddOutlined, LoadingOutlined } from "@ant-design/icons";
 import { useUploadManager } from "@/components/files/upload-files/upload-manager";
 import { FileExtension } from "@wasm";
-import { SupportedFileType } from "@/types/file-types";
 import { UploadFile } from "antd/es/upload/interface";
 import { formatFileSize } from "@/utils/helpers";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
