@@ -1,12 +1,20 @@
 /** @type {import('next').NextConfig} */
 import path from "path";
 import { fileURLToPath } from "url";
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const nextConfig = {
   output: 'standalone',
+  // Add the experimental configuration for server actions
+  experimental: {
+    // Increase the body size limit for server actions
+    serverActions: {
+      // Set to 50MB (adjust as needed)
+      bodySizeLimit: '50mb',
+    },
+    // Keep any other experimental features if they exist
+  },
   webpack: (config, { dev, isServer }) => {
     config.experiments = {
       asyncWebAssembly: true,

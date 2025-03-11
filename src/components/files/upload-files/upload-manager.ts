@@ -88,6 +88,12 @@ async function processAndUploadFile(
 ): Promise<void> {
     try {
         const filePath = file.name; // This now contains the full path from webkitRelativePath
+
+        if (file.size === 0) {
+          console.error(`File ${file.name} has zero size. Skipping upload.`);
+          throw new Error(`Cannot upload empty file: ${file.name}`);
+        }
+
         const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
 
         // Use `new_file` to create the file synchronously and retrieve the response

@@ -1,66 +1,111 @@
-import { useEffect } from "react"
+import { useEffect } from "react";
 import { useUploadManager } from "@/components/files/upload-files/upload-manager";
-import { Spin } from 'antd';
-import { LoadingOutlined } from '@ant-design/icons';
-import { notification } from "antd";
-
+import { notification, Progress, Card } from 'antd';
+import { 
+  LoadingOutlined, 
+  FileOutlined, 
+  CloseCircleFilled,
+} from '@ant-design/icons';
 
 const UploadIndicator = () => {
-    const uploadManager = useUploadManager();
-    const [api, contextHolder] = notification.useNotification();
+  const uploadManager = useUploadManager();
+  const [api, contextHolder] = notification.useNotification();
 
-
-    useEffect(() => {
-        if (!uploadManager.isUploading && (uploadManager.uploadedFiles > 0 || uploadManager.failedFiles.length || uploadManager.filesAlreadyExisted)) {
-
-            if (uploadManager.failedFiles.length > 0) {
-                api.error({
-                    message: "Error",
-                    description: `Failed to upload ${uploadManager.failedFiles.length} files`
-                });
-            }
-
-            if (uploadManager.uploadedFiles > 0 || uploadManager.filesAlreadyExisted) {
-                const lines = [];
-
-                if (uploadManager.uploadedFiles > 0) {
-                    lines.push(`Successfully uploaded ${uploadManager.uploadedFiles} files.`);
-                }
-
-                if (uploadManager.filesAlreadyExisted > 0) {
-                    lines.push(`${uploadManager.filesAlreadyExisted} files already existed.`);
-                }
-
-                api.success({
-                    message: "Success",
-                    description: lines.join("\n"),
-                });
-
-
-            }
+  // Calculate upload statistics
+  const progress = Math.round(uploadManager.progress * 100);
+  const uploadedCount = Math.min(uploadManager.uploadedFiles, uploadManager.totalFiles);
+  const totalCount = uploadManager.totalFiles;
+  const failedCount = uploadManager.failedFiles.length;
+  const alreadyExistedCount = uploadManager.filesAlreadyExisted;
+  const isComplete = !uploadManager.isUploading && (uploadedCount > 0 || failedCount > 0 || alreadyExistedCount > 0);
+  
+  // Show notification when upload completes
+  useEffect(() => {
+    if (isComplete) {
+      if (failedCount > 0) {
+        api.error({
+          message: "Upload Error",
+          description: `Failed to upload ${failedCount} files`
+        });
+      }
+      
+      if (uploadedCount > 0 || alreadyExistedCount > 0) {
+        const lines = [];
+        if (uploadedCount > 0) {
+          lines.push(`Successfully uploaded ${uploadedCount} files.`);
         }
-    }, [uploadManager, api]);
+        if (alreadyExistedCount > 0) {
+          lines.push(`${alreadyExistedCount} files already existed.`);
+        }
+        api.success({
+          message: "Upload Complete",
+          description: lines.join("\n"),
+        });
+      }
+    }
+  }, [uploadManager.isUploading, uploadedCount, failedCount, alreadyExistedCount, api, isComplete]);
 
-    if (!uploadManager.isUploading) return <div>{contextHolder}</div>;
+  // If not uploading and no recent completion, don't show anything
+  if (!uploadManager.isUploading && !isComplete) {
+    return <div>{contextHolder}</div>;
+  }
 
-    return (
-        <div style={{
-            position: "fixed",
-            top: 5,
-            right: 10,
-            borderRadius: "5px",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            zIndex: 9999,
-            color: "gray"
-        }}
-        >
-            <Spin indicator={<LoadingOutlined spin />} size="small" />
-            Uploading {uploadManager.uploadedFiles}/{uploadManager.totalFiles}
-            {contextHolder}
+  // Show the indicator for 5 seconds after completion
+  if (isComplete) {
+    return <div>{contextHolder}</div>;
+  }
+  
+  // Render expanded version (detailed card)
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 16,
+        right: 16,
+        zIndex: 1000,
+        width: 300,
+      }}
+    >
+      <Card 
+        size="small" 
+        title={
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>
+              <LoadingOutlined spin style={{ marginRight: 8 }} />
+              Uploading Files
+            </span>
+          </div>
+        }
+        styles={{ body: { padding: '12px' } }}
+      >
+        <Progress 
+          percent={progress} 
+          status="active" 
+          size="small"
+          strokeWidth={6}
+        />
+        
+        <div style={{ 
+          marginTop: 8,
+          fontSize: '13px',
+          color: 'rgba(0, 0, 0, 0.65)'
+        }}>
+          <div>
+            <FileOutlined style={{ marginRight: 4 }} />
+            {uploadedCount}/{totalCount} files
+          </div>
         </div>
-    );
+        
+        {failedCount > 0 && (
+          <div style={{ marginTop: 8, color: '#ff4d4f', fontSize: '13px' }}>
+            <CloseCircleFilled style={{ marginRight: 4 }} />
+            {failedCount} failed files
+          </div>
+        )}
+      </Card>
+      {contextHolder}
+    </div>
+  );
 };
 
 export default UploadIndicator;
