@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { Table, Breadcrumb, Skeleton } from 'antd';
-import RegulatoryFrameworkTag from '@/components/regulatory-framework-tag';
+import RegulatoryFrameworkTag from '@/components/reports/regulatory-framework-tag';
 import { useRegulatoryFrameworksContext } from '@/contexts/regulatory-frameworks-context';
 import { getPriceForGroup, getPriceForSection, getPriceForFramework } from '@/utils/payment';
 import { formatPrice } from '@/utils/payment';

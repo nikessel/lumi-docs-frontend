@@ -4,7 +4,7 @@ import React from 'react';
 import { Divider } from 'antd';
 import "@/styles/globals.css";
 
-import Typography from '@/components/typography';
+import Typography from '@/components/common/typography';
 
 
 interface LayoutProps {

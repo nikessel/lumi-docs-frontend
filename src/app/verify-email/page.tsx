@@ -5,7 +5,6 @@ import { Typography, Alert, Button } from "antd";
 import Image from "next/image";
 import { useAuth } from "@/hooks/auth-hook/Auth0Provider";
 import { useRouter } from "next/navigation";
-import { clear } from "console";
 const { Title, Text } = Typography;
 
 export default function VerifyEmailPage() {
@@ -50,7 +49,7 @@ export default function VerifyEmailPage() {
         </div>
         <div className="flex justify-center my-8">
           <Image
-            src={require("@/assets/undraw_mail-sent_ujev.svg")}
+            src={require("@/assets/svgs/undraw_mail-sent_ujev.svg")}
             alt="Signed Out Illustration"
             width={200}
             height={200}

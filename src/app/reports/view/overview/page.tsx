@@ -1,8 +1,8 @@
 'use client';
 import { Card, Statistic, Skeleton } from 'antd';
 import { getSimplefiedComplianceColorCode } from "@/utils/formating";
-import WaffleChart from "./waffle-canvas-view";
-import ComplianceBarChart from "./horizontal-bars";
+import WaffleChart from "./components/waffle-canvas-view";
+import ComplianceBarChart from "./components/horizontal-bars";
 import { analyzeReports } from "@/utils/advanced-charts-utils";
 import { analyzeTasks } from "@/utils/tasks-utils";
 import { useReportsContext } from "@/contexts/reports-context";

@@ -1,7 +1,7 @@
 'use client';
 import React from "react";
 import { Anchor, Alert, Affix } from "antd";
-import Typography from "@/components/typography";
+import Typography from "@/components/common/typography";
 import Image from "next/image";
 import { useAuth } from "@/hooks/auth-hook/Auth0Provider";
 

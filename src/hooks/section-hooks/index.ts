@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { useWasm } from "@/components/WasmProvider";
+import { useWasm } from "@/contexts/wasm-context/WasmProvider";
 import { fetchSectionsByRegulatoryFramework } from "@/utils/sections-utils";
 import { Section } from "@wasm";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
@@ -23,7 +23,6 @@ export const useSections = (): UseSections => {
     const { frameworks, loading: frameWorksLoading } = useRegulatoryFrameworksContext();
     const { isAuthenticated, isLoading: authLoading } = useAuth()
 
-
     const [sections, setSections] = useState<Section[]>([]);
     const [sectionsForRegulatoryFramework, setSectionsForRegulatoryFramework] = useState<Record<string, Section[]>>({});
     const [loading, setLoading] = useState(true);
@@ -40,7 +39,7 @@ export const useSections = (): UseSections => {
             if (!wasmModule || !isAuthenticated || authLoading) return;
             if (frameworks.length === 0 || frameWorksLoading) return;
             if (!user?.email) return
-            
+
             try {
                 setLoading(true);
 

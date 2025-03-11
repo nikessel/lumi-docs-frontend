@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useWasm } from "@/components/WasmProvider";
+import { useWasm } from "@/contexts/wasm-context/WasmProvider";
 import { fetchDocuments } from "@/utils/documents-utils";
 import { fetchDocumentsByFileIds } from "@/utils/documents-utils";
 import type { Document, File } from "@wasm";

@@ -1,9 +1,8 @@
 'use client'
-import { Button } from "@/components/ui/button";
-// import { useAuth } from "@/components/Auth0"
+import { Button } from "antd";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import Typography from "@/components/typography";
+import Typography from "@/components/common/typography";
 import { useAuth } from "@/hooks/auth-hook/Auth0Provider";
 
 export default function LogoutScreen() {
@@ -15,7 +14,7 @@ export default function LogoutScreen() {
       <div className="text-center">
         <Typography className="mt-8 mb-16 justify-center" textSize="h2">You were logged out</Typography>
         <Image
-          src={require("@/assets/undraw_close-tab_jr11.svg")}
+          src={require("@/assets/svgs/undraw_close-tab_jr11.svg")}
           alt="Signed Out Illustration"
           width={400}
           height={400}
@@ -29,7 +28,7 @@ export default function LogoutScreen() {
             Login
           </Button>
           <Button
-            variant="outline"
+            type="link"
             onClick={() => router.push("/documentation")}
           >
             View Documentation

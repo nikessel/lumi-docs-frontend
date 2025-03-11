@@ -1,13 +1,13 @@
 'use client';
 import React, { useState, useEffect } from "react";
-import Typography from "@/components/typography";
+import Typography from "@/components/common/typography";
 import { Button, Divider, Input } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import "@/styles/globals.css";
-import ReportMetaView from "@/components/report-meta-view";
+import ReportMetaView from "@/components/reports/report-meta-view";
 import { useRouter } from "next/navigation";
-import CreateReportModal from "@/components/create-report/create-report-modal";
-import { useWasm } from '@/components/WasmProvider';
+import CreateReportModal from "@/components/reports/create-report/create-report-modal";
+import { useWasm } from '@/contexts/wasm-context/WasmProvider';
 import { isArchived } from "@/utils/report-utils";
 import { useReportsContext } from "@/contexts/reports-context";
 import { useUrlParams } from "@/hooks/url-hooks";

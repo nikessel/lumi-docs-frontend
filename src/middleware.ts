@@ -13,7 +13,7 @@ export function middleware(request: NextRequest) {
     // Construct the target URL
     const targetUrl = new URL(request.nextUrl.pathname, apiUrl)
     targetUrl.search = request.nextUrl.search
-    
+
     // Copy all headers
     const requestHeaders = new Headers(request.headers)
     requestHeaders.set('x-next-proxy-debug', 'true')
