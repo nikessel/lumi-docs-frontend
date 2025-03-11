@@ -3,13 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Divider, Space, Skeleton, Tooltip } from 'antd';
 import { UploadOutlined } from "@ant-design/icons";
-import Typography from '@/components/typography';
-import { useWasm } from "@/components/WasmProvider";
-import DocumentManager from './document-manager';
-import FileUploadModal from '@/components/upload-files/file-upload-modal';
+import Typography from '@/components/common/typography';
+import { useWasm } from "@/contexts/wasm-context/WasmProvider";
+import DocumentManager from '../../components/files/document-manager';
+import FileUploadModal from '@/components/files/upload-files/file-upload-modal';
 import { useFilesContext } from '@/contexts/files-context';
 import { viewFile, downloadFile, fetchFileData } from '@/utils/files-utils';
-import { useUploadManager } from '@/components/upload-files/upload-manager';
+import { useUploadManager } from '@/components/files/upload-files/upload-manager';
 import { useDocumentsContext } from '@/contexts/documents-context';
 
 const Page = () => {

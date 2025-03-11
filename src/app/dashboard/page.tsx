@@ -2,13 +2,13 @@
 import React, { useState, useEffect } from "react";
 import "@/styles/globals.css";
 import { useUserContext } from "@/contexts/user-context";
-import ReportList from "./report-list";
-import TaskList from "@/components/tasks-list/task-list";
-import SavedViews from "./saved-views";
+import ReportList from "@/components/reports/report-list";
+import TaskList from "@/components/tasks/task-list";
+import SavedViews from "@/components/saved-views/saved-views-list";
 import { useRouter } from "next/navigation";
 import { useReportsContext } from "@/contexts/reports-context";
 import { useTasksContext } from "@/contexts/tasks-context";
-import InitialSteps from "@/components/user-guide-components/initial-screen";
+import InitialSteps from "@/components/common/user-guide-components/initial-screen";
 import { useAllRequirementsContext } from "@/contexts/requirements-context/all-requirements-context";
 
 const Page = () => {
@@ -18,7 +18,6 @@ const Page = () => {
     const { tasks, loading: tasksLoading } = useTasksContext()
     const { loading: requirementsLoading } = useAllRequirementsContext()
     const isLoading = tasksLoading || (reportsLoading && !reports.length) || (userLoading && !user?.first_name)
-
     const [showInitialScreen, setShowInitialScreen] = useState(false)
 
     useEffect(() => {
@@ -34,7 +33,6 @@ const Page = () => {
     if (showInitialScreen) {
         return <InitialSteps />
     }
-
 
     return (
         <div className="flex" style={{ height: "75vh" }}>

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useWasm } from "@/components/WasmProvider";
+import { useWasm } from "@/contexts/wasm-context/WasmProvider";
 import { Auth0ConfigPublic } from "@wasm";
 
 export const useAuthConfig = () => {

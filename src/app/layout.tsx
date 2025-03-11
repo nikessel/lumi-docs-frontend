@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import type { ReactNode } from "react";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { ConfigProvider, Layout } from "antd";
 import { antdconfig } from "@/../antd-config";
-import AppSider from "@/components/sidebar";
+import AppSider from "@/components/common/sidebar";
 import "@/styles/globals.css";
-import LoadingLogoScreen from "@/components/loading-screen";
-import WasmProviderComponent from "@/components/WasmProvider";
+import LoadingLogoScreen from "@/components/common/loading-screen";
+import WasmProviderComponent from "@/contexts/wasm-context/WasmProvider";
 import '@syncfusion/ej2-base/styles/material.css';
 import '@syncfusion/ej2-react-filemanager/styles/material.css';
 import '@caldwell619/react-kanban/dist/styles.css';
@@ -19,9 +19,9 @@ import { UserProvider } from "@/contexts/user-context";
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { SearchParamsProvider } from "@/contexts/search-params-context";
-import TourComponent from "@/components/user-guide-components/tour";
+import TourComponent from "@/components/common/user-guide-components/tour";
 import { Alert } from "antd";
-import UploadIndicator from "@/components/upload-files/upload-indicator";
+import UploadIndicator from "@/components/files/upload-files/upload-indicator";
 import { SectionsProvider } from "@/contexts/sections-context";
 import { RequirementGroupsProvider } from "@/contexts/requirement-group-context";
 import { RequirementsProvider } from "@/contexts/requirements-context";
@@ -30,10 +30,8 @@ import { TasksProvider } from "@/contexts/tasks-context";
 import { AuthProvider, useAuth } from "@/hooks/auth-hook/Auth0Provider";
 import { usePathname } from "next/navigation"
 import { RequirementPriceProvider } from "@/contexts/price-context/use-requirement-price-context";
-import LoginPrompt from "@/components/login-prompt";
-import { useAllRequirementsContext } from "@/contexts/requirements-context/all-requirements-context";
+import LoginPrompt from "@/components/authentication/login-prompt";
 import { DocumentsProvider } from "@/contexts/documents-context";
-import SampleDetailedAssessmentModal from "@/components/detailed-assessment-modal/new";
 import { StyleProvider } from "@/contexts/style-context";
 
 const { Content } = Layout;
@@ -42,7 +40,6 @@ const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? loadStrip
 
 function LayoutWithWasm({ children }: { children: ReactNode }) {
   const { isLoading: authLoading, isAuthenticated } = useAuth()
-  const { loading: requirementsLoading } = useAllRequirementsContext()
   const routesWithoutAuth = useMemo(() => ["/verify-email", "/callback", "/documentation", "/signup", "/logout", "/login"], []);
   const routesWithoutLayout = useMemo(() => ["/documentation", "/logout", "/signup", "/verify-email", "/callback"], []);
 

@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { useWasm } from "@/components/WasmProvider";
+import { useWasm } from "@/contexts/wasm-context/WasmProvider";
 import { filterReports } from "@/utils/report-utils";
 import { RequirementGroup } from "@wasm";
 import { useReportsContext } from "@/contexts/reports-context";

@@ -1,11 +1,11 @@
 'use client';
 
 import React from 'react';
-import TaskTable from './task-table';
+import TaskTable from '@/components/tasks/task-table';
 import { useTasksContext } from '@/contexts/tasks-context';
 
 const Page: React.FC = () => {
-    const { selectedFilteredReportsTasks, loading: tasksLoading } = useTasksContext();
+    const { selectedFilteredReportsTasks } = useTasksContext();
 
 
     return (

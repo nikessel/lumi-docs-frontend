@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchUser } from "@/utils/user-utils";
 import type { User } from "@wasm";
-import { useWasm } from "@/components/WasmProvider";
+import { useWasm } from "@/contexts/wasm-context/WasmProvider";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
 import { useAuth } from "../auth-hook/Auth0Provider";
 import { logLumiDocsContext } from "@/utils/logging-utils";

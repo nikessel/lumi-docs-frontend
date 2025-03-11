@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useWasm } from "@/components/WasmProvider";
+import { useWasm } from "@/contexts/wasm-context/WasmProvider";
 import { fetchFiles } from "@/utils/files-utils";
 import type { File } from "@wasm";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";

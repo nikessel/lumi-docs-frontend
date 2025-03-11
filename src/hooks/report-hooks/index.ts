@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useWasm } from '@/components/WasmProvider';
+import { useWasm } from '@/contexts/wasm-context/WasmProvider';
 import { Report } from '@wasm';
 import { fetchReports, fetchReportsByIds, filterReports } from '@/utils/report-utils';
 import useCacheInvalidationStore from '@/stores/cache-validation-store';
@@ -20,14 +20,12 @@ interface UseReports {
 
 export type RequirementAssessmentWithId = RequirementAssessment & { id: string, reportId: string, regulatoryFramework: RegulatoryFramework };
 
-
 export const useReports = (): UseReports => {
     const { wasmModule } = useWasm();
     const [reports, setReports] = useState<Report[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const { isAuthenticated, isLoading: authLoading } = useAuth()
-
 
     const cacheStore = useCacheInvalidationStore.getState();
     const lastUpdated = cacheStore.lastUpdated["reports"];

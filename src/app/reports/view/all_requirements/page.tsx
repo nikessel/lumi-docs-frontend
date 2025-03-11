@@ -4,11 +4,9 @@ import React, { useState } from 'react';
 import { Layout } from 'antd';
 import { VerticalAlignMiddleOutlined } from '@ant-design/icons';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import Navigation from '@/components/report-view/navigation';
-import MainContent from '@/components/report-view/main-content';
-import ToolBar from '@/components/report-view/tool-bar';
-
-const { Content } = Layout;
+import Navigation from '@/components/reports/report-view/navigation';
+import MainContent from '@/components/reports/report-view/main-content';
+import ToolBar from '@/components/reports/report-view/tool-bar';
 
 const Page = () => {
   const [selectedSections, setSelectedSections] = useState<Set<string>>(new Set());

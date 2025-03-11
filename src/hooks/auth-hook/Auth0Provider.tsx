@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
 import { useAuthConfig } from "./auth-config";
-import { useWasm } from "@/components/WasmProvider";
+import { useWasm } from "@/contexts/wasm-context/WasmProvider";
 import { useRouter } from "next/navigation";
 
 interface AuthContextType {

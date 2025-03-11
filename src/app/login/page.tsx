@@ -5,8 +5,6 @@ import { useAuth } from "@/hooks/auth-hook/Auth0Provider";
 const AutoLogin = () => {
     const { loginWithRedirect, clearTokens, logout } = useAuth();
 
-    console.log("LOGGING...");
-
     useEffect(() => {
         const initiateLogin = async () => {
             logout()

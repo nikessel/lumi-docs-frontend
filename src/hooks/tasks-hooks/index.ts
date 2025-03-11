@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useWasm } from "@/components/WasmProvider";
+import { useWasm } from "@/contexts/wasm-context/WasmProvider";
 import { fetchTasksByReport, fetchTaskById } from "@/utils/tasks-utils";
 import { Task } from "@wasm";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
