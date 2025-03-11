@@ -129,7 +129,7 @@ export const useTasks = (): UseTasks => {
 
         if (selectedTaskDocuments.length > 0) {
             filteredTasks = filteredTasks.filter((task) => {
-                const associatedDocId = documents?.find((document) => document.meta.title === task.associated_document)?.id;
+                const associatedDocId = documents?.find((document) => document.number === task.associated_document)?.id;
                 return associatedDocId && selectedTaskDocuments.includes(associatedDocId);
             });
         }

@@ -1,13 +1,13 @@
 'use client';
 import React, { useState, useEffect } from "react";
-import { Button, Progress, Tooltip, Dropdown, Menu, Skeleton, Tag, Checkbox } from "antd";
-import { MoreOutlined, FolderOutlined, ReloadOutlined } from "@ant-design/icons";
+import { Button, Progress, Tooltip, Dropdown, Menu, Skeleton, Tag, Checkbox, Modal, Input } from "antd";
+import { MoreOutlined, FolderOutlined, ReloadOutlined, EditOutlined } from "@ant-design/icons";
 import Typography from "../typography";
 import "@/styles/globals.css";
 import { useRouter } from "next/navigation";
 import RegulatoryFrameworkTag from "../regulatory-framework-tag";
 import { Report } from '@wasm';
-import { archiveReport, isArchived, restoreReport } from "@/utils/report-utils";
+import { archiveReport, isArchived, restoreReport, renameReport } from "@/utils/report-utils";
 import { message as antdMessage } from "antd";
 import type * as WasmModule from "@wasm";
 import ReportStatusTag from "../report-status-tag";
@@ -49,7 +49,8 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
     const addStaleReportId = useCacheInvalidationStore((state) => state.addStaleReportId)
     const [assessmentProgres, setAssessmentProgress] = useState(0)
     const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate)
-
+    const [isRenameModalVisible, setIsRenameModalVisible] = useState(false);
+    const [newReportName, setNewReportName] = useState("");
 
     useEffect(() => {
         if (report?.status === "processing") {
@@ -63,8 +64,6 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
             setIsSelected(selectedReports.includes(report.id));
         }
     }, [selectedReports, report?.id]);
-
-
 
     const toggleSelection = () => {
         if (!report?.id) return
@@ -112,6 +111,7 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
             return
         }
         const messageKey = `${Date.now()}`
+
         try {
             messageApi.open({
                 key: messageKey,
@@ -128,16 +128,71 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
                 key: messageKey,
                 type: 'error',
                 content: 'Could not restore report',
-                duration: 2,
+                duration: 0,
             });
-            console.error("Error archiving report:", error);
+            console.error("Error restoring report:", error);
         }
         setActionLoading(false)
     };
 
+    const handleRename = async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        const messageKey = `${Date.now()}`
+        if (!report?.id || !newReportName.trim()) {
+            messageApi.open({
+                key: messageKey,
+                type: 'error',
+                content: 'Please enter a new report name',
+                duration: 2,
+            });
+            return
+        }
+
+        try {
+            messageApi.open({
+                key: messageKey,
+                type: 'loading',
+                content: 'Renaming report...',
+                duration: 0,
+            });
+            await renameReport(wasmModule, report.id, newReportName);
+            addStaleReportId(report.id)
+            triggerUpdate("reports")
+            setIsRenameModalVisible(false);
+            setNewReportName("");
+            messageApi.open({
+                key: messageKey,
+                type: 'success',
+                content: 'Report renamed successfully',
+                duration: 2,
+            });
+        } catch (error) {
+            messageApi.open({
+                key: messageKey,
+                type: 'error',
+                content: 'Could not rename report',
+                duration: 2,
+            });
+            console.error("Error renaming report:", error);
+        }
+    };
+
     const menu = (
         <Menu>
-            {!isArchived(report?.status) ?
+            {!isArchived(report?.status) && (
+                <Menu.Item
+                    key="rename"
+                    onClick={(info) => {
+                        info.domEvent.stopPropagation();
+                        setIsRenameModalVisible(true);
+                        setNewReportName(report?.title || "");
+                    }}
+                    icon={<EditOutlined />}
+                >
+                    Rename
+                </Menu.Item>
+            )}
+            {!isArchived(report?.status) && (
                 <Menu.Item
                     key="archive"
                     onClick={(info) => handleArchiveReport(info.domEvent as React.MouseEvent, report?.id)}
@@ -145,7 +200,9 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
                     disabled={actionLoading}
                 >
                     Archive
-                </Menu.Item> :
+                </Menu.Item>
+            )}
+            {isArchived(report?.status) && (
                 <Menu.Item
                     key="restore"
                     onClick={(info) => handleRestoreReport(info.domEvent as React.MouseEvent, report?.id)}
@@ -154,7 +211,7 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
                 >
                     Restore
                 </Menu.Item>
-            }
+            )}
         </Menu>
     );
 
@@ -180,8 +237,26 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
             className={`relative flex items-center justify-between border-b py-1 ${report?.status === "processing" ? "cursor-not-allowed" : "cursor-pointer"
                 }`}
             onClick={report?.status === "processing" ? undefined : toggleSelection}
-        >{contextHolder}
-
+        >
+            {contextHolder}
+            <Modal
+                title="Rename Report"
+                open={isRenameModalVisible}
+                onOk={(e) => handleRename(e)}
+                onCancel={(e) => {
+                    e.stopPropagation();
+                    setIsRenameModalVisible(false);
+                    setNewReportName("");
+                }}
+                okText="Rename"
+            >
+                <Input
+                    placeholder="Enter new report name"
+                    value={newReportName}
+                    onChange={(e) => setNewReportName(e.target.value)}
+                    onClick={(e) => e.stopPropagation()}
+                />
+            </Modal>
 
             {report?.status === "processing" ?
                 <Tooltip title="The report progress is updated every 5 minutes">
