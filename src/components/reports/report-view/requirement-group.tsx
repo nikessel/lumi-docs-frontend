@@ -149,7 +149,7 @@ const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, req
     }, []);
 
     const getComplianceIcon = (rating: number | undefined) => {
-        if (rating === undefined) return null;
+        if (rating === undefined) return <WarningFilled className="text-gray-500" />;
         if (rating > 80) return <CheckCircleFilled className="text-green-500" />;
         if (rating > 40) return <WarningFilled className="text-yellow-500" />;
         return <CloseCircleFilled className="text-red-500" />;
@@ -240,7 +240,7 @@ const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, req
         const isExpanded = expandedRequirements.has(requirement.id);
         const textSizeClass = getTextSizeClass(fontSize);
         const paddingClass = getPaddingClass(fontSize);
-
+        console.log("aassadas", assessment)
         return (
             <div key={requirement.id} className="cursor-pointer select-none">
                 <div
@@ -250,16 +250,16 @@ const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, req
                     {assessment === undefined ? (
                         <Spin size="small" className="flex-shrink-0" />
                     ) : (
-                        assessment?.applicable ? (
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                                {getComplianceIcon(assessment?.compliance_rating)}
-                                {assessment?.compliance_rating !== undefined && (
-                                    <Text className={textSizeClass + " whitespace-nowrap"}>
-                                        {Math.round(assessment.compliance_rating)}%
-                                    </Text>
-                                )}
-                            </div>
-                        ) : <NATag />
+                        !assessment?.applicable ? (
+                            <WarningFilled className="text-gray-500" />
+                        ) : <div className="flex items-center gap-2 flex-shrink-0">
+                            {getComplianceIcon(assessment?.compliance_rating)}
+                            {assessment?.compliance_rating !== undefined && (
+                                <Text className={textSizeClass + " whitespace-nowrap"}>
+                                    {Math.round(assessment.compliance_rating)}%
+                                </Text>
+                            )}
+                        </div>
                     )}
 
                     <Text className={textSizeClass + " whitespace-nowrap flex-shrink-0"}>{requirement.name}</Text>

@@ -108,6 +108,7 @@ export function filterReports(
     return reports
         .filter(report => selectedReportIds.includes(report.id))
         .map(report => {
+            console.log("reportasdasdasd", report)
             const filteredSections = new Map<IdType, SectionAssessment>();
 
             report.section_assessments.forEach((section, sectionId) => {

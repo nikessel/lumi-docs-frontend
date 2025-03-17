@@ -57,7 +57,7 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
     }, [selectedReports, report?.id]);
 
     const toggleSelection = () => {
-        if (!report?.id) return
+        if (!report?.id || (report?.status === "processing" && assessmentProgress === 0)) return
         toggleSelectedReport(report.id)
     };
 
@@ -248,27 +248,29 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
                 />
             </Modal>
 
-            {report?.status === "processing" ?
-                <Tooltip title="The report progress is updated every 5 minutes">
-                    <div
-                        style={{ width: "100%" }}
-                        className={`flex items-center flex justify-between`}
-                    >
-                        <Tag color="geekblue">Processing {`${assessmentProgress}%`}<LoadingOutlined style={{ marginLeft: 5 }} /></Tag>
-                    </div>
-                </Tooltip>
-                : ""}
+
 
             <div className={`flex items-center gap-3`}>
-                <Checkbox checked={isSelected} />
-                <Typography>{report?.title}</Typography>
+
+
+
+                <Checkbox disabled={report?.status === "processing" && assessmentProgress === 0}
+                    checked={isSelected} />
+
+                {report?.status === "processing" ?
+                    <Tag color="geekblue">Processing {`${assessmentProgress}%`}<LoadingOutlined style={{ marginLeft: 5 }} /></Tag>
+                    : ""}
+
+                {report?.status !== "processing" && <Typography>{report?.title}</Typography>}
+
             </div>
+
             <div
                 className={`flex items-center space-x-6 }`}
             >
-                <div className="w-20 flex justify-center">
+                {report?.status !== "processing" && <div className="w-20 flex justify-center">
                     <ReportStatusTag status={report?.status} />
-                </div>
+                </div>}
                 <div className="w-20 flex justify-center">
                     <RegulatoryFrameworkTag standard={report?.regulatory_framework} />
                 </div>
@@ -277,22 +279,23 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
                         {report?.created_date ? new Date(report?.created_date).toLocaleDateString() : ""}
                     </Typography>
                 </div>
-                <Tooltip title={`Compliance score: ${report?.compliance_rating}%`}>
+                {report?.status !== "processing" && <Tooltip title={`Compliance score: ${report?.compliance_rating}%`}>
                     <Progress size={20} type="circle" percent={report?.compliance_rating} showInfo={false} />
-                </Tooltip>
+                </Tooltip>}
                 {!isArchived(report?.status) ? <Button
                     type="link"
                     size="small"
+                    disabled={report?.status === "processing" && assessmentProgress === 0}
                     onClick={(e) => {
                         e.stopPropagation();
                         router.push(`${openRedirectPath}?selectedReports=${report?.id}`);
                     }}
                 >
-                    Open
+                    {report?.status === "processing" ? "Open Partial" : "Open"}
                 </Button> : ""}
-                <Dropdown overlay={menu} trigger={["click"]} placement="bottomRight">
+                {report?.status !== "processing" && <Dropdown overlay={menu} trigger={["click"]} placement="bottomRight">
                     <Button type="text" icon={<MoreOutlined />} onClick={(e) => e.stopPropagation()} />
-                </Dropdown>
+                </Dropdown>}
             </div>
         </div>
     );
