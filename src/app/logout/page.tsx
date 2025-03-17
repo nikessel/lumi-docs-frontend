@@ -6,7 +6,7 @@ import Typography from "@/components/common/typography";
 import { useAuth } from "@/hooks/auth-hook/Auth0Provider";
 
 export default function LogoutScreen() {
-  const { loginWithRedirect } = useAuth();
+  const { loginWithRedirect, signup } = useAuth();
   const router = useRouter();
 
   return (
@@ -20,14 +20,23 @@ export default function LogoutScreen() {
           height={400}
           className="mb-6"
         />
-        <div className="flex justify-center mt-8 gap-4">
+        <div>
+          <div className="flex justify-center mt-8 gap-4">
+            <Button
+              type="primary"
+              onClick={() => loginWithRedirect()}
+            >
+              Login
+            </Button>
+            <Button
+              type="default"
+              onClick={() => signup()}
+            >
+              Sign Up
+            </Button>
+          </div>
           <Button
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => loginWithRedirect()}
-          >
-            Login
-          </Button>
-          <Button
+            className="mt-4"
             type="link"
             onClick={() => router.push("/documentation")}
           >

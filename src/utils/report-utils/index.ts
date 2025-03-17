@@ -310,4 +310,12 @@ export async function renameReport(
     }
 }
 
+export const extractProgress = (title: string): number => {
+    const match = title.match(/(\d+)\/(\d+)/);
+    if (!match) return 0;
 
+    const completed = parseInt(match[1], 10);
+    const total = parseInt(match[2], 10);
+
+    return total > 0 ? Math.round((completed / total) * 100) : 0;
+};

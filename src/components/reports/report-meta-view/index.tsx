@@ -14,16 +14,7 @@ import ReportStatusTag from "../report-status-tag";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
 import { useSearchParamsState } from "@/contexts/search-params-context";
 import { LoadingOutlined } from "@ant-design/icons";
-
-const extractProgress = (title: string): number => {
-    const match = title.match(/(\d+)\/(\d+)/);
-    if (!match) return 0;
-
-    const completed = parseInt(match[1], 10);
-    const total = parseInt(match[2], 10);
-
-    return total > 0 ? Math.round((completed / total) * 100) : 0;
-};
+import { extractProgress } from "@/utils/report-utils";
 
 interface ReportMetaViewProps {
     openRedirectPath: string,
@@ -47,7 +38,7 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
     const [isSelected, setIsSelected] = useState(false);
     const [messageApi, contextHolder] = antdMessage.useMessage();
     const addStaleReportId = useCacheInvalidationStore((state) => state.addStaleReportId)
-    const [assessmentProgres, setAssessmentProgress] = useState(0)
+    const [assessmentProgress, setAssessmentProgress] = useState(0)
     const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate)
     const [isRenameModalVisible, setIsRenameModalVisible] = useState(false);
     const [newReportName, setNewReportName] = useState("");
@@ -234,9 +225,8 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
 
     return (
         <div
-            className={`relative flex items-center justify-between border-b py-1 ${report?.status === "processing" ? "cursor-not-allowed" : "cursor-pointer"
-                }`}
-            onClick={report?.status === "processing" ? undefined : toggleSelection}
+            className={'relative flex items-center justify-between border-b py-1 cursor-pointer'}
+            onClick={toggleSelection}
         >
             {contextHolder}
             <Modal
@@ -264,48 +254,46 @@ const ReportMetaView: React.FC<ReportMetaViewProps> = ({
                         style={{ width: "100%" }}
                         className={`flex items-center flex justify-between`}
                     >
-                        <div className="whitespace-nowrap mr-3">{report.title}</div>
-                        <Tag color="geekblue">Processing<LoadingOutlined style={{ marginLeft: 5 }} /></Tag>
+                        <Tag color="geekblue">Processing {`${assessmentProgress}%`}<LoadingOutlined style={{ marginLeft: 5 }} /></Tag>
                     </div>
                 </Tooltip>
-                :
-                <div className={`flex items-center gap-3`}>
-                    <Checkbox checked={isSelected} />
-                    <Typography>{report?.title}</Typography>
+                : ""}
+
+            <div className={`flex items-center gap-3`}>
+                <Checkbox checked={isSelected} />
+                <Typography>{report?.title}</Typography>
+            </div>
+            <div
+                className={`flex items-center space-x-6 }`}
+            >
+                <div className="w-20 flex justify-center">
+                    <ReportStatusTag status={report?.status} />
                 </div>
-            }
-            {report?.status !== "processing" ?
-                <div
-                    className={`flex items-center space-x-6 }`}
+                <div className="w-20 flex justify-center">
+                    <RegulatoryFrameworkTag standard={report?.regulatory_framework} />
+                </div>
+                <div className="w-20 flex justify-center ">
+                    <Typography color="secondary" textSize="small">
+                        {report?.created_date ? new Date(report?.created_date).toLocaleDateString() : ""}
+                    </Typography>
+                </div>
+                <Tooltip title={`Compliance score: ${report?.compliance_rating}%`}>
+                    <Progress size={20} type="circle" percent={report?.compliance_rating} showInfo={false} />
+                </Tooltip>
+                {!isArchived(report?.status) ? <Button
+                    type="link"
+                    size="small"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`${openRedirectPath}?selectedReports=${report?.id}`);
+                    }}
                 >
-                    <div className="w-20 flex justify-center">
-                        <ReportStatusTag status={report?.status} />
-                    </div>
-                    <div className="w-20 flex justify-center">
-                        <RegulatoryFrameworkTag standard={report?.regulatory_framework} />
-                    </div>
-                    <div className="w-20 flex justify-center ">
-                        <Typography color="secondary" textSize="small">
-                            {report?.created_date ? new Date(report?.created_date).toLocaleDateString() : ""}
-                        </Typography>
-                    </div>
-                    <Tooltip title={`Compliance score: ${report?.compliance_rating}%`}>
-                        <Progress size={20} type="circle" percent={report?.compliance_rating} showInfo={false} />
-                    </Tooltip>
-                    {!isArchived(report?.status) ? <Button
-                        type="link"
-                        size="small"
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            router.push(`${openRedirectPath}?selectedReports=${report?.id}`);
-                        }}
-                    >
-                        Open
-                    </Button> : ""}
-                    <Dropdown overlay={menu} trigger={["click"]} placement="bottomRight">
-                        <Button type="text" icon={<MoreOutlined />} onClick={(e) => e.stopPropagation()} />
-                    </Dropdown>
-                </div> : ""}
+                    Open
+                </Button> : ""}
+                <Dropdown overlay={menu} trigger={["click"]} placement="bottomRight">
+                    <Button type="text" icon={<MoreOutlined />} onClick={(e) => e.stopPropagation()} />
+                </Dropdown>
+            </div>
         </div>
     );
 

@@ -25,7 +25,34 @@ const UserSignup: React.FC = () => {
     const triggerUpdate = useCacheInvalidationStore((state) => state.triggerUpdate)
 
     useEffect(() => {
+        const checkToken = async () => {
+            if (!idToken) {
+                router.push("/logout");
+                return;
+            }
+
+            if (!wasmModule) {
+                return;
+            }
+
+            try {
+                const adminResponse = await wasmModule.is_admin();
+                if (adminResponse.error?.kind === "Unauthorized") {
+                    router.push("/logout");
+                    return;
+                }
+                console.log("Admin status:", adminResponse);
+            } catch (err) {
+                console.error("Error checking admin status:", err);
+            }
+        };
+
+        checkToken();
+    }, [])
+
+    useEffect(() => {
         const initializeComponent = async () => {
+
             if (!wasmModule || !idToken) {
                 setIsCheckingUser(false);
                 return;

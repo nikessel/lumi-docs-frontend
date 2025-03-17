@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Typography, Progress, Tag } from 'antd';
+import { Typography, Progress, Tag, Spin, Button, Tooltip } from 'antd';
 import { RightOutlined, CheckCircleFilled, WarningFilled, CloseCircleFilled } from '@ant-design/icons';
 import { Requirement, Task } from '@wasm';
 import { getSimplefiedComplianceColorCode } from '@/utils/formating';
@@ -15,6 +15,8 @@ import { RequirementWithGroupId } from '@/hooks/requirement-hooks';
 import { useWasm } from '@/contexts/wasm-context/WasmProvider';
 import { getTasksByReportAndRequirmentId } from '@/utils/tasks-utils';
 import { RequirementAssessmentWithId } from '@/hooks/report-hooks';
+import NATag from '../non-applicable-tag';
+
 const { Text } = Typography;
 
 interface RequirementGroupProps {
@@ -215,9 +217,14 @@ const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, req
                                 );
                             })}
                             {assessment.sources.length > 1 && (
-                                <Tag color="geekblue" className={`${textSizeClass} whitespace-nowrap`}>
-                                    +{assessment.sources.length - 1}
-                                </Tag>
+                                <Tooltip title={assessment.sources.slice(1).map(sourceId => {
+                                    const document = documents.find(doc => doc.number === sourceId);
+                                    return document?.meta.title || sourceId;
+                                }).join('\n')}>
+                                    <Tag color="geekblue" className={`${textSizeClass} whitespace-nowrap`}>
+                                        +{assessment.sources.length - 1} more
+                                    </Tag>
+                                </Tooltip>
                             )}
                         </div>
                     </div>
@@ -240,16 +247,24 @@ const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, req
                     className={`flex items-center gap-2 hover:bg-blue-50 ${paddingClass}`}
                     onClick={(e) => toggleRequirementExpand(requirement.id, e)}
                 >
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                        {getComplianceIcon(assessment?.compliance_rating)}
-                        {assessment?.compliance_rating !== undefined && (
-                            <Text className={textSizeClass + " whitespace-nowrap"}>
-                                {Math.round(assessment.compliance_rating)}%
-                            </Text>
-                        )}
-                    </div>
+                    {assessment === undefined ? (
+                        <Spin size="small" className="flex-shrink-0" />
+                    ) : (
+                        assessment?.applicable ? (
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                                {getComplianceIcon(assessment?.compliance_rating)}
+                                {assessment?.compliance_rating !== undefined && (
+                                    <Text className={textSizeClass + " whitespace-nowrap"}>
+                                        {Math.round(assessment.compliance_rating)}%
+                                    </Text>
+                                )}
+                            </div>
+                        ) : <NATag />
+                    )}
+
                     <Text className={textSizeClass + " whitespace-nowrap flex-shrink-0"}>{requirement.name}</Text>
-                    <div className="flex items-center gap-2 ml-auto">
+
+                    {assessment ? <div className="flex items-center gap-2 ml-auto">
                         <button
                             className="hover:bg-blue-100 rounded"
                             onClick={(e) => {
@@ -262,7 +277,7 @@ const RequirementGroupComponent: React.FC<RequirementGroupProps> = ({ group, req
                         <RightOutlined
                             className={`${textSizeClass} transition-transform ${isExpanded ? 'rotate-90' : ''}`}
                         />
-                    </div>
+                    </div> : ""}
                 </div>
                 {isExpanded && renderExpandedRequirementDetails(assessment)}
             </div>

@@ -7,19 +7,35 @@ import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import Navigation from '@/components/reports/report-view/navigation';
 import MainContent from '@/components/reports/report-view/main-content';
 import ToolBar from '@/components/reports/report-view/tool-bar';
+import { useReportsContext } from '@/contexts/reports-context';
+import { Alert } from 'antd';
+import { extractProgress } from '@/utils/report-utils';
 
 const Page = () => {
   const [selectedSections, setSelectedSections] = useState<Set<string>>(new Set());
   const [selectedGroupId, setSelectedGroupId] = useState<string | undefined>();
+  const { filteredSelectedReports } = useReportsContext();
 
   const handleSectionSelect = (sections: Set<string>, groupId?: string) => {
     setSelectedSections(sections);
     setSelectedGroupId(groupId);
   };
 
+  const processingReport = filteredSelectedReports.find(report => report.status === "processing");
+  const progress = processingReport ? extractProgress(processingReport.title) : undefined;
+
   return (
     <div className="h-screen">
       <div className="">
+        {!processingReport && (
+          <div className="mb-4">
+            <Alert
+              message={`A report has only partially finished processing. Assessments will gradually be updated. ${progress ? `Progress: ${progress}%` : ""}`}
+              type="info"
+              closable
+            />
+          </div>
+        )}
         <div className="mb-4">
           <ToolBar
             selectedSections={selectedSections}
