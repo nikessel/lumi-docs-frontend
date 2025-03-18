@@ -2,43 +2,30 @@ import React from "react";
 import type { File } from "@wasm";
 import type * as WasmModule from "@wasm";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
-
+import { fetchWrapper } from "../error-handling-utils/fetchWrapper";
 
 export async function fetchFiles(
     wasmModule: typeof WasmModule | null
 ): Promise<{ files: File[]; error: string | null }> {
-
-    const result: { files: File[]; error: string | null } = {
-        files: [],
-        error: null,
-    };
+    if (!wasmModule) {
+        console.error("❌ WASM module not loaded.");
+        return { files: [], error: "WASM module not available" };
+    }
 
     const clearStaleFileIds = useCacheInvalidationStore.getState().clearStaleFileIds;
 
-    if (!wasmModule) {
-        return result;
+    const { data, error } = await fetchWrapper(() => wasmModule.get_all_files());
+
+    if (!error) {
+        clearStaleFileIds(); // ✅ Clears stale files only when fetch succeeds
     }
 
-    try {
-        // Fetch files from the WASM module
-        const response = await wasmModule.get_all_files();
-
-        if (response.output) {
-            const filesData = response.output.output;
-            result.files = filesData;
-            clearStaleFileIds();
-        } else if (response.error) {
-            result.error = response.error.message;
-            console.error(`⚠️ Fetch failed: ${response.error.message}`);
-        }
-    } catch (err) {
-        console.error("❌ Error fetching files:", err);
-        result.error = "Failed to fetch files";
-        clearStaleFileIds();
-    }
-
-    return result;
+    return {
+        files: data?.output?.output || [],
+        error: error || null,
+    };
 }
+
 
 
 export const getDocumentIconLetters = (title: string) =>

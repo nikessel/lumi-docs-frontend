@@ -33,8 +33,11 @@ import { RequirementPriceProvider } from "@/contexts/price-context/use-requireme
 import LoginPrompt from "@/components/authentication/login-prompt";
 import { DocumentsProvider } from "@/contexts/documents-context";
 import { StyleProvider } from "@/contexts/style-context";
+import AppVersion from "@/components/common/app-version";
+import { NotificationProvider } from "@/contexts/notification-context";
+import AppHeader from "@/components/common/header";
 
-const { Content } = Layout;
+const { Content, Header } = Layout;
 
 const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) : null;
 
@@ -96,20 +99,20 @@ function LayoutWithWasm({ children }: { children: ReactNode }) {
           <Layout className="h-full" style={{ minWidth: 1200 }}>
             {!noLayout ? <AppSider reportsRef={reportsRef} regulatoryFrameworksRef={regulatoryFrameworksRef} filesRef={filesRef} tasksRef={tasksRef} /> : ""}
             <Layout className="h-full">
-              <UploadIndicator />
-              <TourComponent startTour={false} reportsRef={reportsRef} regulatoryFrameworksRef={regulatoryFrameworksRef} filesRef={filesRef} newReportButtonRef={newReportButtonRef} />
-              <Content className="pt-8 pb-8 px-4 sm:px-8 container h-full">
+              <AppHeader />
+              <Content className="pt-4 pb-8 px-4 container h-full">
+
                 <div className="bg-white p-6 rounded shadow-sm h-full overflow-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
                   {children}
                 </div>
+                <AppVersion />
               </Content>
             </Layout>
           </Layout>
         </ConfigProvider>
       </Elements>
-    </AntdRegistry >
+    </AntdRegistry>
   );
-
 }
 
 export default function RootLayout({
@@ -121,35 +124,37 @@ export default function RootLayout({
     <html lang="en" className="h-full">
       <body className="h-full">
         <WasmProviderComponent>
-          <AuthProvider>
-            <UserProvider>
-              <AllRequirementsProvider>
-                <SearchParamsProvider>
-                  <ReportsProvider>
-                    <RegulatoryFrameworksProvider>
-                      <SectionsProvider>
-                        <RequirementGroupsProvider>
-                          <RequirementsProvider>
-                            <RequirementPriceProvider>
-                              <FilesProvider>
-                                <DocumentsProvider>
-                                  <TasksProvider>
-                                    <StyleProvider>
-                                      <LayoutWithWasm>{children}</LayoutWithWasm>
-                                    </StyleProvider>
-                                  </TasksProvider>
-                                </DocumentsProvider>
-                              </FilesProvider>
-                            </RequirementPriceProvider>
-                          </RequirementsProvider>
-                        </RequirementGroupsProvider>
-                      </SectionsProvider>
-                    </RegulatoryFrameworksProvider>
-                  </ReportsProvider>
-                </SearchParamsProvider>
-              </AllRequirementsProvider>
-            </UserProvider>
-          </AuthProvider>
+          <NotificationProvider>
+            <AuthProvider>
+              <UserProvider>
+                <AllRequirementsProvider>
+                  <SearchParamsProvider>
+                    <ReportsProvider>
+                      <RegulatoryFrameworksProvider>
+                        <SectionsProvider>
+                          <RequirementGroupsProvider>
+                            <RequirementsProvider>
+                              <RequirementPriceProvider>
+                                <FilesProvider>
+                                  <DocumentsProvider>
+                                    <TasksProvider>
+                                      <StyleProvider>
+                                        <LayoutWithWasm>{children}</LayoutWithWasm>
+                                      </StyleProvider>
+                                    </TasksProvider>
+                                  </DocumentsProvider>
+                                </FilesProvider>
+                              </RequirementPriceProvider>
+                            </RequirementsProvider>
+                          </RequirementGroupsProvider>
+                        </SectionsProvider>
+                      </RegulatoryFrameworksProvider>
+                    </ReportsProvider>
+                  </SearchParamsProvider>
+                </AllRequirementsProvider>
+              </UserProvider>
+            </AuthProvider>
+          </NotificationProvider>
         </WasmProviderComponent>
       </body>
     </html>

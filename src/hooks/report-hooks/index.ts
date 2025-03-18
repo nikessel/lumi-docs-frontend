@@ -46,6 +46,8 @@ export const useReports = (): UseReports => {
 
     const { user } = useUserContext()
 
+    const [tbd, setTbd] = useState(0)
+
     useEffect(() => {
         const filteredReports = filterReports(reports, selectedReports, searchQuery, compliance, requirements);
         setFilteredSelectedReports(filteredReports);

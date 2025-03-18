@@ -1,9 +1,9 @@
 import { useEffect } from "react";
 import { useUploadManager } from "@/components/files/upload-files/upload-manager";
 import { notification, Progress, Card } from 'antd';
-import { 
-  LoadingOutlined, 
-  FileOutlined, 
+import {
+  LoadingOutlined,
+  FileOutlined,
   CloseCircleFilled,
 } from '@ant-design/icons';
 
@@ -18,7 +18,7 @@ const UploadIndicator = () => {
   const failedCount = uploadManager.failedFiles.length;
   const alreadyExistedCount = uploadManager.filesAlreadyExisted;
   const isComplete = !uploadManager.isUploading && (uploadedCount > 0 || failedCount > 0 || alreadyExistedCount > 0);
-  
+
   // Show notification when upload completes
   useEffect(() => {
     if (isComplete) {
@@ -28,7 +28,7 @@ const UploadIndicator = () => {
           description: `Failed to upload ${failedCount} files`
         });
       }
-      
+
       if (uploadedCount > 0 || alreadyExistedCount > 0) {
         const lines = [];
         if (uploadedCount > 0) {
@@ -54,7 +54,7 @@ const UploadIndicator = () => {
   if (isComplete) {
     return <div>{contextHolder}</div>;
   }
-  
+
   // Render expanded version (detailed card)
   return (
     <div
@@ -66,8 +66,8 @@ const UploadIndicator = () => {
         width: 300,
       }}
     >
-      <Card 
-        size="small" 
+      <Card
+        size="small"
         title={
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span>
@@ -78,14 +78,14 @@ const UploadIndicator = () => {
         }
         styles={{ body: { padding: '12px' } }}
       >
-        <Progress 
-          percent={progress} 
-          status="active" 
+        <Progress
+          percent={progress}
+          status="active"
           size="small"
           strokeWidth={6}
         />
-        
-        <div style={{ 
+
+        <div style={{
           marginTop: 8,
           fontSize: '13px',
           color: 'rgba(0, 0, 0, 0.65)'
@@ -95,7 +95,7 @@ const UploadIndicator = () => {
             {uploadedCount}/{totalCount} files
           </div>
         </div>
-        
+
         {failedCount > 0 && (
           <div style={{ marginTop: 8, color: '#ff4d4f', fontSize: '13px' }}>
             <CloseCircleFilled style={{ marginRight: 4 }} />

@@ -85,12 +85,6 @@ const AppSiderComponent: React.FC<{ reportsRef: MutableRefObject<null>; regulato
             label: <Link href="/standards">Regulatory Frameworks</Link>,
             ref: regulatoryFrameworksRef
         },
-        {
-            key: "/",
-            icon: <LogoutOutlined />,
-            label: <div>Sign out</div>,
-            onClick: () => handleSignOut()
-        },
     ];
 
     return (

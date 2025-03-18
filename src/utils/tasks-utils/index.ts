@@ -1,11 +1,13 @@
 import type { Task, TaskStatus, UpdateTaskResponse, UpdateTaskInput, GetTasksByReportAndRequirementInput, GetTasksByReportAndRequirementResponse } from "@wasm";
 import type * as WasmModule from "@wasm";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
+import { fetchWrapper } from "@/utils/error-handling-utils/fetchWrapper";
 
 export async function fetchTasksByReport(
     wasmModule: typeof WasmModule | null,
     reportId: string
 ): Promise<Task[]> {
+
 
     if (!wasmModule) {
         console.error("❌ WASM module not loaded.");
@@ -22,12 +24,13 @@ export async function fetchTasksByReport(
             }));
 
             return tasks;
+        } else {
+            return []
         }
 
-        throw new Error(response.error?.message || "Failed to fetch tasks");
     } catch (error) {
         console.error(`❌ Error fetching tasks for report ID: ${reportId}:`, error);
-        throw new Error(`Failed to fetch tasks for report ID: ${reportId}`);
+        return []
     }
 }
 

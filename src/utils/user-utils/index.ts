@@ -1,27 +1,24 @@
 import type * as WasmModule from "@wasm";
 import type { User, SavedView, UserPreferences } from "@wasm";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
+import { fetchWrapper } from "../error-handling-utils/fetchWrapper";
 
 export async function fetchUser(wasmModule: typeof WasmModule | null): Promise<User | null> {
-
     if (!wasmModule) {
+        console.error("❌ Error: WASM module not loaded.");
         return null;
     }
 
-    try {
-        const response = await wasmModule.get_user();
+    const { data, error } = await fetchWrapper(() => wasmModule.get_user());
 
-        if (response.output) {
-            return response.output.output;
-        } else if (response.error) {
-            console.error("❌ Error fetching user:", response.error.message);
-        }
-    } catch (err) {
-        console.error("❌ Unexpected error fetching user:", err);
+    if (error) {
+        console.error(`❌ Error fetching user: ${error}`);
+        return null;
     }
 
-    return null;
+    return data?.output?.output || null;
 }
+
 
 export async function saveViewToUser(
     wasmModule: typeof WasmModule | null,

@@ -90,6 +90,7 @@ export const useTasks = (): UseTasks => {
                     removeStaleTaskIds(staleTaskIds);
                     logLumiDocsContext(`Stale tasks updated: ${validUpdatedTasks.length}`, "success");
                 } else {
+
                     const allTasksByReport = await Promise.all(
                         reports.map((report) =>
                             fetchTasksByReport(wasmModule, report.id).then((tasks) =>
@@ -97,6 +98,7 @@ export const useTasks = (): UseTasks => {
                             )
                         )
                     );
+
 
                     allTasksByReport.forEach((tasks, index) => {
                         updatedTasksByReport[reports[index].id] = tasks;

@@ -1,48 +1,29 @@
 import type { Report, RequirementAssessmentOrRequirementGroupAssessment, IdType, ReportStatus, SectionAssessment, RequirementAssessment, RequirementGroupAssessment, Requirement } from "@wasm";
 import type * as WasmModule from "@wasm";
 import useCacheInvalidationStore from "@/stores/cache-validation-store";
+import { fetchWrapper } from "@/utils/error-handling-utils/fetchWrapper";
 
 export async function fetchReports(
     wasmModule: typeof WasmModule | null
-): Promise<{
-    reports: Report[];
-    blobUrls: Record<string, string>;
-    error: string | null;
-}> {
-    const result: {
-        reports: Report[];
-        blobUrls: Record<string, string>;
-        error: string | null;
-    } = {
-        reports: [],
-        blobUrls: {},
-        error: null,
-    };
-
+): Promise<{ reports: Report[]; blobUrls: Record<string, string>; error: string | null }> {
     if (!wasmModule) {
         console.error("❌ Error: WASM module not loaded.");
-        result.error = "WASM module not loaded";
-        return result;
+        return {
+            reports: [],
+            blobUrls: {},
+            error: "WASM module not loaded",
+        };
     }
 
-    try {
-        const response = await wasmModule.get_all_reports();
+    const { data, error } = await fetchWrapper(() => wasmModule.get_all_reports());
 
-        if (response.output) {
-            const reportsData = response.output.output;
-            result.reports = reportsData;
-
-        } else if (response.error) {
-            console.error(`❌ Error fetching reports: ${response.error.message}`);
-            result.error = response.error.message;
-        }
-    } catch (err) {
-        console.error("❌ Error during report fetch:", err);
-        result.error = "Failed to fetch reports";
-    }
-
-    return result;
+    return {
+        reports: data?.output?.output || [],
+        blobUrls: {},
+        error: error || null,
+    };
 }
+
 
 
 export async function fetchReportsByIds(
@@ -60,7 +41,6 @@ export async function fetchReportsByIds(
 
     const cacheStore = useCacheInvalidationStore.getState();
 
-    // ✅ Remove reports from `staleReportIds` before fetching
     cacheStore.removeStaleReportIds(reportIds);
 
     const results: { reports: Record<string, Report | null>; errors: Record<string, string> } = {
@@ -68,35 +48,22 @@ export async function fetchReportsByIds(
         errors: {},
     };
 
-    try {
-        // Fetch all reports in parallel
-        const fetchPromises = reportIds.map(async (reportId) => {
-            try {
-                const response = await wasmModule.get_report({ input: reportId });
+    const fetchPromises = reportIds.map(async (reportId) => {
 
-                if (response.output) {
-                    results.reports[reportId] = response.output.output;
-                } else if (response.error) {
-                    results.errors[reportId] = response.error.message;
-                    console.error(`❌ Error fetching report ${reportId}: ${response.error.message}`);
-                }
-            } catch (err) {
-                results.errors[reportId] = "Failed to fetch report";
-                console.error(`❌ Failed to fetch report ${reportId}:`, err);
-            }
-        });
+        const { data, error } = await fetchWrapper(() => wasmModule.get_report({ input: reportId }));
 
-        await Promise.all(fetchPromises);
+        if (data?.output) {
+            results.reports[reportId] = data.output.output;
+        } else if (data?.error) {
+            results.errors[reportId] = data.error.message;
+            console.error(`❌ Error fetching report ${reportId}: ${data.error.message}`);
+        }
 
-    } catch (err) {
-        console.error("❌ Unexpected error fetching reports:", err);
-    }
+    });
+    await Promise.all(fetchPromises);
 
     return results;
 }
-
-
-
 
 export function filterReports(
     reports: Report[],

@@ -1,5 +1,6 @@
 import type { Section, RegulatoryFramework } from "@wasm";
 import type * as WasmModule from "@wasm";
+import { fetchWrapper } from "../error-handling-utils/fetchWrapper";
 
 export async function fetchSectionsByIds(
     wasmModule: typeof WasmModule | null,
@@ -7,73 +8,52 @@ export async function fetchSectionsByIds(
 ): Promise<{ sections: Section[]; errors: { [id: string]: string } }> {
     console.log(`📌 Fetching sections for IDs: ${sectionIds.join(", ")}`);
 
-    const result: { sections: Section[]; errors: { [id: string]: string } } = {
-        sections: [],
-        errors: {},
-    };
-
     if (sectionIds.length === 0) {
         console.warn("⚠️ No section IDs provided.");
-        return result;
+        return { sections: [], errors: {} };
     }
 
     if (!wasmModule) {
         console.error("❌ WASM module not loaded.");
-        return result;
+        return { sections: [], errors: Object.fromEntries(sectionIds.map(id => [id, "WASM module not loaded"])) };
     }
 
-    const fetchPromises = sectionIds.map(async (id) => {
-        try {
-            console.log(`🔄 Fetching section with ID: ${id}`);
-            const response = await wasmModule.get_sections({ input: [id] });
+    const results: { sections: Section[]; errors: { [id: string]: string } } = { sections: [], errors: {} };
 
-            if (response.output) {
-                const section = response.output.output[0];
-                result.sections.push(section);
-            } else if (response.error) {
-                console.error(`❌ Error fetching section ${id}: ${response.error.message}`);
-                result.errors[id] = response.error.message;
-            }
-        } catch (err) {
-            console.error(`❌ Failed to fetch section ${id}:`, err);
-            result.errors[id] = "Failed to fetch section";
+    const fetchPromises = sectionIds.map(async (id) => {
+        const { data, error } = await fetchWrapper(() => wasmModule.get_sections({ input: [id] }));
+
+        if (data?.output?.output?.[0]) {
+            results.sections.push(data.output.output[0]);
+        } else {
+            results.errors[id] = error || `Failed to fetch section ${id}`;
+            console.error(`❌ Error fetching section ${id}: ${error}`);
         }
     });
 
-    await Promise.all(fetchPromises);
+    await Promise.allSettled(fetchPromises); // Ensures all requests complete
 
-    return result;
+    return results;
 }
+
 
 export async function fetchSectionsByRegulatoryFramework(
     wasmModule: typeof WasmModule | null,
     regulatoryFramework: RegulatoryFramework
 ): Promise<{ sections: Section[]; error?: string }> {
-
-    const result: { sections: Section[]; error?: string } = { sections: [] };
-
     if (!wasmModule) {
         console.error("❌ WASM module not loaded.");
-        result.error = "WASM module not available";
-        return result;
+        return { sections: [], error: "WASM module not available" };
     }
 
-    try {
-        const response = await wasmModule.get_sections_by_regulatory_framework({ input: regulatoryFramework });
+    const { data, error } = await fetchWrapper(() =>
+        wasmModule.get_sections_by_regulatory_framework({ input: regulatoryFramework })
+    );
 
-        if (response.error) {
-            console.error(`❌ Error fetching sections: ${response.error.message}`);
-            throw new Error(response.error.message);
-        }
-
-        if (response.output?.output) {
-            result.sections = response.output.output;
-        }
-    } catch (error) {
-        console.error(`❌ Failed to fetch sections for framework ${regulatoryFramework}:`, error);
-        result.error = (error as Error).message || "Unknown error occurred";
-    }
-
-    return result;
+    return {
+        sections: data?.output?.output || [],
+        error: error || undefined,
+    };
 }
+
 

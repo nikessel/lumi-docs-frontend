@@ -1,6 +1,7 @@
 import type { RequirementGroup } from "@wasm";
 import type * as WasmModule from "@wasm";
 import { RequirementGroupWithSectionId } from "@/hooks/requirement-group-hooks";
+import { fetchWrapper } from "../error-handling-utils/fetchWrapper";
 
 export async function fetchRequirementGroupsByIds(
     wasmModule: typeof WasmModule | null,
@@ -8,73 +9,65 @@ export async function fetchRequirementGroupsByIds(
 ): Promise<{ requirementGroups: RequirementGroup[]; errors: { [id: string]: string } }> {
     console.log(`📌 Fetching requirement groups for IDs: ${groupIds.join(", ")}`);
 
-    const result: { requirementGroups: RequirementGroup[]; errors: { [id: string]: string } } = {
-        requirementGroups: [],
-        errors: {},
-    };
-
     if (!wasmModule) {
         console.error("❌ WASM module not loaded.");
-        return result;
+        return {
+            requirementGroups: [],
+            errors: Object.fromEntries(groupIds.map(id => [id, "WASM module not loaded"])),
+        };
     }
 
-    const fetchPromises = groupIds.map(async (id) => {
-        try {
-            console.log(`🔄 Fetching requirement group with ID: ${id}`);
-            const response = await wasmModule.get_requirement_group({ input: id });
+    const results: { requirementGroups: RequirementGroup[]; errors: { [id: string]: string } } = { requirementGroups: [], errors: {} };
 
-            if (response.output) {
-                const group = response.output.output;
-                result.requirementGroups.push(group);
-            } else if (response.error) {
-                console.error(`❌ Error fetching requirement group ${id}: ${response.error.message}`);
-                result.errors[id] = response.error.message;
-            }
-        } catch (err) {
-            console.error(`❌ Failed to fetch requirement group ${id}:`, err);
-            result.errors[id] = "Failed to fetch requirement group";
+    const fetchPromises = groupIds.map(async (id) => {
+        const { data, error } = await fetchWrapper(() => wasmModule.get_requirement_group({ input: id }));
+
+        if (data?.output) {
+            results.requirementGroups.push(data.output.output);
+        } else {
+            results.errors[id] = error || `Failed to fetch requirement group ${id}`;
+            console.error(`❌ Error fetching requirement group ${id}: ${error}`);
         }
     });
 
-    await Promise.all(fetchPromises);
-    return result;
+    await Promise.allSettled(fetchPromises); // Ensures all requests complete
+
+    return results;
 }
+
 
 export async function fetchGroupsBySectionIds(
     wasmModule: typeof WasmModule | null,
     sectionIds: string[]
 ): Promise<{ requirementGroups: RequirementGroupWithSectionId[]; errors: { [id: string]: string } }> {
-
-    const result: { requirementGroups: RequirementGroupWithSectionId[]; errors: { [id: string]: string } } = {
-        requirementGroups: [],
-        errors: {},
-    };
-
     if (!wasmModule) {
-        return result;
+        console.error("❌ WASM module not loaded.");
+        return {
+            requirementGroups: [],
+            errors: Object.fromEntries(sectionIds.map(id => [id, "WASM module not loaded"])),
+        };
     }
 
+    const results: { requirementGroups: RequirementGroupWithSectionId[]; errors: { [id: string]: string } } = { requirementGroups: [], errors: {} };
+
     const fetchPromises = sectionIds.map(async (sectionId) => {
-        try {
-            const response = await wasmModule.get_requirement_groups_by_section({ input: sectionId });
+        const { data, error } = await fetchWrapper(() =>
+            wasmModule.get_requirement_groups_by_section({ input: sectionId })
+        );
 
-            if (response.output?.output) {
-                const groupsWithSectionId = response.output.output.map((group) => ({
-                    ...group,
-                    section_id: sectionId, // Ensure section_id is included
-                }));
-
-                result.requirementGroups.push(...groupsWithSectionId);
-            } else if (response.error) {
-                console.error(`❌ Error fetching requirement groups for section ID ${sectionId}: ${response.error.message}`);
-                result.errors[sectionId] = response.error.message;
-            }
-        } catch (err) {
-            console.error(`❌ Failed to fetch requirement groups for section ID ${sectionId}:`, err);
-            result.errors[sectionId] = "Failed to fetch requirement groups";
+        if (data?.output) {
+            const groupsWithSectionId = data.output.output.map(group => ({
+                ...group,
+                section_id: sectionId, // Ensure section_id is included
+            }));
+            results.requirementGroups.push(...groupsWithSectionId);
+        } else {
+            results.errors[sectionId] = error || `Failed to fetch requirement groups for section ID ${sectionId}`;
+            console.error(`❌ Error fetching requirement groups for section ID ${sectionId}: ${error}`);
         }
     });
 
-    await Promise.all(fetchPromises);
-    return result;
+    await Promise.allSettled(fetchPromises); // Ensures all requests complete
+
+    return results;
 }
