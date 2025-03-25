@@ -9,6 +9,7 @@ import { useSectionsContext } from '@/contexts/sections-context';
 import { useRequirementsContext } from '@/contexts/requirements-context';
 import { useCreateReportStore } from '@/stores/create-report-store';
 import { useRequirementGroupsContext } from '@/contexts/requirement-group-context';
+import DeviceDescriptionCard from './device-description-card';
 
 interface DevelopmentLifecycleTimelineProps {
     selectedRegulatoryFramework: RegulatoryFramework;
@@ -275,6 +276,9 @@ export const DevelopmentLifecycleTimeline: React.FC<DevelopmentLifecycleTimeline
                     })}
                 </div>
             </div>
+            {deviceDescriptions.length > 0 && (
+                <DeviceDescriptionCard deviceDescription={deviceDescriptions[0].description} />
+            )}
         </div>
     );
 }; 
