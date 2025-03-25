@@ -36,6 +36,7 @@ import { StyleProvider } from "@/contexts/style-context";
 import AppVersion from "@/components/common/app-version";
 import { NotificationProvider } from "@/contexts/notification-context";
 import AppHeader from "@/components/common/header";
+import { DescriptionsProvider } from "@/contexts/descriptions-context";
 
 const { Content, Header } = Layout;
 
@@ -137,11 +138,13 @@ export default function RootLayout({
                               <RequirementPriceProvider>
                                 <FilesProvider>
                                   <DocumentsProvider>
-                                    <TasksProvider>
-                                      <StyleProvider>
-                                        <LayoutWithWasm>{children}</LayoutWithWasm>
-                                      </StyleProvider>
-                                    </TasksProvider>
+                                    <DescriptionsProvider>
+                                      <TasksProvider>
+                                        <StyleProvider>
+                                          <LayoutWithWasm>{children}</LayoutWithWasm>
+                                        </StyleProvider>
+                                      </TasksProvider>
+                                    </DescriptionsProvider>
                                   </DocumentsProvider>
                                 </FilesProvider>
                               </RequirementPriceProvider>

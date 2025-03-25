@@ -16,7 +16,7 @@ const CreateReportModal: React.FC = () => {
             <Modal
                 title={<div className="flex gap-x-4 items-center">
                     <div>Create New Report</div>
-                    <PriceTracker />
+                    {/* <PriceTracker /> */}
                 </div>}
                 open={isModalVisible}
                 onCancel={handleCancel}

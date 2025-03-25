@@ -1,9 +1,11 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { RegulatoryFramework } from '@wasm';
+
 
 interface ReportState {
     currentStep: number;
-    selectedFramework: string;
+    selectedFramework: RegulatoryFramework;
     selectedSections: string[];
     selectedDocumentNumbers: number[];
     selectedRequirementGroups: string[];
@@ -15,7 +17,7 @@ interface ReportState {
     requirementsSetForGroups: string[];
 
     setCurrentStep: (step: number) => void;
-    setSelectedFramework: (framework: string) => void;
+    setSelectedFramework: (framework: RegulatoryFramework) => void;
     setSelectedSections: (sections: string[]) => void;
     setSelectedDocumentNumbers: (documentNumbers: number[]) => void;
     setSelectedRequirementGroups: (requirementGroups: string[]) => void;
