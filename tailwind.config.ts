@@ -41,19 +41,19 @@ const config: Config = {
           to: { height: '0' }
         },
         'border-flow': {
-          '0%': { transform: 'translateX(-100%)' },
-          '50%': { transform: 'translateX(100%)' },
-          '100%': { transform: 'translateX(-100%)' }
+          '0%': { width: '0%', left: '0%' },
+          '50%': { width: '100%', left: '0%' },
+          '100%': { width: '0%', left: '100%' }
         }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        'border-flow': 'border-flow 2s linear infinite'
+        'border-flow': 'border-flow 2s ease-in-out infinite'
       }
     },
     container: {
-      center: true,  // Changed from 'true' to true
+      center: true,
       padding: '2rem',
       screens: {
         '2xl': '1400px'

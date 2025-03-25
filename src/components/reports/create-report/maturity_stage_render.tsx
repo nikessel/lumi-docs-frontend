@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { DevelopmentLifeCyclePhase, RegulatoryFramework } from '@wasm';
+import { DevelopmentLifeCyclePhase, RegulatoryFramework, Company } from '@wasm';
 import { useDescriptionsContext } from '@/contexts/descriptions-context';
 import { Spin, Tag, Tooltip } from 'antd';
 import { CloseOutlined } from '@ant-design/icons';
@@ -9,7 +9,8 @@ import { useSectionsContext } from '@/contexts/sections-context';
 import { useRequirementsContext } from '@/contexts/requirements-context';
 import { useCreateReportStore } from '@/stores/create-report-store';
 import { useRequirementGroupsContext } from '@/contexts/requirement-group-context';
-import DeviceDescriptionCard from './device-description-card';
+import DescriptionCard from './description-card';
+import { getAllCompanies } from '@/utils/description-utils';
 
 interface DevelopmentLifecycleTimelineProps {
     selectedRegulatoryFramework: RegulatoryFramework;
@@ -41,7 +42,9 @@ export const DevelopmentLifecycleTimeline: React.FC<DevelopmentLifecycleTimeline
 }) => {
     const { deviceDescriptions, loading, error } = useDescriptionsContext();
     const { wasmModule } = useWasm();
-    // const [selectedRequirements, setSelectedRequirements] = useState<string[]>([]);
+    const [companies, setCompanies] = useState<Company[]>([]);
+    const [companiesLoading, setCompaniesLoading] = useState(false);
+    const [companiesError, setCompaniesError] = useState<string | null>(null);
     const [completedStages, setCompletedStages] = useState<Set<DevelopmentLifeCyclePhase>>(new Set());
     const [attemptedStages, setAttemptedStages] = useState<Set<DevelopmentLifeCyclePhase>>(new Set());
     const [stageRequirements, setStageRequirements] = useState<Record<DevelopmentLifeCyclePhase, { requirements: string[], loading: boolean, error: string | null }>>(
@@ -69,6 +72,28 @@ export const DevelopmentLifecycleTimeline: React.FC<DevelopmentLifecycleTimeline
         const firstDevice = deviceDescriptions[0];
         return firstDevice.description.life_cycle_info.development_phase;
     }, [deviceDescriptions, loading, error]);
+
+    useEffect(() => {
+        const fetchCompanies = async () => {
+            if (!wasmModule) return;
+            setCompaniesLoading(true);
+            setCompaniesError(null);
+            try {
+                const { companies: fetchedCompanies, error } = await getAllCompanies(wasmModule);
+                if (error) {
+                    setCompaniesError(error);
+                } else {
+                    setCompanies(fetchedCompanies);
+                }
+            } catch (err) {
+                setCompaniesError(err instanceof Error ? err.message : 'Failed to fetch companies');
+            } finally {
+                setCompaniesLoading(false);
+            }
+        };
+
+        fetchCompanies();
+    }, [wasmModule]);
 
     useEffect(() => {
         const fetchRequirementsForStages = async () => {
@@ -213,72 +238,25 @@ export const DevelopmentLifecycleTimeline: React.FC<DevelopmentLifecycleTimeline
     }
 
     return (
-        <div>
-            <div className="relative">
-                <div className="absolute top-[8px] left-0 right-0 h-0.5 bg-muted" />
-                {/* Stages */}
-                <div className="relative flex justify-between">
-                    {stages.map((stage) => {
-                        const status = getStageStatus(stage);
-                        const stageData = stageRequirements[stage];
-                        return (
-                            <div
-                                key={stage}
-                                className="flex flex-col items-center"
-                            >
-                                {/* Stage dot */}
-                                <div className="w-4 h-4 mb-2">
-                                    {status === 'loading' || stageData.loading ? (
-                                        <div className="w-4 h-4 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
-                                    ) : (
-                                        <div
-                                            className={`w-4 h-4 rounded-full ${status === 'current' || status === 'completed'
-                                                ? 'bg-blue-500'
-                                                : 'bg-gray-200'
-                                                }`}
-                                        />
-                                    )}
-                                </div>
-
-                                {/* Stage name and requirements count */}
-                                <div className="flex flex-col justify-between items-center text-center max-w-[100px] h-24  py-2">
-                                    <span
-                                        className={`text-xs ${status === 'current' || status === 'completed'
-                                            ? 'text-blue-500'
-                                            : 'text-gray-400'
-                                            }`}
-                                    >
-                                        {formatStageName(stage)}
-                                    </span>
-
-                                    <div className="h-6 flex items-center justify-center">
-                                        {!attemptedStages.has(stage) || stageData.loading ? null : stageData.error ? (
-                                            <Tag color="error">Error</Tag>
-                                        ) : (() => {
-                                            const stageIndex = stages.indexOf(stage);
-                                            const currentStageIndex = currentStage ? stages.indexOf(currentStage) : -1;
-
-                                            return stageIndex > currentStageIndex ? (
-                                                <Tooltip title="Requirements associated with this stage is estimated to be beyond current maturity level">
-                                                    <Tag color="default">
-                                                        <CloseOutlined />
-                                                    </Tag>
-                                                </Tooltip>
-                                            ) : (
-                                                <Tag color="blue">{stageData.requirements.length}</Tag>
-                                            );
-                                        })()}
-                                    </div>
-                                </div>
-
-                            </div>
-                        );
-                    })}
-                </div>
+        <div className="scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+            <div className="flex gap-4 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                {deviceDescriptions.length > 0 && (
+                    <div className="flex-1">
+                        <DescriptionCard
+                            description={deviceDescriptions[0].description}
+                            title="Device Information"
+                        />
+                    </div>
+                )}
+                {companies.length > 0 && (
+                    <div className="flex-1">
+                        <DescriptionCard
+                            description={companies[0].description}
+                            title="Company Information"
+                        />
+                    </div>
+                )}
             </div>
-            {deviceDescriptions.length > 0 && (
-                <DeviceDescriptionCard deviceDescription={deviceDescriptions[0].description} />
-            )}
         </div>
     );
 }; 

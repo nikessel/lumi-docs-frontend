@@ -267,7 +267,9 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
             title: "Analysis",
             content: (
                 <div>
-                    <DevelopmentLifecycleTimeline onReady={onDefaultSelectionsReady} selectedRegulatoryFramework={selectedFramework as RegulatoryFramework} />
+                    <div className="max-h-[calc(100vh-400px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+                        <DevelopmentLifecycleTimeline onReady={onDefaultSelectionsReady} selectedRegulatoryFramework={selectedFramework as RegulatoryFramework} />
+                    </div>
                 </div>
             ),
         },
