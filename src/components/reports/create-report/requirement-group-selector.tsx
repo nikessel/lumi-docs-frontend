@@ -2,25 +2,29 @@ import React, { useEffect, useState } from "react";
 import { List, Checkbox, Button } from "antd";
 import { useCreateReportStore } from "@/stores/create-report-store";
 import { formatPrice } from "@/utils/payment";
+import { useRequirementGroupsContext } from "@/contexts/requirement-group-context";
+import { useRequirementsContext } from "@/contexts/requirements-context";
+import { useRequirementPriceContext } from "@/contexts/price-context/use-requirement-price-context";
+import { getPriceForGroup } from "@/utils/payment";
 
-interface RequirementGroupDisplay {
-    id: string;
-    name: string;
-    price_for_group: number;
-}
-
-interface SelectRequirementGroupsProps {
-    requirementGroups: RequirementGroupDisplay[];
-}
-
-const SelectRequirementGroups: React.FC<SelectRequirementGroupsProps> = ({
-    requirementGroups,
-}) => {
+const SelectRequirementGroups: React.FC = () => {
+    const { selectedSections } = useCreateReportStore.getState();
+    const { requirementGroupsBySectionId } = useRequirementGroupsContext();
+    const { requirementsByGroupId } = useRequirementsContext();
+    const { userPrice, defaultPrice } = useRequirementPriceContext();
     const { selectedRequirementGroups, setSelectedRequirementGroups } = useCreateReportStore.getState();
 
     const [showGroups, setShowGroups] = useState(false);
-
     const [allGroupsSelected, setAllGroupsSelected] = useState(true);
+
+    // Compute requirement groups based on selected sections
+    const requirementGroups = selectedSections
+        .flatMap((sectionId) => requirementGroupsBySectionId[sectionId] || [])
+        .map((group) => ({
+            id: group.id,
+            name: group.name || "Unknown",
+            price_for_group: getPriceForGroup(group.id, requirementsByGroupId, userPrice ? userPrice : defaultPrice),
+        }));
 
     useEffect(() => {
         setAllGroupsSelected(selectedRequirementGroups.length === requirementGroups.length);
@@ -35,15 +39,12 @@ const SelectRequirementGroups: React.FC<SelectRequirementGroupsProps> = ({
         }
     };
 
-
     const handleGroupSelect = (id: string) => {
         if (selectedRequirementGroups.includes(id)) {
-            // Remove the group if it already exists
             setSelectedRequirementGroups(
                 selectedRequirementGroups.filter((groupId) => groupId !== id)
             );
         } else {
-            // Add the group if it doesn't exist
             setSelectedRequirementGroups([...selectedRequirementGroups, id]);
         }
     };

@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { List, Checkbox, Button } from "antd";
 import { useCreateReportStore } from "@/stores/create-report-store";
 import { formatPrice } from "@/utils/payment";
+import { useRequirementsContext } from "@/contexts/requirements-context";
+import { useRequirementPriceContext } from "@/contexts/price-context/use-requirement-price-context";
+import { getPriceForRequirement } from "@/utils/payment";
 
 interface RequirementDisplay {
     id: string;
@@ -9,17 +12,23 @@ interface RequirementDisplay {
     price_for_requirement: number;
 }
 
-interface SelectRequirementsProps {
-    requirements: RequirementDisplay[];
-}
-
-const SelectRequirements: React.FC<SelectRequirementsProps> = ({
-    requirements,
-}) => {
+const SelectRequirements: React.FC = () => {
+    const { selectedRequirementGroups } = useCreateReportStore.getState();
+    const { requirementsByGroupId } = useRequirementsContext();
+    const { userPrice, defaultPrice } = useRequirementPriceContext();
     const { selectedRequirements, setSelectedRequirements } = useCreateReportStore.getState();
 
     const [showRequirements, setShowRequirements] = useState(false);
     const [allRequirementsSelected, setAllRequirementsSelected] = useState(true);
+
+    // Compute requirements based on selected requirement groups
+    const requirements = selectedRequirementGroups
+        .flatMap((groupId) => requirementsByGroupId[groupId] || [])
+        .map((req) => ({
+            id: req.id,
+            name: req.name || "Unknown",
+            price_for_requirement: getPriceForRequirement(req.id, userPrice ? userPrice : defaultPrice),
+        }));
 
     useEffect(() => {
         setAllRequirementsSelected(selectedRequirements.length === requirements.length);

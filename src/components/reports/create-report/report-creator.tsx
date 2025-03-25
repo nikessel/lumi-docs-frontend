@@ -19,8 +19,9 @@ import { useWasm } from "../../../contexts/wasm-context/WasmProvider";
 import { ValidateReportOutput as ValidateReportOutputType } from "@/utils/report-utils/create-report-utils";
 import { useDocumentsContext } from "@/contexts/documents-context";
 import Image from "next/image";
-import { DevelopmentLifecycleTimeline } from "@/components/default_selection/maturity_stage_render";
+import { DevelopmentLifecycleTimeline } from "@/components/reports/create-report/maturity_stage_render";
 import { RegulatoryFramework } from '@wasm';
+import AISuggestionsReview from './ai-suggestions-review';
 
 
 const { Step } = Steps;
@@ -73,6 +74,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
     const [validationResult, setValidationResult] = useState<ValidateReportOutputType | null>(null);
     const [selectedPath, setSelectedPath] = useState<'ai' | 'manual' | null>(null);
     const [steps, setSteps] = useState<Step[]>([])
+    const [nextDisabled, setNextDisabled] = useState(false)
 
     const next = () => {
         if (currentStep === 1 && selectedPath) {
@@ -99,6 +101,14 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
         }
     };
 
+    useEffect(() => {
+        if (selectedPath === "ai" && currentStep === 2) {
+            setNextDisabled(true)
+        } else {
+            setNextDisabled(false)
+        }
+    }, [selectedPath, currentStep])
+
     const aiStepDescriptions = [
         { title: "Initial Analysis", description: "Let our AI engine estimate the maturity of your documentation" },
         { title: "Review Selection", description: "Review the selected requirements" },
@@ -116,6 +126,31 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
         { title: "Documents", description: "Pick documents to analyze" }
     ];
 
+    const handleSelectPath = (path: 'ai' | 'manual') => {
+        setSelectedPath(path);
+
+        const builtSteps = path === 'ai' ? aiPathSteps : manualPathSteps;
+        setSteps(builtSteps);
+
+        setCurrentStep(2); // jump directly to the first real step
+    };
+
+    const handleSelectFramework = (framework: RegulatoryFramework) => {
+        setSelectedFramework(framework);
+
+        // Get all sections for the selected framework
+        const allSections = sectionsForRegulatoryFramework[framework] || [];
+        setSelectedSections(allSections.map(section => section.id));
+
+        // Get all requirement groups for the selected sections
+        const allGroups = allSections.flatMap(section => requirementGroupsBySectionId[section.id] || []);
+        setSelectedRequirementGroups(allGroups.map(group => group.id));
+
+        // Get all requirements for the selected groups
+        const allRequirements = allGroups.flatMap(group => requirementsByGroupId[group.id] || []);
+        setSelectedRequirements(allRequirements.map(req => req.id));
+    };
+
     const baseSteps: Step[] = [
         {
             title: "Regulatory Framework",
@@ -128,7 +163,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                     <Select
                         showSearch
                         value={selectedFramework}
-                        onChange={setSelectedFramework}
+                        onChange={handleSelectFramework}
                         options={frameworks.map(framework => ({
                             label: formatRegulatoryFramework(framework.id),
                             value: framework.id,
@@ -155,7 +190,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                         <Col span={12}>
                             <Card
 
-                                onClick={() => setSelectedPath('manual')}
+                                onClick={() => handleSelectPath('manual')}
                                 className="h-full cursor-pointer group relative"
                             >
                                 <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-0 group-hover:translate-x-2">
@@ -179,7 +214,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                         <Col span={12}>
                             <Card
 
-                                onClick={() => setSelectedPath('ai')}
+                                onClick={() => handleSelectPath('ai')}
                                 className="h-full cursor-pointer border-l-4 border-blue-500 group relative"
                             >
                                 <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-x-0 group-hover:translate-x-2">
@@ -217,12 +252,22 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
         }
     ];
 
+
+    const onDefaultSelectionsReady = () => {
+        setNextDisabled(false)
+    }
+
+    const handleCustomizeSelection = () => {
+        setSelectedPath('manual');
+        setCurrentStep(2); // Start of manual selection flow
+    };
+
     const aiPathSteps: Step[] = [
         {
             title: "Analysis",
             content: (
                 <div>
-                    <DevelopmentLifecycleTimeline selectedRegulatoryFramework={selectedFramework as RegulatoryFramework} />
+                    <DevelopmentLifecycleTimeline onReady={onDefaultSelectionsReady} selectedRegulatoryFramework={selectedFramework as RegulatoryFramework} />
                 </div>
             ),
         },
@@ -230,19 +275,14 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
             title: "Review",
             content: (
                 <div>
-                    <Typography.Title level={4} className="mb-4">Review AI Suggestions</Typography.Title>
-                    <Typography className="my-4 leading-6" color="secondary">
-                        Review and confirm the AI-suggested requirements.
-                    </Typography>
-                    {/* Add AI suggestion review component here */}
+                    <AISuggestionsReview onCustomize={handleCustomizeSelection} />
                 </div>
             ),
         },
         {
-            title: "AI Documents",
+            title: "Documents",
             content: (
                 <div>
-                    <Typography.Title level={4} className="mb-4">Select Documents for AI Analysis</Typography.Title>
                     <Typography className="my-4 leading-6" color="secondary">
                         Select the documents that will be analyzed by our AI to generate the report.
                     </Typography>
@@ -287,16 +327,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                             .flatMap((sectionId) => requirementGroupsBySectionId[sectionId] || [])?.length} requirement groups.
                         You can select a subset of these groups to include in the report.
                     </Typography>
-                    <SelectRequirementGroups
-                        requirementGroups={selectedSections
-                            .flatMap((sectionId) => requirementGroupsBySectionId[sectionId] || [])
-                            .map((group) => ({
-                                id: group.id,
-                                name: group.name || "Unknown",
-                                price_for_group: getPriceForGroup(group.id, requirementsByGroupId, userPrice ? userPrice : defaultPrice),
-                            }))
-                        }
-                    />
+                    <SelectRequirementGroups />
                 </div>
             ),
         },
@@ -310,16 +341,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                             .flatMap((groupId) => requirementsByGroupId[groupId] || [])?.length} requirements.
                         You can select a subset of these requirements to include in the report.
                     </Typography>
-                    <SelectRequirements
-                        requirements={selectedRequirementGroups
-                            .flatMap((groupId) => requirementsByGroupId[groupId] || [])
-                            .map((req) => ({
-                                id: req.id,
-                                name: req.name || "Unknown",
-                                price_for_requirement: getPriceForRequirement(req.id, userPrice ? userPrice : defaultPrice),
-                            }))
-                        }
-                    />
+                    <SelectRequirements />
                 </div>
             ),
         },
@@ -369,28 +391,28 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
         validate();
     }, [selectedSections, selectedRequirementGroups, selectedRequirements, files, wasmModule, selectedDocumentNumbers]);
 
-    useEffect(() => {
-        if (sectionsForRegulatoryFramework[selectedFramework] && sectionsSetForFramework !== selectedFramework) {
-            setSelectedSections([sectionsForRegulatoryFramework[selectedFramework][0].id]);
-            setSectionsSetForFramework(selectedFramework);
-        }
-    }, [sectionsForRegulatoryFramework, sectionsSetForFramework, selectedFramework, setSectionsSetForFramework, setSelectedSections]);
+    // useEffect(() => {
+    //     if (sectionsForRegulatoryFramework[selectedFramework] && sectionsSetForFramework !== selectedFramework) {
+    //         setSelectedSections([sectionsForRegulatoryFramework[selectedFramework][0].id]);
+    //         setSectionsSetForFramework(selectedFramework);
+    //     }
+    // }, [sectionsForRegulatoryFramework, sectionsSetForFramework, selectedFramework, setSectionsSetForFramework, setSelectedSections]);
 
-    useEffect(() => {
-        if (!arraysAreEqual(groupsSetForSections, selectedSections)) {
-            const relatedGroups = selectedSections.flatMap(sectionId => requirementGroupsBySectionId[sectionId] || []);
-            setSelectedRequirementGroups(relatedGroups.map(group => group.id));
-            setGroupsSetForSections(selectedSections);
-        }
-    }, [requirementGroupsBySectionId, groupsSetForSections, selectedSections, setGroupsSetForSections, setSelectedRequirementGroups]);
+    // useEffect(() => {
+    //     if (!arraysAreEqual(groupsSetForSections, selectedSections)) {
+    //         const relatedGroups = selectedSections.flatMap(sectionId => requirementGroupsBySectionId[sectionId] || []);
+    //         setSelectedRequirementGroups(relatedGroups.map(group => group.id));
+    //         setGroupsSetForSections(selectedSections);
+    //     }
+    // }, [requirementGroupsBySectionId, groupsSetForSections, selectedSections, setGroupsSetForSections, setSelectedRequirementGroups]);
 
-    useEffect(() => {
-        if (!arraysAreEqual(requirementsSetForGroups, selectedRequirementGroups)) {
-            const relatedRequirements = selectedRequirementGroups.flatMap(groupId => requirementsByGroupId[groupId] || []);
-            setSelectedRequirements(relatedRequirements.map(req => req.id));
-            setRequirementsSetForGroups(selectedRequirementGroups);
-        }
-    }, [requirementsByGroupId, requirementsSetForGroups, selectedRequirementGroups, setRequirementsSetForGroups, setSelectedRequirements]);
+    // useEffect(() => {
+    //     if (!arraysAreEqual(requirementsSetForGroups, selectedRequirementGroups)) {
+    //         const relatedRequirements = selectedRequirementGroups.flatMap(groupId => requirementsByGroupId[groupId] || []);
+    //         setSelectedRequirements(relatedRequirements.map(req => req.id));
+    //         setRequirementsSetForGroups(selectedRequirementGroups);
+    //     }
+    // }, [requirementsByGroupId, requirementsSetForGroups, selectedRequirementGroups, setRequirementsSetForGroups, setSelectedRequirements]);
 
     useEffect(() => {
         if (documents.length > 0) {
@@ -434,17 +456,6 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
 
         }
     }
-
-    const handleSelectPath = (path: 'ai' | 'manual') => {
-        setSelectedPath(path);
-
-        const builtSteps = path === 'ai' ? aiPathSteps : manualPathSteps;
-        setSteps(builtSteps);
-
-        setCurrentStep(2); // jump directly to the first real step
-    };
-
-
 
 
     return (
@@ -568,12 +579,12 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                             </div>
                         )}
 
-                        {currentStep === steps.length + 2 ? (
+                        {selectedPath === 'manual' && currentStep === 5 || selectedPath === 'ai' && currentStep === 4 ? (
                             <Button loading={isGeneratingReport} type="primary" disabled={validationResult?.error} onClick={handleCreateReport}>
                                 Create Report
                             </Button>
                         ) : (
-                            <Button type="primary" onClick={next}>
+                            <Button type="primary" onClick={next} disabled={nextDisabled}>
                                 Next
                             </Button>
                         )}

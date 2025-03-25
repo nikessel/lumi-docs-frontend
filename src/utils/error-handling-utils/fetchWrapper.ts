@@ -21,7 +21,6 @@ export async function fetchWrapper<T>(
 ): Promise<{ data: { output?: T; error?: ClientSideError } | null; error: string | null }> {
     try {
         const response = await fn();
-        console.log("asdasdasd123", response);
 
         // ✅ If API returns an error, handle it properly
         if (response.error) {
