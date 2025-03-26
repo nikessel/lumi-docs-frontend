@@ -1,10 +1,10 @@
 import type * as WasmModule from "@wasm";
-import type { Description, RegulatoryFramework, GetDefaultSelectedRequirementIdsInput } from "@wasm";
+import type { Description, RegulatoryFramework, GetDefaultSelectedRequirementIdsInput, GetApplicableFieldPathsInput, GetDefaultSelectionFieldPathsInput, GetMultipleDefaultSelectedRequirementIdsInput } from "@wasm";
 import { fetchWrapper } from "@/utils/error-handling-utils/fetchWrapper";
 
 export async function getDefaultSelection(
     wasmModule: typeof WasmModule | null,
-    defaultSelectionInput: GetDefaultSelectedRequirementIdsInput[],
+    defaultSelectionInput: GetDefaultSelectedRequirementIdsInput,
 ): Promise<{ requirements: string[]; error: string | null }> {
     if (!wasmModule) {
         return {
@@ -14,43 +14,126 @@ export async function getDefaultSelection(
     }
 
     try {
-        // Process each description in parallel
-        const results = await Promise.allSettled(
-            defaultSelectionInput.map(input =>
-                fetchWrapper(() => wasmModule.get_default_selected_requirement_ids(input))
-            )
+        const { data, error } = await fetchWrapper(() =>
+            wasmModule.get_default_selected_requirement_ids(defaultSelectionInput)
         );
 
-        // Collect all successful results and errors
-        const allIds: string[] = [];
-        const errors: string[] = [];
-
-        results.forEach((result, index) => {
-            if (result.status === 'fulfilled') {
-                const { data, error } = result.value;
-                if (error) {
-                    errors.push(`Error processing description ${index}: ${error}`);
-                } else if (data?.output?.output) {
-                    allIds.push(...data.output.output);
-                }
-            } else {
-                errors.push(`Failed to process description ${index}: ${result.reason}`);
-            }
-        });
-
-        // If we have any errors, return them
-        if (errors.length > 0) {
+        if (error) {
             return {
                 requirements: [],
-                error: errors.join('; ')
+                error
             };
         }
 
-        // Ensure we have unique IDs
-        const uniqueIds = [...new Set(allIds)];
+        return {
+            requirements: data?.output?.output || [],
+            error: null
+        };
+    } catch (err) {
+        return {
+            requirements: [],
+            error: err instanceof Error ? err.message : "Unknown error occurred"
+        };
+    }
+}
+
+export async function getApplicableFieldPaths(
+    wasmModule: typeof WasmModule | null,
+    input: GetApplicableFieldPathsInput,
+): Promise<{ fieldPaths: Map<string, string[]>; error: string | null }> {
+    if (!wasmModule) {
+        return {
+            fieldPaths: new Map(),
+            error: "WASM module not loaded",
+        };
+    }
+
+    try {
+        const { data, error } = await fetchWrapper(() =>
+            wasmModule.get_applicable_field_paths(input)
+        );
+
+        if (error) {
+            return {
+                fieldPaths: new Map(),
+                error
+            };
+        }
 
         return {
-            requirements: uniqueIds,
+            fieldPaths: data?.output?.output || new Map(),
+            error: null
+        };
+    } catch (err) {
+        return {
+            fieldPaths: new Map(),
+            error: err instanceof Error ? err.message : "Unknown error occurred"
+        };
+    }
+}
+
+export async function getDefaultSelectionFieldPaths(
+    wasmModule: typeof WasmModule | null,
+    input: GetDefaultSelectionFieldPathsInput,
+): Promise<{ fieldPaths: Map<string, string[]>; error: string | null }> {
+    if (!wasmModule) {
+        return {
+            fieldPaths: new Map(),
+            error: "WASM module not loaded",
+        };
+    }
+
+    try {
+        const { data, error } = await fetchWrapper(() =>
+            wasmModule.get_default_selection_field_paths(input)
+        );
+
+        console.log("!!!!!!13123123", input, data)
+
+        if (error) {
+            return {
+                fieldPaths: new Map(),
+                error
+            };
+        }
+
+        return {
+            fieldPaths: data?.output?.output || new Map(),
+            error: null
+        };
+    } catch (err) {
+        return {
+            fieldPaths: new Map(),
+            error: err instanceof Error ? err.message : "Unknown error occurred"
+        };
+    }
+}
+
+export async function getMultipleDefaultSelectedRequirementIds(
+    wasmModule: typeof WasmModule | null,
+    input: GetMultipleDefaultSelectedRequirementIdsInput,
+): Promise<{ requirements: string[]; error: string | null }> {
+    if (!wasmModule) {
+        return {
+            requirements: [],
+            error: "WASM module not loaded",
+        };
+    }
+
+    try {
+        const { data, error } = await fetchWrapper(() =>
+            wasmModule.get_multiple_default_selected_requirement_ids(input)
+        );
+
+        if (error) {
+            return {
+                requirements: [],
+                error
+            };
+        }
+
+        return {
+            requirements: Array.isArray(data?.output?.output) ? data.output.output : [],
             error: null
         };
     } catch (err) {

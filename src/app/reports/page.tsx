@@ -65,10 +65,9 @@ const Page = () => {
                             allowClear
                             style={{ width: 200 }}
                         />
-                        <Button size="small" type="primary" icon={<PlusOutlined />}>
+                        <Button size="small" type="primary" disabled icon={<PlusOutlined />}>
                             New
                         </Button>
-
                     </div>
                 </div>
                 <Divider className="border-thin mt-2 mb-2" />
@@ -89,7 +88,10 @@ const Page = () => {
             <div className="flex justify-between items-center">
                 <Typography textSize="h4">Reports</Typography>
                 <div className="flex items-center space-x-2" data-tour="new-report-button">
-                    <CreateReportModal />
+
+                    <Button type="primary" onClick={() => router.push('/reports/create')}>
+                        Create New Report
+                    </Button>
                 </div>
             </div>
             <Divider className="border-thin mt-2 mb-2" />

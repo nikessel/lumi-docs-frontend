@@ -19,7 +19,7 @@ import { useWasm } from "../../../contexts/wasm-context/WasmProvider";
 import { ValidateReportOutput as ValidateReportOutputType } from "@/utils/report-utils/create-report-utils";
 import { useDocumentsContext } from "@/contexts/documents-context";
 import Image from "next/image";
-import { DevelopmentLifecycleTimeline } from "@/components/reports/create-report/maturity_stage_render";
+import { DescriptionCustomizer } from "@/components/reports/create-report/description_customizer";
 import { RegulatoryFramework } from '@wasm';
 import AISuggestionsReview from './ai-suggestions-review';
 
@@ -74,7 +74,6 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
     const [validationResult, setValidationResult] = useState<ValidateReportOutputType | null>(null);
     const [selectedPath, setSelectedPath] = useState<'ai' | 'manual' | null>(null);
     const [steps, setSteps] = useState<Step[]>([])
-    const [nextDisabled, setNextDisabled] = useState(false)
 
     const next = () => {
         if (currentStep === 1 && selectedPath) {
@@ -100,14 +99,6 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
             setCurrentStep(currentStep - 1);
         }
     };
-
-    useEffect(() => {
-        if (selectedPath === "ai" && currentStep === 2) {
-            setNextDisabled(true)
-        } else {
-            setNextDisabled(false)
-        }
-    }, [selectedPath, currentStep])
 
     const aiStepDescriptions = [
         { title: "Initial Analysis", description: "Let our AI engine estimate the maturity of your documentation" },
@@ -253,10 +244,6 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
     ];
 
 
-    const onDefaultSelectionsReady = () => {
-        setNextDisabled(false)
-    }
-
     const handleCustomizeSelection = () => {
         setSelectedPath('manual');
         setCurrentStep(2); // Start of manual selection flow
@@ -267,8 +254,8 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
             title: "Analysis",
             content: (
                 <div>
-                    <div className="max-h-[calc(100vh-400px)] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-                        <DevelopmentLifecycleTimeline onReady={onDefaultSelectionsReady} selectedRegulatoryFramework={selectedFramework as RegulatoryFramework} />
+                    <div className=" overflow-y-auto ">
+                        <DescriptionCustomizer selectedRegulatoryFramework={selectedFramework as RegulatoryFramework} />
                     </div>
                 </div>
             ),
@@ -586,7 +573,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
                                 Create Report
                             </Button>
                         ) : (
-                            <Button type="primary" onClick={next} disabled={nextDisabled}>
+                            <Button type="primary" onClick={next} >
                                 Next
                             </Button>
                         )}
