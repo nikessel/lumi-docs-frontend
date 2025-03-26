@@ -1,10 +1,12 @@
 "use client";
 import React, { createContext, useContext, ReactNode } from 'react';
-import { Device } from '@wasm';
-import { useDeviceDescriptions } from '@/hooks/description-hooks';
+import { Device, Company, Trial } from '@wasm';
+import { useDescriptions } from '@/hooks/description-hooks';
 
 interface DescriptionsContextType {
-    deviceDescriptions: Device[];
+    devices: Device[];
+    companies: Company[];
+    trials: Trial[];
     loading: boolean;
     error: string | null;
 }
@@ -12,10 +14,10 @@ interface DescriptionsContextType {
 const DescriptionsContext = createContext<DescriptionsContextType | undefined>(undefined);
 
 export const DescriptionsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const { deviceDescriptions, loading, error } = useDeviceDescriptions();
+    const { devices, companies, trials, loading, error } = useDescriptions();
 
     return (
-        <DescriptionsContext.Provider value={{ deviceDescriptions, loading, error }}>
+        <DescriptionsContext.Provider value={{ devices, companies, trials, loading, error }}>
             {children}
         </DescriptionsContext.Provider>
     );

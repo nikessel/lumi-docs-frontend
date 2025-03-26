@@ -1,51 +1,20 @@
-import React, { useState, useEffect } from "react";
-import { Card, Skeleton, Typography, Spin } from "antd";
+import React from "react";
+import { Card, Typography } from "antd";
 import type { DeviceDescription, TrialDescription, CompanyDescription, Company } from "@wasm";
-import { LoadingOutlined } from '@ant-design/icons';
 
 type DescriptionType = DeviceDescription | TrialDescription | CompanyDescription | Company;
 
 interface DescriptionCardProps {
     description: DescriptionType;
     title: string;
+    onReady?: () => void;
 }
 
-const DescriptionCard: React.FC<DescriptionCardProps> = ({ description, title }) => {
-    const [loadedFields, setLoadedFields] = useState<Set<string>>(new Set());
-    const [loadingTimes, setLoadingTimes] = useState<{ [key: string]: number }>({});
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        // Generate random loading times for each field and sub-field
-        const times: { [key: string]: number } = {};
-        const addFieldTimes = (obj: any, prefix: string = '') => {
-            Object.entries(obj).forEach(([key, value]) => {
-                const fullKey = prefix ? `${prefix}.${key}` : key;
-                times[fullKey] = Math.random() * 4000 + 5000; // Random time between 3-7 seconds
-
-                if (typeof value === 'object' && value !== null) {
-                    addFieldTimes(value, fullKey);
-                }
-            });
-        };
-
-        addFieldTimes(description);
-        setLoadingTimes(times);
-
-        // Set up timeouts to show each field and sub-field
-        Object.entries(times).forEach(([key, time]) => {
-            setTimeout(() => {
-                setLoadedFields((prev) => {
-                    const newSet = new Set([...prev, key]);
-                    // Check if all fields are loaded
-                    if (newSet.size === Object.keys(times).length) {
-                        setIsLoading(false);
-                    }
-                    return newSet;
-                });
-            }, time);
-        });
-    }, [description]);
+const DescriptionCard: React.FC<DescriptionCardProps> = ({ description, title, onReady }) => {
+    // Call onReady immediately since data is available
+    React.useEffect(() => {
+        onReady?.();
+    }, []);
 
     const formatKey = (key: string) => {
         return key
@@ -61,26 +30,14 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({ description, title })
             .join(' ');
     };
 
-    const renderField = (key: string, value: any, level: number = 0, parentKey: string = '') => {
+    const renderField = (key: string, value: any, level: number = 0) => {
         // Skip rendering if the field is "Company Type"
         if (key === 'company_type') {
             return null;
         }
 
-        const fullKey = parentKey ? `${parentKey}.${key}` : key;
-        const isLoading = !loadedFields.has(fullKey);
         const formattedKey = formatKey(key);
         const indent = level * 16; // 16px indentation per level
-        const isChild = typeof value !== 'object' || value === null || Array.isArray(value);
-
-        if (isLoading && isChild) {
-            return (
-                <div key={key} className="mb-4 flex items-center" style={{ marginLeft: `${indent}px` }}>
-                    <Spin className="mr-2" indicator={<LoadingOutlined style={{ fontSize: 14 }} spin />} />
-                    <Typography.Text type="secondary">{formattedKey}:</Typography.Text>
-                </div>
-            );
-        }
 
         const renderValue = (val: any, currentLevel: number = 0): React.ReactNode => {
             if (key.toLowerCase() === 'generation') {
@@ -97,19 +54,6 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({ description, title })
                             // Skip rendering if the field is "Company Type"
                             if (k === 'company_type') {
                                 return null;
-                            }
-
-                            const nestedKey = `${fullKey}.${k}`;
-                            const isNestedLoading = !loadedFields.has(nestedKey);
-                            const isNestedChild = typeof v !== 'object' || v === null || Array.isArray(v);
-
-                            if (isNestedLoading && isNestedChild) {
-                                return (
-                                    <div key={k} className="mb-4 flex items-center" style={{ marginLeft: `${indent}px` }}>
-                                        <Spin className="mr-2" indicator={<LoadingOutlined style={{ fontSize: 14 }} spin />} />
-                                        <Typography.Text type="secondary">{formatKey(k)}:</Typography.Text>
-                                    </div>
-                                );
                             }
 
                             return (
@@ -146,15 +90,10 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({ description, title })
                 position: 'relative'
             }}
             extra={
-                <div
-                    className={`absolute bottom-0 left-0 h-0.5 ${isLoading
-                        ? 'bg-blue-500 animate-border-flow'
-                        : 'bg-green-500 w-full'
-                        }`}
-                />
+                <div className="absolute bottom-0 left-0 h-0.5 bg-green-500 w-full" />
             }
         >
-            {Object.entries(description).map(([key, value]) => renderField(key, value, 0, ''))}
+            {Object.entries(description).map(([key, value]) => renderField(key, value, 0))}
         </Card>
     );
 };

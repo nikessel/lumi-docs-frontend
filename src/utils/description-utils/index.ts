@@ -1,5 +1,5 @@
 import type * as WasmModule from "@wasm";
-import type { Device, Company } from "@wasm";
+import type { Device, Company, Trial } from "@wasm";
 import { fetchWrapper } from "@/utils/error-handling-utils/fetchWrapper";
 
 export async function getDeviceDescriptions(
@@ -36,6 +36,25 @@ export async function getAllCompanies(
 
     return {
         companies: data?.output?.output || [],
+        error: error || null,
+    };
+}
+
+export async function getAllTrials(
+    wasmModule: typeof WasmModule | null
+): Promise<{ trials: Trial[]; error: string | null }> {
+    if (!wasmModule) {
+        console.error("❌ Error: WASM module not loaded.");
+        return {
+            trials: [],
+            error: "WASM module not loaded",
+        };
+    }
+
+    const { data, error } = await fetchWrapper(() => wasmModule.get_all_trials());
+
+    return {
+        trials: data?.output?.output || [],
         error: error || null,
     };
 }
