@@ -244,6 +244,13 @@ const ENUM_FIELD_MAPPING: EnumFieldMapping = {
     has_additional_healthcare_arrangements: ['no', 'yes', 'undetermined'] as HasAdditionalHealthcareArrangements[]
 };
 
+const MULTI_SELECT_FIELDS = [
+    'quality_management_system_maturity',
+    'software_lifecycle_phase',
+    'development_lifecycle_phase',
+    'lifecycle_phase'
+];
+
 const DescriptionCard: React.FC<DescriptionCardProps> = ({
     description,
     title,
@@ -288,6 +295,7 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
         const newDescription = { ...description };
         const path = key.split('.');
         const updatedDescription = updateNestedObject(newDescription, path, value);
+
         onDescriptionChange(updatedDescription);
     };
 
@@ -300,6 +308,7 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
         const indent = level * 16;
 
         const renderValue = (val: any, currentLevel: number = 0, currentPath: string = key): React.ReactNode => {
+            console.log("sdasdasdasd", val, currentPath)
             if (key.toLowerCase() === 'generation') {
                 return (
                     <Select
@@ -316,6 +325,27 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
 
             if (typeof val === 'object' && val !== null) {
                 if (Array.isArray(val)) {
+                    // Check if this is a multi-select field
+                    const fieldName = currentPath.split('.').pop() || currentPath;
+                    const enumOptions = fieldName in ENUM_FIELD_MAPPING ? ENUM_FIELD_MAPPING[fieldName as keyof EnumFieldMapping] : undefined;
+                    const isMultiSelect = MULTI_SELECT_FIELDS.includes(fieldName);
+
+                    if (enumOptions && isMultiSelect) {
+                        return (
+                            <Select
+                                mode="multiple"
+                                value={val}
+                                onChange={(value) => handleValueChange(currentPath, value, currentLevel)}
+                                style={{ width: 'auto' }}
+                                options={enumOptions.map((option: string) => ({
+                                    value: option,
+                                    label: formatValue(option)
+                                }))}
+                            />
+                        );
+                    }
+
+                    // For non-multi-select arrays, render each item
                     return val.map((item, index) =>
                         renderValue(item, currentLevel, `${currentPath}[${index}]`)
                     );
@@ -342,12 +372,24 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
 
             // Handle enum fields
             const fieldName = currentPath.split('.').pop() || currentPath;
+            console.log("sdasdasdasd", val, currentPath, fieldName)
+
             const enumOptions = fieldName in ENUM_FIELD_MAPPING ? ENUM_FIELD_MAPPING[fieldName as keyof EnumFieldMapping] : undefined;
             if (enumOptions) {
+                const isMultiSelect = MULTI_SELECT_FIELDS.includes(fieldName);
+                const currentValue = isMultiSelect ? (Array.isArray(val) ? val : [val]) : val;
                 return (
                     <Select
-                        value={val}
-                        onChange={(value) => handleValueChange(currentPath, value, currentLevel)}
+                        mode={isMultiSelect ? "multiple" : undefined}
+                        value={currentValue}
+                        onChange={(value) => {
+                            if (isMultiSelect) {
+                                // Ensure we always pass an array for multi-select fields
+                                handleValueChange(currentPath, Array.isArray(value) ? value : [value], currentLevel);
+                            } else {
+                                handleValueChange(currentPath, value, currentLevel);
+                            }
+                        }}
                         style={{ width: 'auto' }}
                         options={enumOptions.map((option: string) => ({
                             value: option,

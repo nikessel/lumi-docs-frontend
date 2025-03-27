@@ -120,10 +120,14 @@ export async function getMultipleDefaultSelectedRequirementIds(
         };
     }
 
+    console.log("asaswpppwweiisd - sss", input)
     try {
         const { data, error } = await fetchWrapper(() =>
             wasmModule.get_multiple_default_selected_requirement_ids(input)
         );
+
+        console.log("asaswpppwweiisd - sss", data, error)
+
 
         if (error) {
             return {
