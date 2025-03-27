@@ -39,7 +39,7 @@ const SelectDocuments: React.FC = () => {
         setSelectedDocumentNumbers,
     } = useCreateReportStore();
 
-    const [expandedKeys, setExpandedKeys] = useState<Key[]>([]);
+    const [expandedKeys, setExpandedKeys] = useState<Key[]>(['root']);
     const [currentPath, setCurrentPath] = useState<string | null>(null);
     const [searchValue, setSearchValue] = useState<string>('');
 

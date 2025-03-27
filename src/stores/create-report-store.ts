@@ -11,6 +11,7 @@ interface ReportState {
     selectedRequirementGroups: string[];
     selectedRequirements: string[];
     newReportCreated: { id: string | undefined, status: "pending" | "processing" | "error" | undefined, message?: string },
+    selectedPath: 'ai' | 'manual' | null;
 
     sectionsSetForFramework: string;
     groupsSetForSections: string[];
@@ -22,6 +23,7 @@ interface ReportState {
     setSelectedDocumentNumbers: (documentNumbers: number[]) => void;
     setSelectedRequirementGroups: (requirementGroups: string[]) => void;
     setSelectedRequirements: (requirements: string[]) => void;
+    setSelectedPath: (path: 'ai' | 'manual' | null) => void;
 
     setSectionsSetForFramework: (framework: string) => void;
     setGroupsSetForSections: (sections: string[]) => void;
@@ -42,6 +44,7 @@ export const useCreateReportStore = create<ReportState>()(
             selectedRequirementGroups: [],
             selectedRequirements: [],
             newReportCreated: { id: "", status: undefined },
+            selectedPath: null,
 
             sectionsSetForFramework: "",
             groupsSetForSections: [],
@@ -56,7 +59,7 @@ export const useCreateReportStore = create<ReportState>()(
                 set(() => ({ selectedRequirementGroups: requirementGroups })),
             setSelectedRequirements: (requirements) =>
                 set(() => ({ selectedRequirements: requirements })),
-
+            setSelectedPath: (path) => set(() => ({ selectedPath: path })),
 
             setSectionsSetForFramework: (framework) => set(() => ({ sectionsSetForFramework: framework })),
             setGroupsSetForSections: (sections) => set(() => ({ groupsSetForSections: sections })),

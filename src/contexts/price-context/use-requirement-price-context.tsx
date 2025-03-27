@@ -22,7 +22,7 @@ const PRICE_MAP: Record<string, number> = {
 export const RequirementPriceProvider = ({ children }: { children: ReactNode }) => {
     const user = useUserContext();
     const email = user?.user?.email
-    const defaultPrice = 5;
+    const defaultPrice = 2;
     const userPrice = email ? PRICE_MAP[email] : defaultPrice;
 
     const priceData = { userPrice, defaultPrice, loading: false, error: null };

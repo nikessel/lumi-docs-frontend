@@ -6,11 +6,12 @@ import { PlusOutlined } from "@ant-design/icons";
 import "@/styles/globals.css";
 import ReportMetaView from "@/components/reports/report-meta-view";
 import { useRouter } from "next/navigation";
-import CreateReportModal from "@/components/reports/create-report/create-report-modal";
+import SelectFrameworkModal from "@/components/reports/create-report/select-framework-modal";
 import { useWasm } from '@/contexts/wasm-context/WasmProvider';
 import { isArchived } from "@/utils/report-utils";
 import { useReportsContext } from "@/contexts/reports-context";
 import { useUrlParams } from "@/hooks/url-hooks";
+
 const Page = () => {
     const { reports, loading } = useReportsContext();
     const { selectedReports } = useUrlParams().params;
@@ -19,6 +20,7 @@ const Page = () => {
     const router = useRouter();
     const selectedCount = selectedReports.length;
     const [showArchived, setShowArchived] = useState(false);
+    const [showFrameworkModal, setShowFrameworkModal] = useState(false);
 
     const archivedReports = reports.filter((report) => isArchived(report.status));
     const archivedCount = archivedReports.length;
@@ -66,7 +68,7 @@ const Page = () => {
                             style={{ width: 200 }}
                         />
                         <Button size="small" type="primary" disabled icon={<PlusOutlined />}>
-                            New
+                            New Report
                         </Button>
                     </div>
                 </div>
@@ -88,9 +90,8 @@ const Page = () => {
             <div className="flex justify-between items-center">
                 <Typography textSize="h4">Reports</Typography>
                 <div className="flex items-center space-x-2" data-tour="new-report-button">
-
-                    <Button type="primary" onClick={() => router.push('/reports/create')}>
-                        Create New Report
+                    <Button icon={<PlusOutlined />} type="primary" onClick={() => setShowFrameworkModal(true)}>
+                        New Report
                     </Button>
                 </div>
             </div>
@@ -162,6 +163,10 @@ const Page = () => {
                     ))}
                 </>
             )}
+            <SelectFrameworkModal
+                visible={showFrameworkModal}
+                onClose={() => setShowFrameworkModal(false)}
+            />
         </div>
     );
 };

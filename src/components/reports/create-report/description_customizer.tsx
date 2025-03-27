@@ -290,44 +290,54 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
         fetchFieldPaths();
     }, [wasmModule, selectedRegulatoryFramework, devices, companies, trials]);
 
-    if (descriptionsLoading) {
-        return <div>Loading...</div>;
-    }
-
     if (error) {
         return <div>Error: {error}</div>;
     }
 
     return (
         <div className="scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-            {defaultRequirements.length}
             <div className="flex gap-4 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
-                {Array.from(fieldPaths.keys()).map((key) => {
-                    const description = key === 'trial' ? trialDescription
-                        : key === 'company' ? companyDescription
-                            : key === 'device' ? deviceDescription
-                                : null;
+                <div className="w-1/2 flex flex-col gap-4">
+                    {descriptionsLoading || loadingFieldPaths ? (
+                        <DescriptionCard
+                            description={null}
+                            title={"Loading"}
+                            applicableFieldPaths={fieldPaths}
+                            isLoading={descriptionsLoading || loadingFieldPaths}
+                            onDescriptionChange={() => { }}
+                        />
+                    ) : (
+                        Array.from(fieldPaths.keys()).map((key) => {
+                            const description = key === 'trial' ? trialDescription
+                                : key === 'company' ? companyDescription
+                                    : key === 'device' ? deviceDescription
+                                        : null;
 
-                    if (!description) return null;
+                            const handleDescriptionChangeForType = (newDescription: any) => {
+                                handleDescriptionChange(newDescription, key as 'device' | 'company' | 'trial');
+                            };
 
-                    const handleDescriptionChangeForType = (newDescription: any) => {
-                        handleDescriptionChange(newDescription, key as 'device' | 'company' | 'trial');
-                    };
-
-                    return (
-                        <div key={key} className="flex-1">
-                            <DescriptionCard
-                                description={description}
-                                title={`${key.charAt(0).toUpperCase() + key.slice(1)} Information`}
-                                applicableFieldPaths={fieldPaths}
-                                isLoading={loadingFieldPaths}
-                                onDescriptionChange={handleDescriptionChangeForType}
-                            />
-                        </div>
-                    );
-                })}
-                <div className="flex-1">
-                    <AISuggestionsReview onCustomize={() => { }} requirementIds={defaultRequirements} framework={selectedRegulatoryFramework} isLoading={false} />
+                            return (
+                                <div key={key}>
+                                    <DescriptionCard
+                                        description={description}
+                                        title={`${key.charAt(0).toUpperCase() + key.slice(1)} Information`}
+                                        applicableFieldPaths={fieldPaths}
+                                        isLoading={descriptionsLoading || loadingFieldPaths}
+                                        onDescriptionChange={handleDescriptionChangeForType}
+                                    />
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
+                <div className="w-1/2">
+                    <AISuggestionsReview
+                        onCustomize={() => { }}
+                        requirementIds={defaultRequirements}
+                        framework={selectedRegulatoryFramework}
+                        isLoading={descriptionsLoading || loadingFieldPaths}
+                    />
                 </div>
             </div>
         </div>

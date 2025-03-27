@@ -1,5 +1,5 @@
-import React from "react";
-import { Card, Typography, Spin, Input, Select } from "antd";
+import React, { useState } from "react";
+import { Card, Typography, Spin, Input, Select, Radio } from "antd";
 import type {
     DeviceDescription,
     TrialDescription,
@@ -77,11 +77,13 @@ import type {
     PerformsSupplierManagement,
     PerformsSterilizationActivities
 } from "@wasm";
+import Image from "next/image";
+import DescriptionCardSkeleton from "./description-card-skeleton";
 
 type DescriptionType = DeviceDescription | TrialDescription | CompanyDescription | Company;
 
 interface DescriptionCardProps {
-    description: DescriptionType;
+    description: DescriptionType | null;
     title: string;
     applicableFieldPaths?: Map<string, string[]>;
     isLoading?: boolean;
@@ -258,6 +260,16 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
     isLoading = false,
     onDescriptionChange
 }) => {
+    const [analysisMode, setAnalysisMode] = useState<'full' | 'affecting'>('affecting');
+
+    if (isLoading) {
+        return <DescriptionCardSkeleton />;
+    }
+
+    if (!description) {
+        return;
+    }
+
     const formatKey = (key: string) => {
         return key
             .split('_')
@@ -273,6 +285,7 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
     };
 
     const isFieldApplicable = (key: string) => {
+        if (analysisMode === 'full') return true;
         if (!applicableFieldPaths) return true;
         return Array.from(applicableFieldPaths.values()).some(paths =>
             paths.some(path => path.includes(key))
@@ -308,7 +321,6 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
         const indent = level * 16;
 
         const renderValue = (val: any, currentLevel: number = 0, currentPath: string = key): React.ReactNode => {
-            console.log("sdasdasdasd", val, currentPath)
             if (key.toLowerCase() === 'generation') {
                 return (
                     <Select
@@ -325,7 +337,6 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
 
             if (typeof val === 'object' && val !== null) {
                 if (Array.isArray(val)) {
-                    // Check if this is a multi-select field
                     const fieldName = currentPath.split('.').pop() || currentPath;
                     const enumOptions = fieldName in ENUM_FIELD_MAPPING ? ENUM_FIELD_MAPPING[fieldName as keyof EnumFieldMapping] : undefined;
                     const isMultiSelect = MULTI_SELECT_FIELDS.includes(fieldName);
@@ -345,7 +356,6 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
                         );
                     }
 
-                    // For non-multi-select arrays, render each item
                     return val.map((item, index) =>
                         renderValue(item, currentLevel, `${currentPath}[${index}]`)
                     );
@@ -359,8 +369,8 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
                             const newPath = `${currentPath}.${k}`;
                             return (
                                 <div key={k} className="mb-2">
-                                    <Typography.Text type="secondary">{formatKey(k)}:</Typography.Text>
-                                    <div style={{ marginLeft: '8px' }}>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <Typography.Text type="secondary">{formatKey(k)}:</Typography.Text>
                                         {renderValue(v, currentLevel + 1, newPath)}
                                     </div>
                                 </div>
@@ -370,10 +380,7 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
                 );
             }
 
-            // Handle enum fields
             const fieldName = currentPath.split('.').pop() || currentPath;
-            console.log("sdasdasdasd", val, currentPath, fieldName)
-
             const enumOptions = fieldName in ENUM_FIELD_MAPPING ? ENUM_FIELD_MAPPING[fieldName as keyof EnumFieldMapping] : undefined;
             if (enumOptions) {
                 const isMultiSelect = MULTI_SELECT_FIELDS.includes(fieldName);
@@ -384,7 +391,6 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
                         value={currentValue}
                         onChange={(value) => {
                             if (isMultiSelect) {
-                                // Ensure we always pass an array for multi-select fields
                                 handleValueChange(currentPath, Array.isArray(value) ? value : [value], currentLevel);
                             } else {
                                 handleValueChange(currentPath, value, currentLevel);
@@ -408,12 +414,22 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
             );
         };
 
+        // Check if the value is an object (parent field)
+        const isParentField = typeof value === 'object' && value !== null && !Array.isArray(value);
+
         return (
-            <div key={key} className="" style={{ marginLeft: `${indent}px` }}>
-                <Typography.Text type="secondary">{formattedKey}:</Typography.Text>
-                <div style={{ marginLeft: '8px' }}>
-                    {renderValue(value, level + 1)}
-                </div>
+            <div key={key} className="mb-2" style={{ marginLeft: `${indent}px` }}>
+                {isParentField ? (
+                    <>
+                        <Typography.Text type="secondary" className="block mb-2">{formattedKey}:</Typography.Text>
+                        {renderValue(value, level + 1)}
+                    </>
+                ) : (
+                    <div className="flex items-center justify-between gap-2">
+                        <Typography.Text type="secondary">{formattedKey}:</Typography.Text>
+                        {renderValue(value, level + 1)}
+                    </div>
+                )}
             </div>
         );
     };
@@ -421,28 +437,32 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
     return (
         <Card
             title={
-                <div className="flex items-center gap-2">
-                    {title}
-                    {isLoading && (
-                        <div className="flex items-center gap-2 text-blue-500">
-                            <Spin size="small" />
-                            <span>Analyzing {title}</span>
+                <div >
+                    <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                            {title}
                         </div>
-                    )}
+                        <Radio.Group
+                            value={analysisMode}
+                            onChange={(e) => setAnalysisMode(e.target.value)}
+                            optionType="button"
+                            buttonStyle="solid"
+                            size="small"
+                            style={{ fontSize: '10px', fontWeight: 'normal' }}
+                        >
+                            <Radio.Button value="full">Full Analysis</Radio.Button>
+                            <Radio.Button value="affecting">Key Factors</Radio.Button>
+                        </Radio.Group>
+                    </div>
                 </div>
-            }
-            className="w-full [&_.ant-card-head]:relative [&_.ant-card-head]:border-b-0"
-            headStyle={{
-                borderBottom: 'none',
-                position: 'relative'
-            }}
-            extra={
-                <div
-                    className={`absolute bottom-0 left-0 h-0.5 bg-blue-500 w-full ${isLoading ? 'animate-[loading-border_2s_ease-in-out_infinite]' : ''
-                        }`}
-                />
+
             }
         >
+            <div className="bg-[var(--bg-secondary)] text-[var(--primary)] mb-4 p-2 rounded-md text-xs font-normal flex items-center gap-2">
+                <Image src="/assets/pngs/ai_blue.png" alt="AI" width={24} height={24} color="var(--primary)" />
+                The information below is based on a review of all uploaded documents. Chaging Key Factors will update the suggestions to the right.
+            </div>
+
             {Object.entries(description).map(([key, value]) => renderField(key, value, 0))}
         </Card>
     );
