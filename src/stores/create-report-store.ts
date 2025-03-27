@@ -5,7 +5,7 @@ import { RegulatoryFramework } from '@wasm';
 
 interface ReportState {
     currentStep: number;
-    selectedFramework: RegulatoryFramework;
+    selectedFramework: RegulatoryFramework | null;
     selectedSections: string[];
     selectedDocumentNumbers: number[];
     selectedRequirementGroups: string[];
@@ -77,7 +77,7 @@ export const useCreateReportStore = create<ReportState>()(
             resetState: () =>
                 set(() => ({
                     currentStep: 0,
-                    selectedFramework: "iso13485",
+                    selectedFramework: null,
                     selectedSections: [],
                     selectedRequirementGroups: [],
                     selectedRequirements: [],

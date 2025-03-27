@@ -11,6 +11,7 @@ import { useWasm } from '@/contexts/wasm-context/WasmProvider';
 import { isArchived } from "@/utils/report-utils";
 import { useReportsContext } from "@/contexts/reports-context";
 import { useUrlParams } from "@/hooks/url-hooks";
+import { useCreateReportStore } from "@/stores/create-report-store";
 
 const Page = () => {
     const { reports, loading } = useReportsContext();
@@ -20,7 +21,8 @@ const Page = () => {
     const router = useRouter();
     const selectedCount = selectedReports.length;
     const [showArchived, setShowArchived] = useState(false);
-    const [showFrameworkModal, setShowFrameworkModal] = useState(false);
+    // const [showFrameworkModal, setShowFrameworkModal] = useState(false);
+    const { resetState } = useCreateReportStore.getState();
 
     const archivedReports = reports.filter((report) => isArchived(report.status));
     const archivedCount = archivedReports.length;
@@ -47,6 +49,11 @@ const Page = () => {
             setInitialRenderCompleted(true)
         }
     }, [loading, isLoading, initialRenderCompleted])
+
+    const handleCreateReport = () => {
+        resetState();
+        router.push('/reports/create');
+    }
 
     if (!loading && !isLoading && !initialRenderCompleted) {
         return (
@@ -90,7 +97,7 @@ const Page = () => {
             <div className="flex justify-between items-center">
                 <Typography textSize="h4">Reports</Typography>
                 <div className="flex items-center space-x-2" data-tour="new-report-button">
-                    <Button icon={<PlusOutlined />} type="primary" onClick={() => setShowFrameworkModal(true)}>
+                    <Button icon={<PlusOutlined />} type="primary" onClick={handleCreateReport}>
                         New Report
                     </Button>
                 </div>
@@ -163,10 +170,10 @@ const Page = () => {
                     ))}
                 </>
             )}
-            <SelectFrameworkModal
+            {/* <SelectFrameworkModal
                 visible={showFrameworkModal}
                 onClose={() => setShowFrameworkModal(false)}
-            />
+            /> */}
         </div>
     );
 };

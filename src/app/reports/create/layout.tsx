@@ -15,6 +15,7 @@ import { validateReportInput, createReport } from '@/utils/report-utils/create-r
 import { message } from 'antd';
 import RegulatoryFrameworkTag from '@/components/reports/regulatory-framework-tag';
 import SelectDocuments from '@/components/reports/create-report/document-selector';
+import { useRouter } from 'next/navigation';
 
 const { Step } = Steps;
 
@@ -28,6 +29,7 @@ interface Step {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
+    const router = useRouter();
     const { filteredSelectedReports, reports } = useReportsContext();
     const { currentStep, selectedPath, selectedFramework } = useCreateReportStore();
     const { wasmModule } = useWasm();
@@ -77,8 +79,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             } else {
                 messageApi.success("Report is being generated");
                 setIsGeneratingReport(false);
-                const { resetState } = useCreateReportStore.getState();
-                resetState();
+                router.push('/reports');
             }
         } else {
             messageApi.error("An input error occurred when creating the report");
@@ -93,10 +94,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {contextHolder}
             <div className="w-full flex justify-between items-center">
                 <div className="flex gap-4 items-center">
-                    <Typography textSize="h4">New Documentation Review</Typography>
-                    <RegulatoryFrameworkTag standard={selectedFramework} />
+                    <Typography textSize="h4">New Report</Typography>
+                    <RegulatoryFrameworkTag standard={selectedFramework || undefined} />
                 </div>
-                <div className="flex gap-4 items-center">
+                {selectedFramework && <div className="flex gap-4 items-center">
                     <PriceTracker></PriceTracker>
                     <Button onClick={() => setIsDocumentSelectorVisible(true)}>
                         Select Documents
@@ -104,7 +105,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                     <Button loading={isGeneratingReport} type="primary" onClick={handleCreateReport}>
                         Create Report
                     </Button>
-                </div>
+                </div>}
             </div>
 
             <Modal

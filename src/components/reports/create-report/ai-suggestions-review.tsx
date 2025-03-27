@@ -34,9 +34,9 @@ interface DiffInfo {
 }
 
 const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, requirementIds, framework, isLoading }) => {
-    const { sectionsForRegulatoryFramework } = useSectionsContext();
-    const { requirementGroupsBySectionId } = useRequirementGroupsContext();
-    const { requirementsByGroupId } = useRequirementsContext();
+    const { sectionsForRegulatoryFramework, loading: sectionsLoading } = useSectionsContext();
+    const { requirementGroupsBySectionId, loading: requirementGroupsLoading } = useRequirementGroupsContext();
+    const { requirementsByGroupId, loading: requirementsLoading } = useRequirementsContext();
     const {
         selectedRequirements,
         setSelectedRequirements,
@@ -101,7 +101,7 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
     }, [requirementIds, framework, sectionsForRegulatoryFramework, requirementGroupsBySectionId, requirementsByGroupId]);
 
     useEffect(() => {
-        if (selectedRequirements.length === 0) {
+        if (selectedRequirements.length === 0 && !(isLoading || sectionsLoading || requirementGroupsLoading || requirementsLoading)) {
             api.info({
                 message: 'No Requirements Selected',
                 description: 'Analysis yielded 0 pre-selected requirements. Please select manually or update Key Factors',
@@ -418,6 +418,42 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
         });
     }, [allSections, searchQuery]);
 
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            // Get all requirement IDs from all sections and groups
+            const allRequirementIds = allSections.flatMap(({ selectedGroups }) =>
+                selectedGroups.flatMap(({ selectedRequirements }) =>
+                    selectedRequirements.map(req => req.id)
+                )
+            );
+            // Add all requirements that aren't already selected
+            setSelectedRequirements([...new Set([...selectedRequirements, ...allRequirementIds])]);
+        } else {
+            // Clear all selections
+            setSelectedRequirements([]);
+        }
+    };
+
+    // Calculate if all requirements are selected
+    const isAllSelected = React.useMemo(() => {
+        const allRequirementIds = allSections.flatMap(({ selectedGroups }) =>
+            selectedGroups.flatMap(({ selectedRequirements }) =>
+                selectedRequirements.map(req => req.id)
+            )
+        );
+        return allRequirementIds.length > 0 && allRequirementIds.every(id => selectedRequirements.includes(id));
+    }, [allSections, selectedRequirements]);
+
+    // Calculate if some requirements are selected
+    const isIndeterminate = React.useMemo(() => {
+        const allRequirementIds = allSections.flatMap(({ selectedGroups }) =>
+            selectedGroups.flatMap(({ selectedRequirements }) =>
+                selectedRequirements.map(req => req.id)
+            )
+        );
+        return selectedRequirements.length > 0 && selectedRequirements.length < allRequirementIds.length;
+    }, [allSections, selectedRequirements]);
+
     if (isLoading) {
         return <AISuggestionsReviewSkeleton />;
     }
@@ -427,10 +463,13 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
             title={
                 <div className="flex items-center justify-between w-full">
                     <div className="flex items-center gap-2">
-                        Suggested Requirement Selection
+                        Requirement Selection
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200">
+                            {selectedRequirements.length} Selected
+                        </span>
                     </div>
                     <div className="flex items-center gap-2">
-                        {!isEditMode && displayMode === 'suggested' && (totalChanges.added > 0 || totalChanges.removed > 0) && (
+                        {!isEditMode && displayMode === 'suggested' && (totalChanges.added > 0 || totalChanges.removed > 0) && prevStateRef.current.requirementIds.length > 0 && (
                             <>
                                 {totalChanges.added > 0 && (
                                     <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-200">
@@ -459,14 +498,23 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
         >{contextHolder}
             <div className="flex flex-col h-full">
                 {isEditMode && (
-                    <div className="mb-4">
-                        <Input
-                            prefix={<SearchOutlined />}
-                            placeholder="Search sections, groups, or requirements..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full"
-                        />
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                            <Input
+                                placeholder="Search requirements..."
+                                prefix={<SearchOutlined />}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-64"
+                            />
+                            <Checkbox
+                                checked={isAllSelected}
+                                indeterminate={isIndeterminate}
+                                onChange={(e) => handleSelectAll(e.target.checked)}
+                            >
+                                Select All
+                            </Checkbox>
+                        </div>
                     </div>
                 )}
                 <List
@@ -482,8 +530,8 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
 
                         return (
                             <List.Item
-                                className={`${!isEditMode && displayMode === 'suggested' && sectionDiff.isNew ? 'bg-green-50' :
-                                    !isEditMode && displayMode === 'suggested' && isRemoved ? 'bg-red-50' : ''
+                                className={`${!isEditMode && displayMode === 'suggested' && sectionDiff.isNew && prevStateRef.current.requirementIds.length > 0 ? 'bg-green-50' :
+                                    !isEditMode && displayMode === 'suggested' && isRemoved && prevStateRef.current.requirementIds.length > 0 ? 'bg-red-50' : ''
                                     }`}
                             >
                                 <div className="w-full">
@@ -499,12 +547,12 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
                                         )}
                                         <Text
                                             strong
-                                            className={`text-sm ${!isEditMode && displayMode === 'suggested' && sectionDiff.isNew ? 'text-green-600' :
-                                                !isEditMode && displayMode === 'suggested' && isRemoved ? 'text-red-600' : ''
+                                            className={`text-sm ${!isEditMode && displayMode === 'suggested' && sectionDiff.isNew && prevStateRef.current.requirementIds.length > 0 ? 'text-green-600' :
+                                                !isEditMode && displayMode === 'suggested' && isRemoved && prevStateRef.current.requirementIds.length > 0 ? 'text-red-600' : ''
                                                 }`}
                                         >
                                             {section.description}
-                                            {!isEditMode && displayMode === 'suggested' && sectionDiff.requirementDiff !== 0 && (
+                                            {!isEditMode && displayMode === 'suggested' && sectionDiff.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 && (
                                                 <span className={`ml-2 ${sectionDiff.requirementDiff > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                                     {sectionDiff.requirementDiff > 0 ? '+' : ''}{sectionDiff.requirementDiff}
                                                 </span>
@@ -536,13 +584,15 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
                                                                 />
                                                             )}
                                                             <div
-                                                                className={`text-xs p-1 rounded ${!isEditMode && displayMode === 'suggested' && diffInfo.isNew ? 'bg-green-50 text-green-600' :
-                                                                    !isEditMode && displayMode === 'suggested' && diffInfo.isRemoved ? 'bg-red-50 text-red-600' :
-                                                                        'text-gray-600'
+                                                                className={`text-xs p-1 rounded ${!isEditMode && displayMode === 'suggested' && diffInfo.isNew && prevStateRef.current.requirementIds.length > 0 ? 'bg-green-50 text-green-600' :
+                                                                    !isEditMode && displayMode === 'suggested' && diffInfo.isRemoved && prevStateRef.current.requirementIds.length > 0 ? 'bg-red-50 text-red-600' :
+                                                                        !isEditMode && displayMode === 'suggested' && diffInfo.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 ?
+                                                                            (diffInfo.requirementDiff > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600') :
+                                                                            'text-gray-600'
                                                                     }`}
                                                             >
                                                                 {group.name} ({groupRequirements.length} requirements)
-                                                                {!isEditMode && displayMode === 'suggested' && diffInfo.requirementDiff !== 0 && (
+                                                                {!isEditMode && displayMode === 'suggested' && diffInfo.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 && (
                                                                     <span className={`ml-1 ${diffInfo.requirementDiff > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                                                         {diffInfo.requirementDiff > 0 ? '+' : ''}{diffInfo.requirementDiff}
                                                                     </span>
