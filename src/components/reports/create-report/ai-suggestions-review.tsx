@@ -1,16 +1,17 @@
 import React from 'react';
-import { Typography, Button, List } from 'antd';
-import { useCreateReportStore } from '@/stores/create-report-store';
+import { Typography, Button, List, Card } from 'antd';
 import { useSectionsContext } from '@/contexts/sections-context';
 import { useRequirementGroupsContext } from '@/contexts/requirement-group-context';
 import { useRequirementsContext } from '@/contexts/requirements-context';
-import { formatRegulatoryFramework } from '@/utils/helpers';
-import type { Section, RequirementGroup, Requirement } from '@wasm';
+import type { Section, RequirementGroup, Requirement, RegulatoryFramework } from '@wasm';
 
 const { Title, Text } = Typography;
 
 interface AISuggestionsReviewProps {
     onCustomize: () => void;
+    requirementIds: string[];
+    framework: RegulatoryFramework;
+    isLoading: boolean;
 }
 
 interface SectionWithGroups {
@@ -21,68 +22,140 @@ interface SectionWithGroups {
     }[];
 }
 
-const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize }) => {
-    const {
-        selectedFramework,
-        selectedSections,
-        selectedRequirementGroups,
-        selectedRequirements,
-    } = useCreateReportStore();
+interface DiffInfo {
+    isNew: boolean;
+    isRemoved: boolean;
+    requirementDiff: number;
+}
 
+const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, requirementIds, framework, isLoading }) => {
     const { sectionsForRegulatoryFramework } = useSectionsContext();
     const { requirementGroupsBySectionId } = useRequirementGroupsContext();
     const { requirementsByGroupId } = useRequirementsContext();
 
-    const sections = selectedSections.map(sectionId => {
-        const section = sectionsForRegulatoryFramework[selectedFramework]?.find(s => s.id === sectionId);
-        if (!section) return null;
+    // Store previous requirementIds
+    const prevRequirementIdsRef = React.useRef<string[]>([]);
 
-        const groups = requirementGroupsBySectionId[sectionId] || [];
-        const selectedGroupsForSection = groups.filter(group => selectedRequirementGroups.includes(group.id));
+    const sections = React.useMemo(() => {
+        const sections = sectionsForRegulatoryFramework[framework] || [];
+        const sectionMap = new Map<string, SectionWithGroups>();
 
-        if (selectedGroupsForSection.length === 0) return null;
+        // First, find all sections that contain any of the selected requirements
+        sections.forEach(section => {
+            const groups = requirementGroupsBySectionId[section.id] || [];
+            const selectedGroups = groups.filter(group => {
+                const requirements = requirementsByGroupId[group.id] || [];
+                return requirements.some(req => requirementIds.includes(req.id));
+            });
+
+            if (selectedGroups.length > 0) {
+                sectionMap.set(section.id, {
+                    section,
+                    selectedGroups: selectedGroups.map(group => ({
+                        group,
+                        selectedRequirements: (requirementsByGroupId[group.id] || [])
+                            .filter(req => requirementIds.includes(req.id))
+                    }))
+                });
+            }
+        });
+
+        return Array.from(sectionMap.values());
+    }, [sectionsForRegulatoryFramework, framework, requirementGroupsBySectionId, requirementsByGroupId, requirementIds]);
+
+    // Calculate diffs for sections and groups
+    const getDiffInfo = React.useCallback((sectionId: string, groupId: string, currentRequirements: Requirement[]): DiffInfo => {
+        const prevSection = prevRequirementIdsRef.current.length > 0 ?
+            sectionsForRegulatoryFramework[framework]?.find(s => s.id === sectionId) : null;
+
+        const prevGroup = prevSection ?
+            (requirementGroupsBySectionId[prevSection.id] || []).find(g => g.id === groupId) : null;
+
+        const prevRequirements = prevGroup ?
+            (requirementsByGroupId[prevGroup.id] || []).filter(req => prevRequirementIdsRef.current.includes(req.id)) : [];
 
         return {
-            section,
-            selectedGroups: selectedGroupsForSection.map(group => {
-                const requirements = requirementsByGroupId[group.id] || [];
-                const selectedRequirementsForGroup = requirements.filter(req =>
-                    selectedRequirements.includes(req.id)
-                );
-                return { group, selectedRequirements: selectedRequirementsForGroup };
-            })
+            isNew: !prevGroup,
+            isRemoved: false, // We don't show removed groups in the current view
+            requirementDiff: currentRequirements.length - prevRequirements.length
         };
-    }).filter((item): item is SectionWithGroups => item !== null);
+    }, [sectionsForRegulatoryFramework, framework, requirementGroupsBySectionId, requirementsByGroupId]);
+
+    // Update previous requirementIds after rendering
+    React.useEffect(() => {
+        prevRequirementIdsRef.current = requirementIds;
+    }, [requirementIds]);
 
     return (
-        <div className="flex flex-col h-full">
-            <div className="flex justify-between items-center mb-2">
-                <Title level={5} className="!mb-0">Suggested Requirements</Title>
-                <Button size="small" onClick={onCustomize}>Customize Selection</Button>
-            </div>
+        <Card
+            title={
+                <div className="flex items-center gap-2">
+                    Suggested Requirement Selection
+                </div>
+            }
+            className="w-full [&_.ant-card-head]:relative [&_.ant-card-head]:border-b-0"
+            headStyle={{
+                borderBottom: 'none',
+                position: 'relative'
+            }}
+            extra={
+                <div
+                    className={`absolute bottom-0 left-0 h-0.5 bg-blue-500 w-full ${!isLoading ? 'animate-[loading-border_2s_ease-in-out_infinite]' : ''}`}
+                />
+            }
+        >
+            <div className="flex flex-col h-full">
+                <List
+                    className="flex-1 overflow-auto"
+                    size="small"
+                    dataSource={sections}
+                    renderItem={({ section, selectedGroups }) => {
+                        const sectionDiff = getDiffInfo(section.id, selectedGroups[0]?.group.id, selectedGroups[0]?.selectedRequirements || []);
 
-            <List
-                className="flex-1 overflow-auto"
-                size="small"
-                bordered
-                style={{ maxHeight: 'calc(100vh - 300px)' }}
-                dataSource={sections}
-                renderItem={({ section, selectedGroups }) => (
-                    <List.Item className="py-2">
-                        <div className="w-full">
-                            <Text strong className="text-sm">{section.description}</Text>
-                            <div className="ml-4 mt-1 space-y-1">
-                                {selectedGroups.map(({ group, selectedRequirements }) => (
-                                    <div key={group.id} className="text-xs text-gray-600">
-                                        • {group.name} ({selectedRequirements.length} requirements)
+                        return (
+                            <List.Item>
+                                <div className="w-full">
+                                    <Text
+                                        strong
+                                        className={`text-sm ${sectionDiff.isNew ? 'text-green-600' :
+                                            sectionDiff.isRemoved ? 'text-red-600' : ''
+                                            }`}
+                                    >
+                                        {section.description}
+                                        {sectionDiff.requirementDiff !== 0 && (
+                                            <span className={`ml-2 ${sectionDiff.requirementDiff > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                {sectionDiff.requirementDiff > 0 ? '+' : ''}{sectionDiff.requirementDiff}
+                                            </span>
+                                        )}
+                                    </Text>
+                                    <div className="ml-2 mt-1 space-y-1">
+                                        {selectedGroups.map(({ group, selectedRequirements }) => {
+                                            const diffInfo = getDiffInfo(section.id, group.id, selectedRequirements);
+                                            return (
+                                                <div
+                                                    key={group.id}
+                                                    className={`text-xs ${diffInfo.isNew ? 'text-green-600' :
+                                                        diffInfo.isRemoved ? 'text-red-600' :
+                                                            'text-gray-600'
+                                                        }`}
+                                                >
+                                                    • {group.name} ({selectedRequirements.length} requirements)
+                                                    {diffInfo.requirementDiff !== 0 && (
+                                                        <span className={`ml-1 ${diffInfo.requirementDiff > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                            {diffInfo.requirementDiff > 0 ? '+' : ''}{diffInfo.requirementDiff}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
                                     </div>
-                                ))}
-                            </div>
-                        </div>
-                    </List.Item>
-                )}
-            />
-        </div>
+                                </div>
+                            </List.Item>
+                        );
+                    }}
+                />
+            </div>
+        </Card>
     );
 };
 

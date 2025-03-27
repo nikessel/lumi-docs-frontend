@@ -264,7 +264,7 @@ const ReportCreator: React.FC<ReportCreatorProps> = ({ onReportSubmitted }) => {
             title: "Review",
             content: (
                 <div>
-                    <AISuggestionsReview onCustomize={handleCustomizeSelection} />
+
                 </div>
             ),
         },

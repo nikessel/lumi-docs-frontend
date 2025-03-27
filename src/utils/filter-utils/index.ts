@@ -120,14 +120,10 @@ export async function getMultipleDefaultSelectedRequirementIds(
         };
     }
 
-    console.log("asaswpppwweiisd - sss", input)
     try {
         const { data, error } = await fetchWrapper(() =>
             wasmModule.get_multiple_default_selected_requirement_ids(input)
         );
-
-        console.log("asaswpppwweiisd - sss", data, error)
-
 
         if (error) {
             return {
@@ -136,8 +132,23 @@ export async function getMultipleDefaultSelectedRequirementIds(
             };
         }
 
+        // The response is a Map where each value is an array of requirement IDs
+        const requirementsMap = data?.output?.output;
+        if (!(requirementsMap instanceof Map)) {
+            return {
+                requirements: [],
+                error: "Invalid response format"
+            };
+        }
+
+        // Combine all requirement IDs from all entries in the Map
+        const allRequirements: string[] = [];
+        requirementsMap.forEach((requirementIds) => {
+            allRequirements.push(...requirementIds);
+        });
+
         return {
-            requirements: Array.isArray(data?.output?.output) ? data.output.output : [],
+            requirements: allRequirements,
             error: null
         };
     } catch (err) {

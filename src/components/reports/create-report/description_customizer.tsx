@@ -6,6 +6,7 @@ import { getApplicableFieldPaths, getDefaultSelectionFieldPaths, getMultipleDefa
 import DescriptionCard from './description-card';
 import type { Device, Company, Trial, Description, DeviceDescription, CompanyDescription, TrialDescription } from '@wasm';
 import { GetDefaultSelectedRequirementIdsInput, GetMultipleDefaultSelectedRequirementIdsInput } from '@wasm';
+import AISuggestionsReview from './ai-suggestions-review';
 
 // Define which fields can have multiple values
 const MULTI_SELECT_FIELDS = [
@@ -232,7 +233,6 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
 
         console.log("Input for getMultipleDefaultSelectedRequirementIds:", input);
         const { requirements, error } = await getMultipleDefaultSelectedRequirementIds(wasmModule, input);
-        console.log("Requirements:asdasdasdasd", requirements, error);
 
         if (error) {
             console.error('Error fetching default selection:', error);
@@ -240,6 +240,8 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
         } else {
             // Remove duplicates from requirements
             const uniqueRequirements = [...new Set(requirements)];
+            console.log("Requirements:asdasdasdasd", uniqueRequirements, error);
+
             setDefaultRequirements(uniqueRequirements);
         }
     };
@@ -324,6 +326,9 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
                         </div>
                     );
                 })}
+                <div className="flex-1">
+                    <AISuggestionsReview onCustomize={() => { }} requirementIds={defaultRequirements} framework={selectedRegulatoryFramework} isLoading={false} />
+                </div>
             </div>
         </div>
     );
