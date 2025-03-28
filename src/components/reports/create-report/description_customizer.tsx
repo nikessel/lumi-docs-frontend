@@ -79,6 +79,8 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
 
             const { requirements, error } = await getMultipleDefaultSelectedRequirementIds(wasmModule, input);
 
+            console.log("[fetchDefaultSelection] Requirements:", requirements);
+
             if (error) {
                 console.error('[fetchDefaultSelection] Error:', error);
                 setDefaultRequirements([]);
@@ -211,6 +213,7 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
                         framework={selectedRegulatoryFramework}
                         isLoading={descriptionsLoading || loadingFieldPaths}
                         highlightChanges={highlightChanges}
+                        setHighlightChanges={setHighlightChanges}
                     />}
                 </div>
             </div>

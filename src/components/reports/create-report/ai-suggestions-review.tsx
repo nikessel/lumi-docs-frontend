@@ -18,6 +18,8 @@ interface AISuggestionsReviewProps {
     framework: RegulatoryFramework;
     isLoading: boolean;
     highlightChanges: boolean;
+    setHighlightChanges: (highlightChanges: boolean) => void;
+
 }
 
 interface SectionWithGroups {
@@ -34,7 +36,7 @@ interface DiffInfo {
     requirementDiff: number;
 }
 
-const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, requirementIds, framework, isLoading, highlightChanges }) => {
+const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, requirementIds, framework, isLoading, highlightChanges, setHighlightChanges }) => {
     const { sectionsForRegulatoryFramework, loading: sectionsLoading } = useSectionsContext();
     const { requirementGroupsBySectionId, loading: requirementGroupsLoading } = useRequirementGroupsContext();
     const { requirementsByGroupId, loading: requirementsLoading } = useRequirementsContext();
@@ -274,8 +276,9 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
 
     // Handle edit mode toggle
     const handleEditModeToggle = () => {
+        setHideHighlights(false)
+        setHighlightChanges(true)
         if (isEditMode) {
-            handleHideHighlightsToggle()
             // When saving (exiting edit mode)
             setSearchQuery(''); // Clear search when saving
             setIsEditMode(false);
