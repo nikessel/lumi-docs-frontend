@@ -6,7 +6,6 @@ import { PlusOutlined } from "@ant-design/icons";
 import "@/styles/globals.css";
 import ReportMetaView from "@/components/reports/report-meta-view";
 import { useRouter } from "next/navigation";
-import SelectFrameworkModal from "@/components/reports/create-report/select-framework-modal";
 import { useWasm } from '@/contexts/wasm-context/WasmProvider';
 import { isArchived } from "@/utils/report-utils";
 import { useReportsContext } from "@/contexts/reports-context";
