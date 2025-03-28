@@ -33,14 +33,15 @@ const MULTI_SELECT_FIELDS = [
 type DescriptionType = DeviceDescription | TrialDescription | CompanyDescription | Company;
 
 interface DescriptionCardProps {
-    description: DescriptionType | null;
+    description: DescriptionType[]; // now an array
     title: string;
     applicableFieldPaths?: Map<string, string[]>;
     rootKey: 'device' | 'company' | 'trial';
     setHighlightChanges: (highlightChanges: boolean) => void;
     isLoading?: boolean;
-    onDescriptionChange?: (newDescription: DescriptionType) => void;
+    onDescriptionChange?: (newDescriptions: DescriptionType[]) => void;
 }
+
 
 const StringArrayInput: React.FC<{
     value: string[];
@@ -113,6 +114,13 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
 }) => {
     const [analysisMode, setAnalysisMode] = useState<'full' | 'affecting'>('affecting');
     const [initialDescription] = useState(description);
+    const [resetCounter, setResetCounter] = useState(0);
+
+    const [descriptions, setDescriptions] = useState<DescriptionType[]>(description);
+
+    useEffect(() => {
+        setDescriptions(description); // sync if prop changes
+    }, [description]);
 
     useEffect(() => {
         if (!initialDescription || !onDescriptionChange) return;
@@ -123,19 +131,30 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
             Object.entries(obj).forEach(([key, value]) => {
                 const fieldPath = currentPath ? `${currentPath}.${key}` : key;
 
-                // Check if this is a multi-select field
                 const enumOptions = getEnumOptions(fieldPath);
                 if (enumOptions?.length && MULTI_SELECT_FIELDS.includes(key)) {
+                    // Previously used only the current value
+                    // ✅ Now select value and all values before it
                     const valuesUpTo = getValuesUpTo(String(value), enumOptions);
-                    handleValueChange({ key, value, level: 0, enableHighlightChanges: false });
+
+                    // Only pre-fill if the original was a string (not an array already)
+                    if (typeof value === 'string') {
+                        handleValueChange({
+                            key: fieldPath,
+                            value: valuesUpTo,
+                            level: 0,
+                            enableHighlightChanges: false,
+                        });
+                    }
                 } else if (typeof value === 'object' && value !== null) {
                     processObject(value, fieldPath);
                 }
             });
         };
 
-        processObject(initialDescription);
-    }, [initialDescription]); // Only run when initialDescription changes
+        processObject(initialDescription[0]); // ✅ Use initialDescription[0] since it's an array now
+    }, [initialDescription, resetCounter]);
+    // Only run when initialDescription changes
 
     const getEnumOptions = (fieldPath: string): string[] | undefined => {
         const qualifiedPath = `${rootKey}.${fieldPath}`;
@@ -157,13 +176,37 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
     const formatValue = (value: string) =>
         value.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
-    const isFieldApplicable = (key: string) => {
+    const isFieldApplicable = (fieldPath: string): boolean => {
         if (analysisMode === 'full') return true;
         if (!applicableFieldPaths) return true;
-        return Array.from(applicableFieldPaths.values()).some(paths =>
-            paths.some(path => path.includes(key))
+
+        const subPaths = applicableFieldPaths.get(rootKey) || [];
+
+        // A field is applicable if:
+        // - it is directly included, OR
+        // - one of its children is included (e.g. product_portfolio.includes_xyz)
+        const isApplicable = subPaths.some(path =>
+            path === fieldPath || path.startsWith(fieldPath + '.')
         );
+
+        console.log(`🧠[isFieldApplicable] Checking "${fieldPath}" against:`, subPaths);
+        console.log(`🧠[isFieldApplicable] Result for "${fieldPath}":`, isApplicable);
+
+        return isApplicable;
     };
+
+    const shouldRenderField = (fullPath: string): boolean => {
+        if (analysisMode === 'full') return true;
+        if (!applicableFieldPaths) return true;
+
+        const subPaths = applicableFieldPaths.get(rootKey) || [];
+
+        // Only render this specific field if it or its children are in the applicable list
+        return subPaths.some(p => p === fullPath || p.startsWith(fullPath + '.'));
+    };
+
+
+    console.log("TEETETETETETET", applicableFieldPaths)
 
     const handleValueChange = ({
         key,
@@ -176,153 +219,149 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
         level?: number;
         enableHighlightChanges?: boolean;
     }) => {
-        if (!onDescriptionChange) return;
-        const updateNestedObject = (obj: any, path: string[], newValue: any): any => {
-            if (path.length === 1) return { ...obj, [path[0]]: newValue };
-            return {
-                ...obj,
-                [path[0]]: updateNestedObject(obj[path[0]], path.slice(1), newValue)
-            };
-        };
+        const fieldName = key.split('.').pop() || '';
+        const isMultiSelectField = MULTI_SELECT_FIELDS.includes(fieldName);
 
-        const newDescription = { ...description };
-        const path = key.split('.');
-        const updatedDescription = updateNestedObject(newDescription, path, value);
+        let updatedDescriptions: DescriptionType[] = [];
 
-        onDescriptionChange(updatedDescription);
+        if (isMultiSelectField && Array.isArray(value)) {
+            updatedDescriptions = value.map((option, i) => {
+                const updated = updateNestedField(descriptions[0], key.split('.'), option);
+                return updated;
+            });
+        } else {
+            updatedDescriptions = descriptions.map((desc, i) => {
+                const updated = updateNestedField(desc, key.split('.'), value);
+                return updated;
+            });
+        }
+
+        const flattenedDescriptions = updatedDescriptions.flat();
+
+        setDescriptions(flattenedDescriptions);
+
+        if (onDescriptionChange) {
+            console.log('🧠[updateDescriptions] calling onDescriptionChange');
+            onDescriptionChange(flattenedDescriptions);
+        }
 
         if (enableHighlightChanges) {
             setHighlightChanges(true);
         }
     };
 
+    const updateNestedField = (obj: DescriptionType, path: string[], newValue: any): DescriptionType => {
+        const updated = JSON.parse(JSON.stringify(obj)); // deep copy
+        let current = updated;
+        for (let i = 0; i < path.length - 1; i++) {
+            current = current[path[i]];
+        }
+        current[path[path.length - 1]] = newValue;
+        return updated;
+    };
+
+
     const handleReset = () => {
         if (onDescriptionChange && initialDescription) {
-            onDescriptionChange(initialDescription);
+            setDescriptions(initialDescription);
+            setResetCounter(prev => prev + 1);
         }
     };
 
     const renderField = (key: string, value: any, level: number = 0): React.ReactNode => {
-        if (key === 'company_type' || !isFieldApplicable(key)) return null;
+        const fullPath = key; // top-level keys like "process_scope"
+        if (key === 'company_type' || !isFieldApplicable(fullPath)) return null;
 
         const formattedKey = formatKey(key);
         const indent = level * 16;
 
         const renderValue = (val: any, currentLevel: number = 0, currentPath: string = key): React.ReactNode => {
-            if (key.toLowerCase() === 'generation') {
-                return (
-                    <Select
-                        value={val ? '1st' : 'Later'}
-                        onChange={(value) => handleValueChange({ key: currentPath, value: value === '1st', level: currentLevel, enableHighlightChanges: true })}
-                        style={{ width: 'auto', minWidth: '150px' }}
-                        options={[{ value: '1st', label: '1st' }, { value: 'Later', label: 'Later' }]}
-                    />
-                );
-            }
+            const fieldName = currentPath.split('.').pop() || currentPath;
+            const enumOptions = getEnumOptions(currentPath);
+            const isMultiSelect = MULTI_SELECT_FIELDS.includes(fieldName);
 
-            if (typeof val === 'object' && val !== null) {
-                if (Array.isArray(val)) {
-                    const enumOptions = getEnumOptions(currentPath);
-                    const isMultiSelect = MULTI_SELECT_FIELDS.includes(currentPath.split('.').pop() || '');
-
-                    if (enumOptions?.length && isMultiSelect) {
-                        return (
-                            <Checkbox.Group
-                                value={val}
-                                onChange={(value) => handleValueChange({ key: currentPath, value, level: currentLevel, enableHighlightChanges: true })}
-                                style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}
-                            >
-                                {enumOptions.map(option => (
-                                    <Checkbox key={option} value={option}>{formatValue(option)}</Checkbox>
-                                ))}
-                            </Checkbox.Group>
-                        );
+            // 🔹 1. Get value(s) from all descriptions
+            const getMergedValues = (): any => {
+                const values = descriptions.map(desc => {
+                    let current = desc as any;
+                    for (const part of currentPath.split('.')) {
+                        current = current?.[part];
                     }
+                    return current;
+                });
+                return isMultiSelect ? Array.from(new Set(values.flat())) : values[0];
+            };
 
-                    // Handle array of strings
-                    if (val.every(item => typeof item === 'string')) {
-                        return (
-                            <StringArrayInput
-                                value={val}
-                                onChange={(newValue) => handleValueChange({ key: currentPath, value: newValue, level: currentLevel, enableHighlightChanges: true })}
-                            />
-                        );
-                    }
+            const mergedValue = getMergedValues();
 
-                    return val.map((item, index) => renderValue(item, currentLevel, `${currentPath}[${index}]`));
-                }
-
+            // 🔹 2. If the value is a nested object
+            if (typeof mergedValue === 'object' && !Array.isArray(mergedValue) && mergedValue !== null) {
                 return (
                     <div style={{ marginLeft: `${currentLevel * 16}px` }}>
-                        {Object.entries(val).map(([k, v]) => {
-                            if (k === 'company_type' || !isFieldApplicable(k)) return null;
-                            const newPath = `${currentPath}.${k}`;
-                            const fieldName = k;
-                            const enumOptions = getEnumOptions(newPath);
-                            const isSelectField = enumOptions?.length && !MULTI_SELECT_FIELDS.includes(fieldName);
-                            const isSmallInputField = typeof v === 'string' && v.length <= 30;
-                            const isCheckboxField = enumOptions?.length && MULTI_SELECT_FIELDS.includes(fieldName);
+                        {Object.entries(mergedValue)
+                            .filter(([k, _]) => shouldRenderField(`${currentPath}.${k}`))
+                            .map(([k, v]) => {
+                                const newPath = `${currentPath}.${k}`;
+                                const enumOptions = getEnumOptions(newPath);
+                                const isSelectField = enumOptions?.length && !MULTI_SELECT_FIELDS.includes(k);
 
-                            return (
-                                <div key={k} className="mb-2">
-                                    {isCheckboxField ? (
-                                        <div className="flex flex-col gap-2">
-                                            <Typography.Text type="secondary">{formatKey(k)}:</Typography.Text>
-                                            {renderValue(v, currentLevel + 1, newPath)}
-                                        </div>
-                                    ) : (isSelectField || isSmallInputField) ? (
-                                        <div className="flex items-center justify-between gap-2">
-                                            <Typography.Text type="secondary">{formatKey(k)}:</Typography.Text>
-                                            {renderValue(v, currentLevel + 1, newPath)}
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <Typography.Text type="secondary">{formatKey(k)}:</Typography.Text>
-                                            {renderValue(v, currentLevel + 1, newPath)}
-                                        </>
-                                    )}
-                                </div>
-                            );
-                        })}
+                                return (
+                                    <div key={newPath} className={`mb-2 ${isSelectField ? 'flex items-center justify-between' : ''}`}>
+                                        <Typography.Text type="secondary">{formatKey(k)}:</Typography.Text>
+                                        {renderValue(v, currentLevel + 1, newPath)}
+                                    </div>
+                                );
+                            })}
                     </div>
                 );
             }
 
-            const fieldName = currentPath.split('.').pop() || currentPath;
-            const enumOptions = getEnumOptions(currentPath);
-            const isMultiSelect = MULTI_SELECT_FIELDS.includes(fieldName);
-            const currentValue = isMultiSelect && enumOptions ? (Array.isArray(val) ? val : getValuesUpTo(val, enumOptions)) : val;
+            // 🔹 3. If enum with multi-select (Checkbox.Group)
+            if (enumOptions?.length && isMultiSelect) {
+                return (
+                    <Checkbox.Group
+                        value={mergedValue}
+                        onChange={(value) =>
+                            handleValueChange({ key: currentPath, value, level: currentLevel, enableHighlightChanges: true })
+                        }
+                        style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}
+                    >
+                        {enumOptions.map(option => (
+                            <Checkbox key={option} value={option}>{formatValue(option)}</Checkbox>
+                        ))}
+                    </Checkbox.Group>
+                );
+            }
 
+            // 🔹 4. If enum with single select
             if (enumOptions?.length) {
-                if (isMultiSelect) {
-                    return (
-                        <Checkbox.Group
-                            value={currentValue}
-                            onChange={(value) => handleValueChange({ key: currentPath, value, level: currentLevel, enableHighlightChanges: true })}
-                            style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}
-                        >
-                            {enumOptions.map(option => (
-                                <Checkbox key={option} value={option}>{formatValue(option)}</Checkbox>
-                            ))}
-                        </Checkbox.Group>
-                    );
-                }
-
                 return (
                     <Select
-                        value={currentValue}
-                        onChange={(value) => handleValueChange({ key: currentPath, value, level: currentLevel, enableHighlightChanges: true })}
-                        style={{ width: 'auto', minWidth: '150px' }}
-                        options={enumOptions.map(option => ({ value: option, label: formatValue(option) }))}
+                        value={mergedValue}
+                        onChange={(value) =>
+                            handleValueChange({ key: currentPath, value, level: currentLevel, enableHighlightChanges: true })
+                        }
+                        style={{
+                            width: 'auto',
+                            minWidth: '150px',
+                            ...(currentLevel > 0 ? { marginLeft: 'auto' } : {})
+                        }}
+                        options={enumOptions.map(option => ({
+                            value: option,
+                            label: formatValue(option),
+                        }))}
                     />
                 );
             }
 
-            if (typeof val === 'string' && val.length > 30) {
+            // 🔹 5. If it's a long text
+            if (typeof mergedValue === 'string' && mergedValue.length > 30) {
                 return (
                     <Input.TextArea
-                        value={val}
-                        onChange={(e) => handleValueChange({ key: currentPath, value: e.target.value, level: currentLevel, enableHighlightChanges: true })}
+                        value={mergedValue}
+                        onChange={(e) =>
+                            handleValueChange({ key: currentPath, value: e.target.value, level: currentLevel, enableHighlightChanges: true })
+                        }
                         style={{ width: '100%', minHeight: '80px' }}
                         autoSize={{ minRows: 3 }}
                         className="mt-2"
@@ -330,19 +369,32 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
                 );
             }
 
+            // 🔹 6. Default case (simple input)
             return (
                 <Input
-                    value={String(val)}
-                    onChange={(e) => handleValueChange({ key: currentPath, value: e.target.value, level: currentLevel, enableHighlightChanges: true })}
+                    value={String(mergedValue ?? '')}
+                    onChange={(e) =>
+                        handleValueChange({ key: currentPath, value: e.target.value, level: currentLevel, enableHighlightChanges: true })
+                    }
                     style={{ width: 'auto', minWidth: '50px' }}
                 />
             );
         };
 
+
         return (
             <div key={key} className="mb-2" style={{ marginLeft: `${indent}px` }}>
-                <Typography.Text type="secondary" className="block mb-2">{formattedKey}:</Typography.Text>
-                {renderValue(value, level + 1)}
+                {level === 0 ? (
+                    <>
+                        <Typography.Text type="secondary" className="block mb-2">{formattedKey}:</Typography.Text>
+                        {renderValue(value, level + 1)}
+                    </>
+                ) : (
+                    <div className="flex items-center justify-between">
+                        <Typography.Text type="secondary" className="block mb-2">{formattedKey}:</Typography.Text>
+                        {renderValue(value, level + 1)}
+                    </div>
+                )}
             </div>
         );
     };
@@ -376,7 +428,7 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
                 <Image src="/assets/pngs/ai_blue.png" alt="AI" width={24} height={24} color="var(--primary)" />
                 The information below is based on a review of all uploaded documents. Changing Key Factors will update the suggestions to the right.
             </div>
-            {Object.entries(description).map(([key, value]) => renderField(key, value, 0))}
+            {descriptions.length > 0 && descriptions[0] && Object.entries(descriptions[0]).map(([key, value]) => renderField(key, value, 0))}
         </Card>
     );
 };

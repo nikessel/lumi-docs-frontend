@@ -1,133 +1,15 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { RegulatoryFramework } from '@wasm';
 import { useDescriptionsContext } from '@/contexts/descriptions-context';
 import { useWasm } from '@/contexts/wasm-context/WasmProvider';
 import { getApplicableFieldPaths, getDefaultSelectionFieldPaths, getMultipleDefaultSelectedRequirementIds } from '@/utils/filter-utils';
 import DescriptionCard from './description-card';
-import type { Device, Company, Trial, Description, DeviceDescription, CompanyDescription, TrialDescription } from '@wasm';
-import { GetDefaultSelectedRequirementIdsInput, GetMultipleDefaultSelectedRequirementIdsInput } from '@wasm';
+import type { Description, DeviceDescription, CompanyDescription, TrialDescription } from '@wasm';
+import { GetMultipleDefaultSelectedRequirementIdsInput } from '@wasm';
 import AISuggestionsReview from './ai-suggestions-review';
-
-// Define which fields can have multiple values
-const MULTI_SELECT_FIELDS = [
-    'quality_management.quality_management_system_maturity',
-    'software_info.lifecycle_phase',
-    'basic_info.lifecycle_phase'
-] as const;
-
-type MultiSelectField = typeof MULTI_SELECT_FIELDS[number];
-
-// Create a type that allows arrays for multi-select fields
-type MultiSelectDeviceDescription = Omit<DeviceDescription, MultiSelectField> & {
-    'software_info.lifecycle_phase'?: DeviceDescription['software_info']['lifecycle_phase'] | DeviceDescription['software_info']['lifecycle_phase'][];
-};
-
-type MultiSelectCompanyDescription = Omit<CompanyDescription, MultiSelectField> & {
-    'quality_management.quality_management_system_maturity'?: CompanyDescription['quality_management']['quality_management_system_maturity'] | CompanyDescription['quality_management']['quality_management_system_maturity'][];
-};
-
-type MultiSelectTrialDescription = Omit<TrialDescription, MultiSelectField> & {
-    'basic_info.lifecycle_phase'?: TrialDescription['basic_info']['lifecycle_phase'] | TrialDescription['basic_info']['lifecycle_phase'][];
-};
 
 interface DescriptionCustomizerProps {
     selectedRegulatoryFramework: RegulatoryFramework;
-}
-
-// Function to convert a description with multi-select fields into multiple backend descriptions
-function convertToBackendDescriptions<T extends DeviceDescription | CompanyDescription | TrialDescription>(
-    description: MultiSelectDeviceDescription | MultiSelectCompanyDescription | MultiSelectTrialDescription,
-    type: 'device' | 'company' | 'trial'
-): Description[] {
-    console.log('000000000 Input description:', description);
-    console.log('000000000 Type:', type);
-
-    // Find all multi-select fields that have multiple values
-    const multiSelectValues = MULTI_SELECT_FIELDS.reduce((acc: { [key: string]: any[] }, field) => {
-        // Split the field path into parts (e.g., 'quality_management.quality_management_system_maturity' -> ['quality_management', 'quality_management_system_maturity'])
-        const parts = field.split('.');
-        let currentValue: any = description;
-
-        // Navigate through the nested structure
-        for (const part of parts) {
-            if (currentValue && typeof currentValue === 'object') {
-                currentValue = currentValue[part as keyof typeof currentValue];
-            } else {
-                currentValue = undefined;
-                break;
-            }
-        }
-
-        console.log(`Checking field ${field}:`, currentValue);
-        if (Array.isArray(currentValue) && currentValue.length > 1) {
-            acc[field] = currentValue;
-        }
-        return acc;
-    }, {});
-
-    console.log('000000000 Found multi-select values:', multiSelectValues);
-
-    // If no multi-select fields have multiple values, return the original description
-    if (Object.keys(multiSelectValues).length === 0) {
-        console.log('000000000 No multi-select fields found, returning original description');
-        return [{
-            device: type === 'device' ? description as DeviceDescription : undefined,
-            company: type === 'company' ? description as CompanyDescription : undefined,
-            trial: type === 'trial' ? description as TrialDescription : undefined
-        } as Description];
-    }
-
-    // Create all possible combinations
-    const combinations = Object.entries(multiSelectValues).reduce((acc: any[], [field, values]) => {
-        console.log(`000000000 Processing field ${field} with values:`, values);
-        if (acc.length === 0) {
-            // First multi-select field
-            const result = values.map(value => {
-                // Create a deep copy of the description
-                const newDesc = JSON.parse(JSON.stringify(description));
-                // Split the field path and set the value in the nested structure
-                const parts = field.split('.');
-                let current: any = newDesc;
-                for (let i = 0; i < parts.length - 1; i++) {
-                    current = current[parts[i]];
-                }
-                current[parts[parts.length - 1]] = value;
-                return newDesc;
-            });
-            console.log('000000000 First field combinations:', result);
-            return result;
-        } else {
-            // Subsequent multi-select fields
-            const result = acc.flatMap(desc =>
-                values.map(value => {
-                    // Create a deep copy of the description
-                    const newDesc = JSON.parse(JSON.stringify(desc));
-                    // Split the field path and set the value in the nested structure
-                    const parts = field.split('.');
-                    let current: any = newDesc;
-                    for (let i = 0; i < parts.length - 1; i++) {
-                        current = current[parts[i]];
-                    }
-                    current[parts[parts.length - 1]] = value;
-                    return newDesc;
-                })
-            );
-            console.log(`000000000 Combinations after processing ${field}:`, result);
-            return result;
-        }
-    }, []);
-
-    console.log('Final combinations:', combinations);
-
-    // Convert combinations to Description objects
-    const result = combinations.map(desc => ({
-        device: type === 'device' ? desc as DeviceDescription : undefined,
-        company: type === 'company' ? desc as CompanyDescription : undefined,
-        trial: type === 'trial' ? desc as TrialDescription : undefined
-    } as Description));
-
-    console.log('Final result:', result);
-    return result;
 }
 
 export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
@@ -140,116 +22,81 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
     const [defaultRequirements, setDefaultRequirements] = useState<string[]>([]);
     const [highlightChanges, setHighlightChanges] = useState(false);
     // State for descriptions with multi-select support
-    const [deviceDescription, setDeviceDescription] = useState<MultiSelectDeviceDescription | null>(null);
-    const [companyDescription, setCompanyDescription] = useState<MultiSelectCompanyDescription | null>(null);
-    const [trialDescription, setTrialDescription] = useState<MultiSelectTrialDescription | null>(null);
+    const [deviceDescription, setDeviceDescription] = useState<DeviceDescription[]>([]);
+    const [companyDescription, setCompanyDescription] = useState<CompanyDescription[]>([]);
+    const [trialDescription, setTrialDescription] = useState<TrialDescription[]>([]);
 
-    // Initialize descriptions when data is loaded
+    // // Initialize descriptions when data is loaded
     useEffect(() => {
         if (devices.length > 0) {
-            setDeviceDescription(devices[0].description as MultiSelectDeviceDescription);
+            setDeviceDescription([devices[0].description]);
         }
         if (companies.length > 0) {
-            setCompanyDescription(companies[0].description as MultiSelectCompanyDescription);
+            setCompanyDescription([companies[0].description]);
         }
         if (trials.length > 0) {
-            setTrialDescription(trials[0].description as MultiSelectTrialDescription);
+            setTrialDescription([trials[0].description]);
         }
     }, [devices, companies, trials]);
 
-    // Function to handle description changes
-    const handleDescriptionChange = (newDescription: any, type: 'device' | 'company' | 'trial') => {
-        switch (type) {
-            case 'device':
-                setDeviceDescription(newDescription as MultiSelectDeviceDescription);
-                break;
-            case 'company':
-                setCompanyDescription(newDescription as MultiSelectCompanyDescription);
-                break;
-            case 'trial':
-                setTrialDescription(newDescription as MultiSelectTrialDescription);
-                break;
-        }
-    };
+    useEffect(() => {
+        const fetchDefaultSelection = async () => {
+            if (!wasmModule) return;
 
-    // Function to fetch default selection for multiple descriptions
-    const fetchDefaultSelection = async () => {
-        if (!wasmModule) return;
+            const frameworksAndDescriptions = new Map<number, [RegulatoryFramework, Description[]]>();
 
-        const allDescriptions: Description[] = [];
+            let index = 0;
+            for (const device of deviceDescription) {
+                for (const company of companyDescription) {
+                    for (const trial of trialDescription) {
+                        const descriptions: Description[] = [];
 
-        // Convert and add trial descriptions
-        if (trialDescription) {
-            allDescriptions.push(...convertToBackendDescriptions(trialDescription, 'trial'));
-        }
+                        if (device) descriptions.push({ device });
+                        if (company) descriptions.push({ company });
+                        if (trial) descriptions.push({ trial });
 
-        // Convert and add device descriptions
-        if (deviceDescription) {
-            allDescriptions.push(...convertToBackendDescriptions(deviceDescription, 'device'));
-        }
+                        frameworksAndDescriptions.set(index, [selectedRegulatoryFramework, descriptions]);
+                        index++;
+                    }
+                }
+            }
 
-        // Convert and add company descriptions
-        if (companyDescription) {
-            allDescriptions.push(...convertToBackendDescriptions(companyDescription, 'company'));
-        }
+            const input: GetMultipleDefaultSelectedRequirementIdsInput = {
+                frameworks_and_descriptions: frameworksAndDescriptions
+            };
 
-        // Only proceed if we have descriptions to process
-        if (allDescriptions.length === 0) {
-            setDefaultRequirements([]);
-            return;
-        }
+            console.log("[fetchDefaultSelection] Input:", input);
 
-        const frameworksAndDescriptions = new Map<number, [RegulatoryFramework, Description[]]>();
+            const { requirements, error } = await getMultipleDefaultSelectedRequirementIds(wasmModule, input);
 
-        // Group descriptions by type
-        const deviceDescriptions = allDescriptions.filter((desc): desc is Description & { device: DeviceDescription } =>
-            'device' in desc && desc.device !== undefined);
-        const companyDescriptions = allDescriptions.filter((desc): desc is Description & { company: CompanyDescription } =>
-            'company' in desc && desc.company !== undefined);
-        const trialDescriptions = allDescriptions.filter((desc): desc is Description & { trial: TrialDescription } =>
-            'trial' in desc && desc.trial !== undefined);
-
-        // Create entries for each combination
-        let index = 0;
-        deviceDescriptions.forEach(deviceDesc => {
-            companyDescriptions.forEach(companyDesc => {
-                trialDescriptions.forEach(trialDesc => {
-                    // Create an array of three separate Description objects
-                    const descriptions: Description[] = [
-                        { device: deviceDesc.device },
-                        { company: companyDesc.company },
-                        { trial: trialDesc.trial }
-                    ];
-
-                    frameworksAndDescriptions.set(index, [selectedRegulatoryFramework, descriptions]);
-                    index++;
-                });
-            });
-        });
-
-        const input: GetMultipleDefaultSelectedRequirementIdsInput = {
-            frameworks_and_descriptions: frameworksAndDescriptions
+            if (error) {
+                console.error('[fetchDefaultSelection] Error:', error);
+                setDefaultRequirements([]);
+            } else {
+                const uniqueRequirements = [...new Set(requirements)];
+                setDefaultRequirements(uniqueRequirements);
+                console.log("[fetchDefaultSelection] Requirements:", uniqueRequirements);
+            }
         };
 
-        console.log("Input for getMultipleDefaultSelectedRequirementIds:", input);
-        const { requirements, error } = await getMultipleDefaultSelectedRequirementIds(wasmModule, input);
+        fetchDefaultSelection();
+    }, [wasmModule, deviceDescription, companyDescription, trialDescription, selectedRegulatoryFramework]);
 
-        if (error) {
-            console.error('Error fetching default selection:', error);
-            setDefaultRequirements([]);
-        } else {
-            // Remove duplicates from requirements
-            const uniqueRequirements = [...new Set(requirements)];
-            console.log("Requirements:asdasdasdasd", uniqueRequirements, error);
 
-            setDefaultRequirements(uniqueRequirements);
+    // Function to handle description changes
+    const handleDescriptionChange = (newDescriptions: any[], type: 'device' | 'company' | 'trial') => {
+        switch (type) {
+            case 'device':
+                setDeviceDescription(newDescriptions);
+                break;
+            case 'company':
+                setCompanyDescription(newDescriptions);
+                break;
+            case 'trial':
+                setTrialDescription(newDescriptions);
+                break;
         }
     };
-
-    // Call fetchDefaultSelection when descriptions change
-    useEffect(() => {
-        fetchDefaultSelection();
-    }, [deviceDescription, companyDescription, trialDescription]);
 
     useEffect(() => {
         const fetchFieldPaths = async () => {
@@ -300,7 +147,7 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
                 <div className="w-1/2 flex flex-col gap-4">
                     {descriptionsLoading || loadingFieldPaths ? (
                         <DescriptionCard
-                            description={null}
+                            description={[]}
                             title={"Loading"}
                             applicableFieldPaths={fieldPaths}
                             isLoading={descriptionsLoading || loadingFieldPaths}
@@ -322,7 +169,7 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
                             return (
                                 <div key={key}>
                                     <DescriptionCard
-                                        description={description}
+                                        description={description ?? []}
                                         title={`${key.charAt(0).toUpperCase() + key.slice(1)} Information`}
                                         applicableFieldPaths={fieldPaths}
                                         isLoading={descriptionsLoading || loadingFieldPaths}

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Typography, Button, List, Card, Collapse, Checkbox, Input, notification } from 'antd';
-import { EditOutlined, SearchOutlined, SaveOutlined } from '@ant-design/icons';
+import { EditOutlined, SearchOutlined, SaveOutlined, CheckOutlined } from '@ant-design/icons';
 import { useSectionsContext } from '@/contexts/sections-context';
 import { useRequirementGroupsContext } from '@/contexts/requirement-group-context';
 import { useRequirementsContext } from '@/contexts/requirements-context';
@@ -52,6 +52,7 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
     const [searchQuery, setSearchQuery] = React.useState('');
     const [api, contextHolder] = notification.useNotification();
     const lastNotificationTimeRef = React.useRef<number>(0);
+    const [hideHighlights, setHideHighlights] = React.useState(false);
 
     // Store previous state
     const prevStateRef = React.useRef<{
@@ -274,6 +275,7 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
     // Handle edit mode toggle
     const handleEditModeToggle = () => {
         if (isEditMode) {
+            handleHideHighlightsToggle()
             // When saving (exiting edit mode)
             setSearchQuery(''); // Clear search when saving
             setIsEditMode(false);
@@ -324,6 +326,18 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
         setIsEditMode(false);
         setDisplayMode('suggested');
     }, [requirementIds]);
+
+    // Reset hideHighlights when new changes are received
+    React.useEffect(() => {
+        setHideHighlights(false);
+    }, [requirementIds]);
+
+    // Handle hide highlights toggle
+    const handleHideHighlightsToggle = () => {
+        // setHideHighlights(!hideHighlights);
+        // Update selectedRequirements with their current values to reset change tracking
+        setSelectedRequirements([...selectedRequirements]);
+    };
 
     // Add handlers for selecting all children
     const handleSelectAllSection = (sectionId: string, checked: boolean) => {
@@ -470,7 +484,7 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
                         </span>
                     </div>
                     <div className="flex items-center gap-2">
-                        {!isEditMode && displayMode === 'suggested' && highlightChanges && (totalChanges.added > 0 || totalChanges.removed > 0) && prevStateRef.current.requirementIds.length > 0 && (
+                        {!isEditMode && displayMode === 'suggested' && highlightChanges && (totalChanges.added > 0 || totalChanges.removed > 0) && prevStateRef.current.requirementIds.length > 0 && !hideHighlights && (
                             <>
                                 {totalChanges.added > 0 && (
                                     <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-200">
@@ -484,6 +498,13 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
                                 )}
                             </>
                         )}
+                        {totalChanges.added + totalChanges.removed > 0 && <Button
+                            type={'text'}
+                            icon={<CheckOutlined />}
+                            onClick={handleHideHighlightsToggle}
+                            className={`${hideHighlights ? 'text-gray-500' : 'text-gray-500'}`}
+                            size="small"
+                        />}
                         <Button
                             type={isEditMode ? 'default' : 'text'}
                             icon={isEditMode ? <SaveOutlined /> : <EditOutlined />}
@@ -531,8 +552,8 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
 
                         return (
                             <List.Item
-                                className={`${!isEditMode && displayMode === 'suggested' && highlightChanges && sectionDiff.isNew && prevStateRef.current.requirementIds.length > 0 ? 'bg-green-50' :
-                                    !isEditMode && displayMode === 'suggested' && highlightChanges && isRemoved && prevStateRef.current.requirementIds.length > 0 ? 'bg-red-50' : ''
+                                className={`${!isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && sectionDiff.isNew && prevStateRef.current.requirementIds.length > 0 ? 'bg-green-50' :
+                                    !isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && isRemoved && prevStateRef.current.requirementIds.length > 0 ? 'bg-red-50' : ''
                                     }`}
                             >
                                 <div className="w-full">
@@ -548,12 +569,12 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
                                         )}
                                         <Text
                                             strong
-                                            className={`text-sm ${!isEditMode && displayMode === 'suggested' && highlightChanges && sectionDiff.isNew && prevStateRef.current.requirementIds.length > 0 ? 'text-green-600' :
-                                                !isEditMode && displayMode === 'suggested' && highlightChanges && isRemoved && prevStateRef.current.requirementIds.length > 0 ? 'text-red-600' : ''
+                                            className={`text-sm ${!isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && sectionDiff.isNew && prevStateRef.current.requirementIds.length > 0 ? 'text-green-600' :
+                                                !isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && isRemoved && prevStateRef.current.requirementIds.length > 0 ? 'text-red-600' : ''
                                                 }`}
                                         >
                                             {section.description}
-                                            {!isEditMode && displayMode === 'suggested' && highlightChanges && sectionDiff.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 && (
+                                            {!isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && sectionDiff.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 && (
                                                 <span className={`ml-2 ${sectionDiff.requirementDiff > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                                     {sectionDiff.requirementDiff > 0 ? '+' : ''}{sectionDiff.requirementDiff}
                                                 </span>
@@ -585,15 +606,15 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
                                                                 />
                                                             )}
                                                             <div
-                                                                className={`text-xs p-1 rounded ${!isEditMode && displayMode === 'suggested' && highlightChanges && diffInfo.isNew && prevStateRef.current.requirementIds.length > 0 ? 'bg-green-50 text-green-600' :
-                                                                    !isEditMode && displayMode === 'suggested' && highlightChanges && diffInfo.isRemoved && prevStateRef.current.requirementIds.length > 0 ? 'bg-red-50 text-red-600' :
-                                                                        !isEditMode && displayMode === 'suggested' && highlightChanges && diffInfo.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 ?
+                                                                className={`text-xs p-1 rounded ${!isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && diffInfo.isNew && prevStateRef.current.requirementIds.length > 0 ? 'bg-green-50 text-green-600' :
+                                                                    !isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && diffInfo.isRemoved && prevStateRef.current.requirementIds.length > 0 ? 'bg-red-50 text-red-600' :
+                                                                        !isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && diffInfo.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 ?
                                                                             (diffInfo.requirementDiff > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600') :
                                                                             'text-gray-600'
                                                                     }`}
                                                             >
                                                                 {group.name} ({groupRequirements.length} requirements)
-                                                                {!isEditMode && displayMode === 'suggested' && highlightChanges && diffInfo.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 && (
+                                                                {!isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && diffInfo.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 && (
                                                                     <span className={`ml-1 ${diffInfo.requirementDiff > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                                                         {diffInfo.requirementDiff > 0 ? '+' : ''}{diffInfo.requirementDiff}
                                                                     </span>
@@ -603,24 +624,51 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
                                                     }
                                                 >
                                                     <div className="ml-4 space-y-1">
-                                                        {groupRequirements.map(req => (
-                                                            <div
-                                                                key={req.id}
-                                                                className={`text-xs text-gray-600 flex items-start gap-2 items-center ${isEditMode && !selectedRequirements.includes(req.id) ? 'opacity-50' : ''
-                                                                    }`}
-                                                            >
-                                                                {isEditMode ? (
-                                                                    <Checkbox
-                                                                        checked={selectedRequirements.includes(req.id)}
-                                                                        onChange={() => handleRequirementSelect(req.id)}
-                                                                        className=""
-                                                                    />
-                                                                ) : (
-                                                                    <span className="text-gray-400">•</span>
-                                                                )}
-                                                                <span>{req.name}</span>
-                                                            </div>
-                                                        ))}
+                                                        {(() => {
+                                                            // Get all requirements for this group
+                                                            const allGroupRequirements = requirementsByGroupId[group.id] || [];
+
+                                                            // Get requirements that were previously selected but are now removed
+                                                            const removedRequirements = allGroupRequirements.filter(req =>
+                                                                prevStateRef.current.requirementIds.includes(req.id) &&
+                                                                !selectedRequirements.includes(req.id)
+                                                            );
+
+                                                            // Combine current and removed requirements
+                                                            const displayRequirements = [...groupRequirements, ...removedRequirements];
+
+                                                            return displayRequirements.map(req => {
+                                                                const isNew = !isEditMode && displayMode === 'suggested' && highlightChanges &&
+                                                                    !prevStateRef.current.requirementIds.includes(req.id) &&
+                                                                    prevStateRef.current.requirementIds.length > 0;
+                                                                const isRemoved = !isEditMode && displayMode === 'suggested' && highlightChanges &&
+                                                                    prevStateRef.current.requirementIds.includes(req.id) &&
+                                                                    !selectedRequirements.includes(req.id) &&
+                                                                    prevStateRef.current.requirementIds.length > 0;
+
+                                                                return (
+                                                                    <div
+                                                                        key={req.id}
+                                                                        className={`text-xs text-gray-600 flex items-start gap-2 items-center 
+                                                                            ${isEditMode && !selectedRequirements.includes(req.id) ? 'opacity-50' : ''}
+                                                                            ${isNew && !hideHighlights ? 'text-green-600' : ''}
+                                                                            ${isRemoved && !hideHighlights ? 'text-red-600' : ''}
+                                                                        `}
+                                                                    >
+                                                                        {isEditMode ? (
+                                                                            <Checkbox
+                                                                                checked={selectedRequirements.includes(req.id)}
+                                                                                onChange={() => handleRequirementSelect(req.id)}
+                                                                                className=""
+                                                                            />
+                                                                        ) : (
+                                                                            <span className={`${isNew && !hideHighlights ? 'text-green-600' : isRemoved && !hideHighlights ? 'text-red-600' : 'text-gray-400'}`}>•</span>
+                                                                        )}
+                                                                        <span>{req.name}</span>
+                                                                    </div>
+                                                                );
+                                                            });
+                                                        })()}
                                                     </div>
                                                 </Collapse.Panel>
                                             );
