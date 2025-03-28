@@ -2,16 +2,13 @@ import React, { useState, useEffect } from "react";
 import {
     Card,
     Typography,
-    Spin,
     Input,
     Select,
-    Radio,
     Button,
     Checkbox,
     Tag
 } from "antd";
 import { ReloadOutlined, PlusOutlined, CloseOutlined } from "@ant-design/icons";
-import * as Enums from "@wasm";
 import type {
     DeviceDescription,
     TrialDescription,
@@ -20,8 +17,9 @@ import type {
 } from "@wasm";
 import Image from "next/image";
 import DescriptionCardSkeleton from "./description-card-skeleton";
-import { enumMap } from "@/enumMap";
-import { FIELD_TO_ENUM_TYPE } from "@/fieldToEnumMap";
+import { FIELD_TO_ENUM_TYPE } from "@/types/fieldToEnumMap";
+import { enumMap, TypeName } from "@/types/constants";
+
 
 const MULTI_SELECT_FIELDS = [
     "quality_management_system_maturity",
@@ -131,37 +129,40 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
             Object.entries(obj).forEach(([key, value]) => {
                 const fieldPath = currentPath ? `${currentPath}.${key}` : key;
 
-                const enumOptions = getEnumOptions(fieldPath);
-                if (enumOptions?.length && MULTI_SELECT_FIELDS.includes(key)) {
-                    // Previously used only the current value
-                    // ✅ Now select value and all values before it
-                    const valuesUpTo = getValuesUpTo(String(value), enumOptions);
+                // Only process if the field is both applicable and should be rendered
+                if (isFieldApplicable(fieldPath) && shouldRenderField(fieldPath)) {
+                    const enumOptions = getEnumOptions(fieldPath);
+                    if (enumOptions?.length && MULTI_SELECT_FIELDS.includes(key)) {
+                        // Previously used only the current value
+                        // ✅ Now select value and all values before it
+                        const valuesUpTo = getValuesUpTo(String(value), enumOptions);
 
-                    // Only pre-fill if the original was a string (not an array already)
-                    if (typeof value === 'string') {
-                        handleValueChange({
-                            key: fieldPath,
-                            value: valuesUpTo,
-                            level: 0,
-                            enableHighlightChanges: false,
-                        });
+                        // Only pre-fill if the original was a string (not an array already)
+                        if (typeof value === 'string') {
+                            handleValueChange({
+                                key: fieldPath,
+                                value: valuesUpTo,
+                                level: 0,
+                                enableHighlightChanges: false,
+                            });
+                        }
+                    } else if (typeof value === 'object' && value !== null) {
+                        processObject(value, fieldPath);
                     }
-                } else if (typeof value === 'object' && value !== null) {
-                    processObject(value, fieldPath);
                 }
             });
         };
 
         processObject(initialDescription[0]); // ✅ Use initialDescription[0] since it's an array now
     }, [initialDescription, resetCounter]);
-    // Only run when initialDescription changes
 
     const getEnumOptions = (fieldPath: string): string[] | undefined => {
         const qualifiedPath = `${rootKey}.${fieldPath}`;
-        const enumType = FIELD_TO_ENUM_TYPE[qualifiedPath];
+        const enumType = FIELD_TO_ENUM_TYPE[qualifiedPath] as TypeName;
         if (!enumType) return undefined;
+
         const values = enumMap[enumType];
-        return Array.isArray(values) ? values : undefined;
+        return values ? [...values] : undefined;
     };
 
 

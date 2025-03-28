@@ -26,22 +26,25 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
     const [companyDescription, setCompanyDescription] = useState<CompanyDescription[]>([]);
     const [trialDescription, setTrialDescription] = useState<TrialDescription[]>([]);
 
-    // // Initialize descriptions when data is loaded
+    // Initialize descriptions when data is loaded
     useEffect(() => {
-        if (devices.length > 0) {
-            setDeviceDescription([devices[0].description]);
+        if (!descriptionsLoading) {
+            if (devices.length > 0) {
+                setDeviceDescription([devices[0].description]);
+            }
+            if (companies.length > 0) {
+                setCompanyDescription([companies[0].description]);
+            }
+            if (trials.length > 0) {
+                setTrialDescription([trials[0].description]);
+            }
         }
-        if (companies.length > 0) {
-            setCompanyDescription([companies[0].description]);
-        }
-        if (trials.length > 0) {
-            setTrialDescription([trials[0].description]);
-        }
-    }, [devices, companies, trials]);
+    }, [descriptionsLoading, devices, companies, trials]);
 
     useEffect(() => {
+        console.log("USEEFFECTTTTTR", wasmModule, descriptionsLoading, deviceDescription, companyDescription, trialDescription)
         const fetchDefaultSelection = async () => {
-            if (!wasmModule) return;
+            if (!wasmModule || descriptionsLoading) return;
 
             const frameworksAndDescriptions = new Map<number, [RegulatoryFramework, Description[]]>();
 
@@ -59,6 +62,13 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
                         index++;
                     }
                 }
+            }
+
+            // Only proceed if we have actual data
+            if (frameworksAndDescriptions.size === 0) {
+                console.log("[fetchDefaultSelection] No data to process, skipping API call");
+                setDefaultRequirements([]);
+                return;
             }
 
             const input: GetMultipleDefaultSelectedRequirementIdsInput = {
@@ -80,11 +90,10 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
         };
 
         fetchDefaultSelection();
-    }, [wasmModule, deviceDescription, companyDescription, trialDescription, selectedRegulatoryFramework]);
-
+    }, [wasmModule, selectedRegulatoryFramework, deviceDescription, companyDescription, trialDescription, descriptionsLoading]);
 
     // Function to handle description changes
-    const handleDescriptionChange = (newDescriptions: any[], type: 'device' | 'company' | 'trial') => {
+    const handleDescriptionChange = React.useCallback((newDescriptions: any[], type: 'device' | 'company' | 'trial') => {
         switch (type) {
             case 'device':
                 setDeviceDescription(newDescriptions);
@@ -96,46 +105,59 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
                 setTrialDescription(newDescriptions);
                 break;
         }
-    };
+    }, []);
 
     useEffect(() => {
         const fetchFieldPaths = async () => {
-            if (!wasmModule) return;
+            if (!wasmModule || descriptionsLoading) return;
             setLoadingFieldPaths(true);
 
-            const input = {
-                regulatory_framework: selectedRegulatoryFramework,
-                trial: trials.length > 0 ? trials[0] : undefined,
-                device: devices.length > 0 ? devices[0] : undefined,
-                company: companies.length > 0 ? companies[0] : undefined
-            };
+            // Add a minimum delay to ensure loading state is visible
+            const minDelay = new Promise(resolve => setTimeout(resolve, 500));
 
-            const { fieldPaths: applicablePaths, error: applicableError } = await getApplicableFieldPaths(wasmModule, input);
-            const { fieldPaths: defaultPaths, error: defaultError } = await getDefaultSelectionFieldPaths(wasmModule, input);
+            try {
+                const input = {
+                    regulatory_framework: selectedRegulatoryFramework,
+                    trial: trials.length > 0 ? trials[0] : undefined,
+                    device: devices.length > 0 ? devices[0] : undefined,
+                    company: companies.length > 0 ? companies[0] : undefined
+                };
 
-            if (applicableError) console.error('Applicable field paths error:', applicableError);
-            if (defaultError) console.error('Default field paths error:', defaultError);
+                const [{ fieldPaths: applicablePaths, error: applicableError }, { fieldPaths: defaultPaths, error: defaultError }] = await Promise.all([
+                    getApplicableFieldPaths(wasmModule, input),
+                    getDefaultSelectionFieldPaths(wasmModule, input)
+                ]);
 
-            // Merge the maps by combining arrays for each key
-            const combinedPaths = new Map();
-            for (const [key, value] of applicablePaths) {
-                combinedPaths.set(key, [...value]);
-            }
-            for (const [key, value] of defaultPaths) {
-                if (combinedPaths.has(key)) {
-                    // Merge arrays and remove duplicates
-                    combinedPaths.set(key, [...new Set([...combinedPaths.get(key), ...value])]);
-                } else {
-                    combinedPaths.set(key, value);
+                if (applicableError) console.error('Applicable field paths error:', applicableError);
+                if (defaultError) console.error('Default field paths error:', defaultError);
+
+                // Merge the maps by combining arrays for each key
+                const combinedPaths = new Map();
+                for (const [key, value] of applicablePaths) {
+                    combinedPaths.set(key, [...value]);
                 }
-            }
+                for (const [key, value] of defaultPaths) {
+                    if (combinedPaths.has(key)) {
+                        // Merge arrays and remove duplicates
+                        combinedPaths.set(key, [...new Set([...combinedPaths.get(key), ...value])]);
+                    } else {
+                        combinedPaths.set(key, value);
+                    }
+                }
 
-            setFieldPaths(combinedPaths);
-            setLoadingFieldPaths(false);
+                // Wait for minimum delay before updating state
+                await minDelay;
+                setFieldPaths(combinedPaths);
+            } catch (error) {
+                console.error('Error fetching field paths:', error);
+                await minDelay;
+            } finally {
+                setLoadingFieldPaths(false);
+            }
         };
 
         fetchFieldPaths();
-    }, [wasmModule, selectedRegulatoryFramework, devices, companies, trials]);
+    }, [wasmModule, selectedRegulatoryFramework, devices, companies, trials, descriptionsLoading]);
 
     if (error) {
         return <div>Error: {error}</div>;
@@ -183,13 +205,13 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
                     )}
                 </div>
                 <div className="w-1/2">
-                    <AISuggestionsReview
+                    {<AISuggestionsReview
                         onCustomize={() => { }}
                         requirementIds={defaultRequirements}
                         framework={selectedRegulatoryFramework}
                         isLoading={descriptionsLoading || loadingFieldPaths}
                         highlightChanges={highlightChanges}
-                    />
+                    />}
                 </div>
             </div>
         </div>

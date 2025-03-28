@@ -1,3 +1,4 @@
+// run the script: npx tsx scripts/generate-enum-map.ts from lumi-docs-frontend repo
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -6,36 +7,7 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dtsPath = path.join(__dirname, "../public/pkg/app.d.ts");
-const enumMapOutputPath = path.join(__dirname, "../src/enumMap.ts");
-const fieldToEnumOutputPath = path.join(__dirname, "../src/fieldToEnumMap.ts");
-
-const dtsContents = fs.readFileSync(dtsPath, "utf-8");
-
-// Match namespace blocks
-const namespaceRegex = /declare namespace (\w+)\s*{([^}]*)}/g;
-const enumMap: Record<string, string[]> = {};
-
-let match;
-while ((match = namespaceRegex.exec(dtsContents)) !== null) {
-    const namespace = match[1];
-    const body = match[2];
-
-    // Find all exported string literal types within the namespace
-    const values: string[] = [];
-    const typeValueRegex = /export type \w+\s*=\s*"([^"]+)"(?:\s*\|\s*"([^"]+)")*/g;
-
-    let typeMatch;
-    while ((typeMatch = typeValueRegex.exec(body)) !== null) {
-        const fullMatch = typeMatch[0];
-        const extractedValues = [...fullMatch.matchAll(/"([^"]+)"/g)].map(m => m[1]);
-        values.push(...extractedValues);
-    }
-
-    if (values.length > 0) {
-        enumMap[namespace] = [...new Set(values)];
-    }
-}
+const fieldToEnumOutputPath = path.join(__dirname, "../src/types/fieldToEnumMap.ts");
 
 // ✅ STATIC: Map full response field paths to enum type names
 export const fieldToEnumMapSeed: Record<string, string> = {
@@ -142,60 +114,10 @@ export const fieldToEnumMapSeed: Record<string, string> = {
     "company.basic_info.company_type": "CompanyType"
 };
 
-const enumMapOutput = `// AUTO-GENERATED FILE. DO NOT MODIFY.
-export const enumMap: Record<string, string[]> = ${JSON.stringify(enumMap, null, 2)};
-`;
-
 const fieldToEnumOutput = `// AUTO-GENERATED FILE. DO NOT MODIFY.
 export const FIELD_TO_ENUM_TYPE: Record<string, string> = ${JSON.stringify(fieldToEnumMapSeed, null, 2)};
 `;
 
-fs.writeFileSync(enumMapOutputPath, enumMapOutput, "utf-8");
 fs.writeFileSync(fieldToEnumOutputPath, fieldToEnumOutput, "utf-8");
 
-console.log(`[Enum Generator] ✅ Wrote ${Object.keys(enumMap).length} enums to enumMap.ts`);
 console.log(`[Enum Generator] ✅ Wrote ${Object.keys(fieldToEnumMapSeed).length} mappings to fieldToEnumMap.ts`);
-
-
-// import fs from 'fs';
-// import path from 'path';
-// import { fileURLToPath } from 'url';
-
-// // Fix __dirname in ESM
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
-
-// const dtsPath = path.join(__dirname, '../public/pkg/app.d.ts');
-// const outputPath = path.join(__dirname, '../src/enumMap.ts');
-
-// // This captures all namespaces and their content (non-greedy match)
-// const namespaceRegex = /declare namespace (\w+)\s*{([\s\S]*?)}/g;
-// // This captures type aliases within a namespace
-// const typeAliasRegex = /export type (\w+)\s*=\s*(?:"[^"]+"|'[^']+'|\d+|true|false)/g;
-
-// const dtsContents = fs.readFileSync(dtsPath, 'utf-8');
-
-// const enumMap: Record<string, string[]> = {};
-
-// let namespaceMatch;
-// while ((namespaceMatch = namespaceRegex.exec(dtsContents)) !== null) {
-//     const namespaceName = namespaceMatch[1];
-//     const namespaceBody = namespaceMatch[2];
-
-//     let typeMatch;
-//     while ((typeMatch = typeAliasRegex.exec(namespaceBody)) !== null) {
-//         const value = typeMatch[1];
-//         if (!enumMap[namespaceName]) {
-//             enumMap[namespaceName] = [];
-//         }
-//         enumMap[namespaceName].push(value);
-//     }
-// }
-
-// const output = `// AUTO-GENERATED FILE. DO NOT MODIFY.
-// export const enumMap: Record<string, string[]> = ${JSON.stringify(enumMap, null, 2)};
-// `;
-
-// fs.writeFileSync(outputPath, output, 'utf-8');
-
-// console.log(`[Enum Generator] Wrote ${Object.keys(enumMap).length} namespaces to enumMap.ts`);
