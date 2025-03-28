@@ -187,3 +187,4 @@ next-env.d.ts
 ehthumbs.db
 Thumbs.db
 yarn.lock
+src/types/constants.ts
