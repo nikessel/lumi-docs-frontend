@@ -20,8 +20,7 @@ const SelectFramework: React.FC = () => {
 
     const handleFrameworkClick = (frameworkId: RegulatoryFramework) => {
         setLoadingFramework(frameworkId);
-        //setSelectedFramework(frameworkId);
-        // Reset loading state after a short delay
+
         setTimeout(() => setSelectedFramework(frameworkId), 500);
     };
 

@@ -50,7 +50,6 @@ const Page = () => {
     }, [loading, isLoading, initialRenderCompleted])
 
     const handleCreateReport = async () => {
-
         resetState();
         router.push('/reports/create');
     }
