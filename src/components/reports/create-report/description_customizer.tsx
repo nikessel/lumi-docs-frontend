@@ -138,7 +138,7 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
     const [fieldPaths, setFieldPaths] = useState<Map<string, string[]>>(new Map());
     const [loadingFieldPaths, setLoadingFieldPaths] = useState(true);
     const [defaultRequirements, setDefaultRequirements] = useState<string[]>([]);
-
+    const [highlightChanges, setHighlightChanges] = useState(false);
     // State for descriptions with multi-select support
     const [deviceDescription, setDeviceDescription] = useState<MultiSelectDeviceDescription | null>(null);
     const [companyDescription, setCompanyDescription] = useState<MultiSelectCompanyDescription | null>(null);
@@ -305,6 +305,8 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
                             applicableFieldPaths={fieldPaths}
                             isLoading={descriptionsLoading || loadingFieldPaths}
                             onDescriptionChange={() => { }}
+                            rootKey={'device'}
+                            setHighlightChanges={setHighlightChanges}
                         />
                     ) : (
                         Array.from(fieldPaths.keys()).map((key) => {
@@ -325,6 +327,8 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
                                         applicableFieldPaths={fieldPaths}
                                         isLoading={descriptionsLoading || loadingFieldPaths}
                                         onDescriptionChange={handleDescriptionChangeForType}
+                                        rootKey={key as 'device' | 'company' | 'trial'}
+                                        setHighlightChanges={setHighlightChanges}
                                     />
                                 </div>
                             );
@@ -337,6 +341,7 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
                         requirementIds={defaultRequirements}
                         framework={selectedRegulatoryFramework}
                         isLoading={descriptionsLoading || loadingFieldPaths}
+                        highlightChanges={highlightChanges}
                     />
                 </div>
             </div>

@@ -17,6 +17,7 @@ interface AISuggestionsReviewProps {
     requirementIds: string[];
     framework: RegulatoryFramework;
     isLoading: boolean;
+    highlightChanges: boolean;
 }
 
 interface SectionWithGroups {
@@ -33,7 +34,7 @@ interface DiffInfo {
     requirementDiff: number;
 }
 
-const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, requirementIds, framework, isLoading }) => {
+const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, requirementIds, framework, isLoading, highlightChanges }) => {
     const { sectionsForRegulatoryFramework, loading: sectionsLoading } = useSectionsContext();
     const { requirementGroupsBySectionId, loading: requirementGroupsLoading } = useRequirementGroupsContext();
     const { requirementsByGroupId, loading: requirementsLoading } = useRequirementsContext();
@@ -469,7 +470,7 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
                         </span>
                     </div>
                     <div className="flex items-center gap-2">
-                        {!isEditMode && displayMode === 'suggested' && (totalChanges.added > 0 || totalChanges.removed > 0) && prevStateRef.current.requirementIds.length > 0 && (
+                        {!isEditMode && displayMode === 'suggested' && highlightChanges && (totalChanges.added > 0 || totalChanges.removed > 0) && prevStateRef.current.requirementIds.length > 0 && (
                             <>
                                 {totalChanges.added > 0 && (
                                     <span className="text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-600 border border-green-200">
@@ -530,8 +531,8 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
 
                         return (
                             <List.Item
-                                className={`${!isEditMode && displayMode === 'suggested' && sectionDiff.isNew && prevStateRef.current.requirementIds.length > 0 ? 'bg-green-50' :
-                                    !isEditMode && displayMode === 'suggested' && isRemoved && prevStateRef.current.requirementIds.length > 0 ? 'bg-red-50' : ''
+                                className={`${!isEditMode && displayMode === 'suggested' && highlightChanges && sectionDiff.isNew && prevStateRef.current.requirementIds.length > 0 ? 'bg-green-50' :
+                                    !isEditMode && displayMode === 'suggested' && highlightChanges && isRemoved && prevStateRef.current.requirementIds.length > 0 ? 'bg-red-50' : ''
                                     }`}
                             >
                                 <div className="w-full">
@@ -547,12 +548,12 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
                                         )}
                                         <Text
                                             strong
-                                            className={`text-sm ${!isEditMode && displayMode === 'suggested' && sectionDiff.isNew && prevStateRef.current.requirementIds.length > 0 ? 'text-green-600' :
-                                                !isEditMode && displayMode === 'suggested' && isRemoved && prevStateRef.current.requirementIds.length > 0 ? 'text-red-600' : ''
+                                            className={`text-sm ${!isEditMode && displayMode === 'suggested' && highlightChanges && sectionDiff.isNew && prevStateRef.current.requirementIds.length > 0 ? 'text-green-600' :
+                                                !isEditMode && displayMode === 'suggested' && highlightChanges && isRemoved && prevStateRef.current.requirementIds.length > 0 ? 'text-red-600' : ''
                                                 }`}
                                         >
                                             {section.description}
-                                            {!isEditMode && displayMode === 'suggested' && sectionDiff.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 && (
+                                            {!isEditMode && displayMode === 'suggested' && highlightChanges && sectionDiff.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 && (
                                                 <span className={`ml-2 ${sectionDiff.requirementDiff > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                                     {sectionDiff.requirementDiff > 0 ? '+' : ''}{sectionDiff.requirementDiff}
                                                 </span>
@@ -584,15 +585,15 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
                                                                 />
                                                             )}
                                                             <div
-                                                                className={`text-xs p-1 rounded ${!isEditMode && displayMode === 'suggested' && diffInfo.isNew && prevStateRef.current.requirementIds.length > 0 ? 'bg-green-50 text-green-600' :
-                                                                    !isEditMode && displayMode === 'suggested' && diffInfo.isRemoved && prevStateRef.current.requirementIds.length > 0 ? 'bg-red-50 text-red-600' :
-                                                                        !isEditMode && displayMode === 'suggested' && diffInfo.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 ?
+                                                                className={`text-xs p-1 rounded ${!isEditMode && displayMode === 'suggested' && highlightChanges && diffInfo.isNew && prevStateRef.current.requirementIds.length > 0 ? 'bg-green-50 text-green-600' :
+                                                                    !isEditMode && displayMode === 'suggested' && highlightChanges && diffInfo.isRemoved && prevStateRef.current.requirementIds.length > 0 ? 'bg-red-50 text-red-600' :
+                                                                        !isEditMode && displayMode === 'suggested' && highlightChanges && diffInfo.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 ?
                                                                             (diffInfo.requirementDiff > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600') :
                                                                             'text-gray-600'
                                                                     }`}
                                                             >
                                                                 {group.name} ({groupRequirements.length} requirements)
-                                                                {!isEditMode && displayMode === 'suggested' && diffInfo.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 && (
+                                                                {!isEditMode && displayMode === 'suggested' && highlightChanges && diffInfo.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 && (
                                                                     <span className={`ml-1 ${diffInfo.requirementDiff > 0 ? 'text-green-600' : 'text-red-600'}`}>
                                                                         {diffInfo.requirementDiff > 0 ? '+' : ''}{diffInfo.requirementDiff}
                                                                     </span>
