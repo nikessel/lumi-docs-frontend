@@ -1,12 +1,13 @@
 import React, { useEffect } from 'react';
 import { Typography, Button, List, Card, Collapse, Checkbox, Input, notification } from 'antd';
-import { EditOutlined, SearchOutlined, SaveOutlined, CheckOutlined } from '@ant-design/icons';
+import { EditOutlined, SearchOutlined, SaveOutlined, CheckOutlined, LoadingOutlined } from '@ant-design/icons';
 import { useSectionsContext } from '@/contexts/sections-context';
 import { useRequirementGroupsContext } from '@/contexts/requirement-group-context';
 import { useRequirementsContext } from '@/contexts/requirements-context';
 import { useCreateReportStore } from '@/stores/create-report-store';
 import type { Section, RequirementGroup, Requirement, RegulatoryFramework } from '@wasm';
 import AISuggestionsReviewSkeleton from './ai-suggestions-review-skeleton';
+import RegulatoryFrameworkTag from '../regulatory-framework-tag';
 
 const { Title, Text } = Typography;
 
@@ -19,7 +20,6 @@ interface AISuggestionsReviewProps {
     isLoading: boolean;
     highlightChanges: boolean;
     setHighlightChanges: (highlightChanges: boolean) => void;
-
 }
 
 interface SectionWithGroups {
@@ -131,6 +131,23 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
         }
     };
 
+    // Add sorting functions
+    const sortByReference = <T extends { reference?: string }>(items: T[]): T[] => {
+        return [...items].sort((a, b) => {
+            const aRef = a.reference || '';
+            const bRef = b.reference || '';
+            const aNum = aRef.split('.').map(Number);
+            const bNum = bRef.split('.').map(Number);
+
+            for (let i = 0; i < Math.max(aNum.length, bNum.length); i++) {
+                const aVal = aNum[i] || 0;
+                const bVal = bNum[i] || 0;
+                if (aVal !== bVal) return aVal - bVal;
+            }
+            return 0;
+        });
+    };
+
     const sections = React.useMemo(() => {
         const sections = sectionsForRegulatoryFramework[framework] || [];
         const sectionMap = new Map<string, SectionWithGroups>();
@@ -141,9 +158,9 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
                 const groups = requirementGroupsBySectionId[section.id] || [];
                 sectionMap.set(section.id, {
                     section,
-                    selectedGroups: groups.map(group => ({
+                    selectedGroups: sortByReference(groups).map(group => ({
                         group,
-                        selectedRequirements: requirementsByGroupId[group.id] || [] // Show all requirements
+                        selectedRequirements: sortByReference(requirementsByGroupId[group.id] || []) // Sort requirements
                     }))
                 });
             });
@@ -159,17 +176,24 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
                 if (selectedGroups.length > 0) {
                     sectionMap.set(section.id, {
                         section,
-                        selectedGroups: selectedGroups.map(group => ({
+                        selectedGroups: sortByReference(selectedGroups).map(group => ({
                             group,
-                            selectedRequirements: (requirementsByGroupId[group.id] || [])
-                                .filter(req => selectedRequirements.includes(req.id))
+                            selectedRequirements: sortByReference((requirementsByGroupId[group.id] || [])
+                                .filter(req => selectedRequirements.includes(req.id)))
                         }))
                     });
                 }
             });
         }
 
-        return Array.from(sectionMap.values());
+        // Convert map to array and sort sections by their first group's reference
+        return Array.from(sectionMap.values()).sort((a, b) => {
+            const aRef = a.selectedGroups[0]?.group.reference || '';
+            const bRef = b.selectedGroups[0]?.group.reference || '';
+            const aNum = parseInt(aRef.split('.')[0] || '0');
+            const bNum = parseInt(bRef.split('.')[0] || '0');
+            return aNum - bNum;
+        });
     }, [sectionsForRegulatoryFramework, framework, requirementGroupsBySectionId, requirementsByGroupId, selectedRequirements, displayMode]);
 
     // Get all sections including removed ones
@@ -215,7 +239,21 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
             };
         });
 
-        return [...sectionsWithRemovedGroups, ...removedSections];
+        // Combine all sections and sort by reference
+        const allSections = [...sectionsWithRemovedGroups, ...removedSections];
+        return allSections.sort((a, b) => {
+            const aRef = a.section.reference || '';
+            const bRef = b.section.reference || '';
+            const aNum = aRef.split('.').map(Number);
+            const bNum = bRef.split('.').map(Number);
+
+            for (let i = 0; i < Math.max(aNum.length, bNum.length); i++) {
+                const aVal = aNum[i] || 0;
+                const bVal = bNum[i] || 0;
+                if (aVal !== bVal) return aVal - bVal;
+            }
+            return 0;
+        });
     }, [sections, displayMode]);
 
     // Calculate diffs for sections and groups
@@ -508,15 +546,17 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
                             className={`${hideHighlights ? 'text-gray-500' : 'text-gray-500'}`}
                             size="small"
                         />}
-                        <Button
-                            type={isEditMode ? 'default' : 'text'}
-                            icon={isEditMode ? <SaveOutlined /> : <EditOutlined />}
-                            onClick={handleEditModeToggle}
-                            className={`${isEditMode ? 'text-blue-500' : 'text-gray-500'}`}
-                            size="small"
-                        >
-                            {isEditMode ? 'Save' : ''}
-                        </Button>
+                        <div className="flex items-center gap-1">
+                            <Button
+                                type={isEditMode ? 'default' : 'text'}
+                                icon={isEditMode ? <SaveOutlined /> : <EditOutlined />}
+                                onClick={handleEditModeToggle}
+                                className={`${isEditMode ? 'text-blue-500' : 'text-gray-500'}`}
+                                size="small"
+                            >
+                                {isEditMode ? 'Save' : ''}
+                            </Button>
+                        </div>
                     </div>
                 </div>
             }
@@ -547,7 +587,16 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
                     size="small"
                     dataSource={filteredSections}
                     renderItem={({ section, selectedGroups }) => {
-                        const sectionDiff = getDiffInfo(section.id, selectedGroups[0]?.group.id, selectedGroups[0]?.selectedRequirements || []);
+                        // Calculate total diff for the section by summing up all group diffs
+                        const sectionDiff = selectedGroups.reduce((acc, { group, selectedRequirements }) => {
+                            const groupDiff = getDiffInfo(section.id, group.id, selectedRequirements);
+                            return {
+                                isNew: acc.isNew || groupDiff.isNew,
+                                isRemoved: acc.isRemoved || groupDiff.isRemoved,
+                                requirementDiff: acc.requirementDiff + groupDiff.requirementDiff
+                            };
+                        }, { isNew: false, isRemoved: false, requirementDiff: 0 });
+
                         const isRemoved = !selectedGroups.some(g => g.selectedRequirements.length > 0);
                         const allSectionRequirements = selectedGroups.flatMap(group => group.selectedRequirements);
                         const isAllSelected = allSectionRequirements.length > 0 &&
@@ -572,16 +621,23 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
                                         )}
                                         <Text
                                             strong
-                                            className={`text-sm ${!isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && sectionDiff.isNew && prevStateRef.current.requirementIds.length > 0 ? 'text-green-600' :
+                                            className={`text-sm w-full ${!isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && sectionDiff.isNew && prevStateRef.current.requirementIds.length > 0 ? 'text-green-600' :
                                                 !isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && isRemoved && prevStateRef.current.requirementIds.length > 0 ? 'text-red-600' : ''
                                                 }`}
                                         >
-                                            {section.description}
-                                            {!isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && sectionDiff.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 && (
-                                                <span className={`ml-2 ${sectionDiff.requirementDiff > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                    {sectionDiff.requirementDiff > 0 ? '+' : ''}{sectionDiff.requirementDiff}
-                                                </span>
-                                            )}
+                                            <div className="flex justify-between items-center w-full pr-0">
+                                                <div>
+                                                    {section.description}
+                                                    {!isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && sectionDiff.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 && (
+                                                        <span className={`ml-2 ${sectionDiff.requirementDiff > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                            {sectionDiff.requirementDiff > 0 ? '+' : ''}{sectionDiff.requirementDiff}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="ml-4">
+                                                    <span className="text-[10px] text-gray-400">{section.reference}</span>
+                                                </div>
+                                            </div>
                                         </Text>
                                     </div>
                                     <Collapse
@@ -609,19 +665,26 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
                                                                 />
                                                             )}
                                                             <div
-                                                                className={`text-xs p-1 rounded ${!isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && diffInfo.isNew && prevStateRef.current.requirementIds.length > 0 ? 'bg-green-50 text-green-600' :
+                                                                className={`text-xs p-1 rounded w-full ${!isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && diffInfo.isNew && prevStateRef.current.requirementIds.length > 0 ? 'bg-green-50 text-green-600' :
                                                                     !isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && diffInfo.isRemoved && prevStateRef.current.requirementIds.length > 0 ? 'bg-red-50 text-red-600' :
                                                                         !isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && diffInfo.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 ?
                                                                             (diffInfo.requirementDiff > 0 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600') :
                                                                             'text-gray-600'
                                                                     }`}
                                                             >
-                                                                {group.name} ({groupRequirements.length} requirements)
-                                                                {!isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && diffInfo.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 && (
-                                                                    <span className={`ml-1 ${diffInfo.requirementDiff > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                                        {diffInfo.requirementDiff > 0 ? '+' : ''}{diffInfo.requirementDiff}
-                                                                    </span>
-                                                                )}
+                                                                <div className="flex justify-between items-center w-full pr-0">
+                                                                    <div>
+                                                                        {group.name} ({groupRequirements.length} requirements{requirementsByGroupId[group.id]?.length !== groupRequirements.length && <>, <span className="text-gray-400">{requirementsByGroupId[group.id]?.length - groupRequirements.length} available</span></>})
+                                                                        {!isEditMode && displayMode === 'suggested' && highlightChanges && !hideHighlights && diffInfo.requirementDiff !== 0 && prevStateRef.current.requirementIds.length > 0 && (
+                                                                            <span className={`ml-1 ${diffInfo.requirementDiff > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                                                {diffInfo.requirementDiff > 0 ? '+' : ''}{diffInfo.requirementDiff}
+                                                                            </span>
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="ml-4">
+                                                                        <span className="text-[10px] text-gray-400">{group.reference}</span>
+                                                                    </div>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     }
@@ -631,14 +694,14 @@ const AISuggestionsReview: React.FC<AISuggestionsReviewProps> = ({ onCustomize, 
                                                             // Get all requirements for this group
                                                             const allGroupRequirements = requirementsByGroupId[group.id] || [];
 
-                                                            // Get requirements that were previously selected but are now removed
-                                                            const removedRequirements = allGroupRequirements.filter(req =>
-                                                                prevStateRef.current.requirementIds.includes(req.id) &&
-                                                                !selectedRequirements.includes(req.id)
-                                                            );
-
-                                                            // Combine current and removed requirements
-                                                            const displayRequirements = [...groupRequirements, ...removedRequirements];
+                                                            // In edit mode, show all requirements
+                                                            // In normal mode, only show requirements that are either currently selected or were previously selected
+                                                            const displayRequirements = isEditMode
+                                                                ? allGroupRequirements
+                                                                : allGroupRequirements.filter(req =>
+                                                                    selectedRequirements.includes(req.id) ||
+                                                                    prevStateRef.current.requirementIds.includes(req.id)
+                                                                );
 
                                                             return displayRequirements.map(req => {
                                                                 const isNew = !isEditMode && displayMode === 'suggested' && highlightChanges &&

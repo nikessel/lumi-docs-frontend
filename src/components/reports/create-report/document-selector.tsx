@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { List, Checkbox, Button, Tree, Input } from "antd";
+import { List, Checkbox, Button, Tree, Input, Tag } from "antd";
 import { FolderOutlined, FilePdfOutlined } from "@ant-design/icons";
 import { useCreateReportStore } from "@/stores/create-report-store";
 import { useDocumentsContext } from "@/contexts/documents-context";
@@ -262,18 +262,22 @@ const SelectDocuments: React.FC = () => {
 
     return (
         <div >
-            <Input.Search
-                placeholder="Search documents..."
-                onChange={(e) => {
-                    setSearchValue(e.target.value);
-                    if (e.target.value && !expandedKeys.includes('root')) {
-                        setExpandedKeys([...expandedKeys, 'root']);
-                    }
-                }}
-                style={{ marginBottom: 8, width: 200 }}
-                allowClear
-                size="small"
-            />
+            <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Input.Search
+                    placeholder="Search documents..."
+                    onChange={(e) => {
+                        setSearchValue(e.target.value);
+                        if (e.target.value && !expandedKeys.includes('root')) {
+                            setExpandedKeys([...expandedKeys, 'root']);
+                        }
+                    }}
+                    style={{ width: 200 }}
+                    allowClear
+                    size="small"
+                />
+                <Tag color="success">{selectedDocumentNumbers.length} Documents Selected</Tag>
+                <Tag color="default">{documents.length - selectedDocumentNumbers.length} Documents Available</Tag>
+            </div>
             <Tree
                 showIcon
                 expandedKeys={expandedKeys}
@@ -285,21 +289,49 @@ const SelectDocuments: React.FC = () => {
                 checkedKeys={selectedDocumentNumbers.map(num => num?.toString())}
                 onCheck={(checkedKeys) => {
                     const keys = Array.isArray(checkedKeys) ? checkedKeys : checkedKeys.checked;
-                    const checkedDocumentNumbers = keys
-                        .map(key => {
-                            const doc = documents.find(d => d.number.toString() === key);
-                            if (doc) {
-                                return doc.number;
+
+                    // Get all visible document numbers from the filtered tree
+                    const getVisibleDocumentNumbers = (nodes: DataNode[]): string[] => {
+                        return nodes.reduce((acc: string[], node) => {
+                            if (node.isLeaf) {
+                                acc.push(node.key.toString());
                             }
-                            return null;
-                        })
-                        .filter((num): num is number => num !== null);
-                    setSelectedDocumentNumbers(checkedDocumentNumbers);
+                            if (node.children) {
+                                acc.push(...getVisibleDocumentNumbers(node.children));
+                            }
+                            return acc;
+                        }, []);
+                    };
+
+                    const visibleDocumentKeys = getVisibleDocumentNumbers(treeData);
+
+                    // Update selection state
+                    const newSelectedNumbers = [...selectedDocumentNumbers];
+
+                    // Remove selection from visible documents that were unchecked
+                    visibleDocumentKeys.forEach(key => {
+                        const docNumber = parseInt(key);
+                        if (!keys.map(k => k.toString()).includes(key) && newSelectedNumbers.includes(docNumber)) {
+                            newSelectedNumbers.splice(newSelectedNumbers.indexOf(docNumber), 1);
+                        }
+                    });
+
+                    // Add selection to visible documents that were checked
+                    keys.map(k => k.toString()).forEach(key => {
+                        if (visibleDocumentKeys.includes(key)) {
+                            const docNumber = parseInt(key);
+                            if (!newSelectedNumbers.includes(docNumber)) {
+                                newSelectedNumbers.push(docNumber);
+                            }
+                        }
+                    });
+
+                    setSelectedDocumentNumbers(newSelectedNumbers);
                 }}
-                height={350}
+                height={window.innerHeight * 0.8}
                 itemHeight={28}
                 virtual
-                style={{ maxHeight: '350px', overflow: 'auto' }}
+                style={{ overflow: 'auto' }}
             />
         </div>
     );

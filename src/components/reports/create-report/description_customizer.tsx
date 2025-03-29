@@ -42,7 +42,6 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
     }, [descriptionsLoading, devices, companies, trials]);
 
     useEffect(() => {
-        console.log("USEEFFECTTTTTR", wasmModule, descriptionsLoading, deviceDescription, companyDescription, trialDescription)
         const fetchDefaultSelection = async () => {
             if (!wasmModule || descriptionsLoading) return;
 
@@ -66,7 +65,6 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
 
             // Only proceed if we have actual data
             if (frameworksAndDescriptions.size === 0) {
-                console.log("[fetchDefaultSelection] No data to process, skipping API call");
                 setDefaultRequirements([]);
                 return;
             }
@@ -79,15 +77,13 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
 
             const { requirements, error } = await getMultipleDefaultSelectedRequirementIds(wasmModule, input);
 
-            console.log("[fetchDefaultSelection] Requirements:", requirements);
+            console.log("[fetchDefaultSelection] Requirements:", requirements.length);
 
             if (error) {
-                console.error('[fetchDefaultSelection] Error:', error);
                 setDefaultRequirements([]);
             } else {
                 const uniqueRequirements = [...new Set(requirements)];
                 setDefaultRequirements(uniqueRequirements);
-                console.log("[fetchDefaultSelection] Requirements:", uniqueRequirements);
             }
         };
 
@@ -115,7 +111,7 @@ export const DescriptionCustomizer: React.FC<DescriptionCustomizerProps> = ({
             setLoadingFieldPaths(true);
 
             // Add a minimum delay to ensure loading state is visible
-            const minDelay = new Promise(resolve => setTimeout(resolve, 500));
+            const minDelay = new Promise(resolve => setTimeout(resolve, 10));
 
             try {
                 const input = {

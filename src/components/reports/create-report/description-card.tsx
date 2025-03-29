@@ -38,123 +38,61 @@ interface DescriptionCardProps {
     setHighlightChanges: (highlightChanges: boolean) => void;
     isLoading?: boolean;
     onDescriptionChange?: (newDescriptions: DescriptionType[]) => void;
+
 }
-
-
-const StringArrayInput: React.FC<{
-    value: string[];
-    onChange: (value: string[]) => void;
-}> = ({ value = [], onChange }) => {
-    const [inputValue, setInputValue] = useState('');
-
-    const handleAdd = () => {
-        if (inputValue.trim()) {
-            onChange([...value, inputValue.trim()]);
-            setInputValue('');
-        }
-    };
-
-    const handleRemove = (index: number) => {
-        const newValue = [...value];
-        newValue.splice(index, 1);
-        onChange(newValue);
-    };
-
-    const handleKeyPress = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            handleAdd();
-        }
-    };
-
-    return (
-        <div className="mt-2 flex flex-col gap-2">
-            <div className="flex flex-wrap gap-2">
-                {value.map((item, index) => (
-                    <Tag
-                        key={index}
-                        closable
-                        onClose={() => handleRemove(index)}
-                        closeIcon={<CloseOutlined className="text-xs" />}
-                        className="flex items-center gap-1"
-                    >
-                        {item}
-                    </Tag>
-                ))}
-            </div>
-            <div className="flex items-center gap-2">
-                <Input
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder="Add new item"
-                    style={{ width: 'auto', minWidth: '150px' }}
-                />
-                <Button
-                    type="text"
-                    icon={<PlusOutlined />}
-                    onClick={handleAdd}
-                    size="small"
-                />
-            </div>
-        </div>
-    );
-};
 
 const DescriptionCard: React.FC<DescriptionCardProps> = ({
     description,
     title,
     applicableFieldPaths,
-    isLoading = false,
+    isLoading: externalLoading = false,
     onDescriptionChange,
     rootKey,
-    setHighlightChanges
+    setHighlightChanges,
 }) => {
     const [analysisMode, setAnalysisMode] = useState<'full' | 'affecting'>('affecting');
     const [initialDescription] = useState(description);
     const [resetCounter, setResetCounter] = useState(0);
-
+    const [isProcessing, setIsProcessing] = useState(true);
     const [descriptions, setDescriptions] = useState<DescriptionType[]>(description);
 
+    // Process multi-select fields when description is first received
     useEffect(() => {
-        setDescriptions(description); // sync if prop changes
-    }, [description]);
+        if (!initialDescription || !onDescriptionChange) {
+            setIsProcessing(false);
+            return;
+        }
 
-    useEffect(() => {
-        if (!initialDescription || !onDescriptionChange) return;
+        const processMultiSelectFields = (obj: any, currentPath: string = ''): any => {
+            if (!obj || typeof obj !== 'object') return obj;
 
-        const processObject = (obj: any, currentPath: string = '') => {
-            if (!obj || typeof obj !== 'object') return;
+            const result = { ...obj };
 
-            Object.entries(obj).forEach(([key, value]) => {
+            Object.entries(result).forEach(([key, value]) => {
                 const fieldPath = currentPath ? `${currentPath}.${key}` : key;
 
-                // Only process if the field is both applicable and should be rendered
                 if (isFieldApplicable(fieldPath) && shouldRenderField(fieldPath)) {
                     const enumOptions = getEnumOptions(fieldPath);
                     if (enumOptions?.length && MULTI_SELECT_FIELDS.includes(key)) {
-                        // Previously used only the current value
-                        // ✅ Now select value and all values before it
-                        const valuesUpTo = getValuesUpTo(String(value), enumOptions);
-
-                        // Only pre-fill if the original was a string (not an array already)
+                        // Process multi-select fields
                         if (typeof value === 'string') {
-                            handleValueChange({
-                                key: fieldPath,
-                                value: valuesUpTo,
-                                level: 0,
-                                enableHighlightChanges: false,
-                            });
+                            const valuesUpTo = getValuesUpTo(String(value), enumOptions);
+                            result[key] = valuesUpTo;
                         }
                     } else if (typeof value === 'object' && value !== null) {
-                        processObject(value, fieldPath);
+                        result[key] = processMultiSelectFields(value, fieldPath);
                     }
                 }
             });
+
+            return result;
         };
 
-        processObject(initialDescription[0]); // ✅ Use initialDescription[0] since it's an array now
-    }, [initialDescription, resetCounter]);
+        const processedDescriptions = description.map(desc => processMultiSelectFields(desc));
+        setDescriptions(processedDescriptions);
+        onDescriptionChange(processedDescriptions);
+        setIsProcessing(false);
+    }, [initialDescription]);
 
     const getEnumOptions = (fieldPath: string): string[] | undefined => {
         const qualifiedPath = `${rootKey}.${fieldPath}`;
@@ -206,9 +144,6 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
         return subPaths.some(p => p === fullPath || p.startsWith(fullPath + '.'));
     };
 
-
-    console.log("TEETETETETETET", applicableFieldPaths)
-
     const handleValueChange = ({
         key,
         value,
@@ -249,6 +184,7 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
         if (enableHighlightChanges) {
             setHighlightChanges(true);
         }
+
     };
 
     const updateNestedField = (obj: DescriptionType, path: string[], newValue: any): DescriptionType => {
@@ -400,7 +336,7 @@ const DescriptionCard: React.FC<DescriptionCardProps> = ({
         );
     };
 
-    if (isLoading) return <DescriptionCardSkeleton />;
+    if (externalLoading || isProcessing) return <DescriptionCardSkeleton />;
     if (!description) return null;
 
     return (

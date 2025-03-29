@@ -16,6 +16,7 @@ import { message } from 'antd';
 import RegulatoryFrameworkTag from '@/components/reports/regulatory-framework-tag';
 import SelectDocuments from '@/components/reports/create-report/document-selector';
 import { useRouter } from 'next/navigation';
+import { ReloadOutlined, CloseOutlined } from '@ant-design/icons';
 
 const { Step } = Steps;
 
@@ -31,7 +32,7 @@ interface Step {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
     const router = useRouter();
     const { filteredSelectedReports, reports } = useReportsContext();
-    const { currentStep, selectedPath, selectedFramework } = useCreateReportStore();
+    const { currentStep, selectedPath, selectedFramework, selectedDocumentNumbers, resetState } = useCreateReportStore();
     const { wasmModule } = useWasm();
     const [messageApi, contextHolder] = message.useMessage();
     const [isGeneratingReport, setIsGeneratingReport] = useState(false);
@@ -94,13 +95,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             {contextHolder}
             <div className="w-full flex justify-between items-center">
                 <div className="flex gap-4 items-center">
-                    <Typography textSize="h4">New Report</Typography>
-                    <RegulatoryFrameworkTag standard={selectedFramework || undefined} />
+                    <div className="text-h4_custom">New Report</div>
+                    <div className="flex items-center">
+                        <RegulatoryFrameworkTag standard={selectedFramework || undefined} />
+                        {selectedFramework && <Button
+                            icon={<CloseOutlined />}
+                            size="small"
+                            type="text"
+                            className="text-gray-400"
+                            onClick={() => resetState()}
+                            loading={isGeneratingReport}
+                        />}
+                    </div>
                 </div>
                 {selectedFramework && <div className="flex gap-4 items-center">
                     <PriceTracker></PriceTracker>
                     <Button onClick={() => setIsDocumentSelectorVisible(true)}>
-                        Select Documents
+                        Select Documents {selectedDocumentNumbers.length > 0 && <span className="text-xs text-gray-400">({selectedDocumentNumbers.length})</span>}
                     </Button>
                     <Button loading={isGeneratingReport} type="primary" onClick={handleCreateReport}>
                         Create Report
@@ -114,6 +125,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 onCancel={() => setIsDocumentSelectorVisible(false)}
                 width="80%"
                 footer={null}
+                style={{ top: 20 }}
+                bodyStyle={{ maxHeight: 'calc(100vh - 100px)', overflow: 'auto' }}
             >
                 <SelectDocuments />
             </Modal>
